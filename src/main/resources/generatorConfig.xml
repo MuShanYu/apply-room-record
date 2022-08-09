@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+    <!--导入配置 -->
+    <properties resource="application.properties"/>
+
+    <!-- context 一般是一个数据源一个context -->
+    <context id="default" targetRuntime="MyBatis3DynamicSql" defaultModelType="flat">
+
+        <!--jdbc的数据库连接 -->
+        <jdbcConnection
+                driverClass="${spring.datasource.driver-class-name}"
+                connectionURL="${spring.datasource.url}"
+                userId="${spring.datasource.username}"
+                password="${spring.datasource.password}">
+            <property name="nullCatalogMeansCurrent" value="true"/>
+        </jdbcConnection>
+
+        <!-- 实体类 -->
+        <javaModelGenerator
+                targetPackage="com.guet.ARC.domain"
+                targetProject=".\src\main\java">
+            <property name="trimStrings" value="true" />
+        </javaModelGenerator>
+
+        <!-- Mapper接口 -->
+        <javaClientGenerator type="ANNOTATEDMAPPER"
+                             targetPackage="com.guet.ARC.mapper"
+                             targetProject=".\src\main\java">
+        </javaClientGenerator>
+
+        <!-- 指定数据库表 -->
+        <table tableName="tbl_room" domainObjectName="Room"/>
+        <table tableName="tbl_room_reservation" domainObjectName="RoomReservation"/>
+        <table tableName="tbl_access_record" domainObjectName="AccessRecord"/>
+        <table tableName="tbl_user_role" domainObjectName="UserRole"/>
+        <table tableName="tbl_role" domainObjectName="Role"/>
+        <table tableName="tbl_user" domainObjectName="User"/>
+    </context>
+</generatorConfiguration>
