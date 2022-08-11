@@ -1,5 +1,6 @@
 package com.guet.ARC.config;
 
+import cn.dev33.satoken.exception.NotLoginException;
 import com.alibaba.fastjson.JSON;
 import com.guet.ARC.common.domain.Result;
 import com.guet.ARC.common.exception.AlertException;
@@ -88,6 +89,43 @@ public class ExceptionHandlerConfig {
         result.setCode(5001);
         result.setSuccess(false);
         result.setMessage(JSON.toJSONString(map));
+        result.setQueryData(null);
+        return result;
+    }
+
+    @ExceptionHandler(NotLoginException.class)
+    public Result<String> handleNotLoginException(NotLoginException e) {
+        e.printStackTrace();
+        String message = "";
+        int code = 0;
+        if(e.getType().equals(NotLoginException.NOT_TOKEN)) {
+            message = "请先登录";
+            code = -1;
+        }
+        else if(e.getType().equals(NotLoginException.INVALID_TOKEN)) {
+            message = "令牌无效";
+            code = -2;
+        }
+        else if(e.getType().equals(NotLoginException.TOKEN_TIMEOUT)) {
+            message = "令牌已过期";
+            code = -3;
+        }
+        else if(e.getType().equals(NotLoginException.BE_REPLACED)) {
+            message = "您已被顶下线";
+            code = -4;
+        }
+        else if(e.getType().equals(NotLoginException.KICK_OUT)) {
+            message = "您已被踢下线";
+            code = -5;
+        }
+        else {
+            message = "当前会话未登录";
+            code = 2001;
+        }
+        Result<String> result = new Result<>();
+        result.setCode(code);
+        result.setSuccess(false);
+        result.setMessage(message);
         result.setQueryData(null);
         return result;
     }

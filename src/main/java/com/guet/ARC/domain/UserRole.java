@@ -1,7 +1,14 @@
 package com.guet.ARC.domain;
 
+import lombok.*;
+
 import javax.annotation.Generated;
 
+@Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
 public class UserRole {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.258+08:00", comments="Source field: tbl_user_role.id")
     private String id;
