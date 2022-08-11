@@ -31,7 +31,7 @@ public enum ResultCode {
 
     UPDATE_USERINFO_OUT_OF_TIMES(2014, "修改个人信息次数达到最大，请24小时后修改", false),
 
-    PERMISSION_REJECTED(4001, "无权访问", false),
+    PERMISSION_REJECTED(4001, "权限不足", false),
     REPEAT_OPERATION(4003,"重复操作", false),
     UPDATE_USER_ROLE_IS_NOT_PERMITTED(4004,"不允许删除普通用户权限", false),
 

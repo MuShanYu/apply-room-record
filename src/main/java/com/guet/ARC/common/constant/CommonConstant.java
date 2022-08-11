@@ -1,6 +1,6 @@
 package com.guet.ARC.common.constant;
 
-public interface StateConstant {
+public interface CommonConstant {
 
     Short STATE_NEGATIVE = -1;//删除状态
 
@@ -23,4 +23,10 @@ public interface StateConstant {
     String ROLE_SUPER_ADMIN_ID = "2";
 
     Integer MAX_PERSONAL_UPDATE_NUM = 1; // 最大个人信息修改次数，每24小时
+
+    String USER_ROLE = "user";
+
+    String ADMIN_ROLE= "admin";
+
+    String SUPER_ADMIN_ROLE = "super-admin";
 }

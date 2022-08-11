@@ -12,6 +12,6 @@ public class SaTokenConfig implements WebMvcConfigurer {
         // 开启sa-token注解权限校验方式
         registry.addInterceptor(new SaAnnotationInterceptor())
                 .addPathPatterns("/**")
-                .excludePathPatterns("/user/login");
+                .excludePathPatterns("/user/login", "/user/publicKey", "/user/register", "/user/refreshToken");
     }
 }
