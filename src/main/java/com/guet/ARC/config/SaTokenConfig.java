@@ -1,6 +1,7 @@
 package com.guet.ARC.config;
 
 import cn.dev33.satoken.interceptor.SaAnnotationInterceptor;
+import cn.dev33.satoken.interceptor.SaRouteInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -9,8 +10,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class SaTokenConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 开启sa-token注解权限校验方式
-        registry.addInterceptor(new SaAnnotationInterceptor())
+        // 注解权限拦截
+        registry.addInterceptor(new SaAnnotationInterceptor()).addPathPatterns("/**");
+        // 登录拦截
+        registry.addInterceptor(new SaRouteInterceptor())
                 .addPathPatterns("/**")
                 .excludePathPatterns("/user/login", "/user/publicKey", "/user/register", "/user/refreshToken");
     }
