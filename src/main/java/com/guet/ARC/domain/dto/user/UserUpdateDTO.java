@@ -1,4 +1,4 @@
-package com.guet.ARC.domain.dto;
+package com.guet.ARC.domain.dto.user;
 
 import lombok.Data;
 import lombok.ToString;

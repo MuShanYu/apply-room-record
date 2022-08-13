@@ -9,13 +9,25 @@ import lombok.EqualsAndHashCode;
 @Data
 public class AlertException extends RuntimeException {
 
-    private ResultCode resultCode;
+    private int code;
+
+    private String message;
+
+    private boolean success;
 
     public AlertException(ResultCode resultCode) {
-        this.resultCode = resultCode;
+        this.code = resultCode.code();
+        this.message = resultCode.message();
+        this.success = resultCode.isSuccess();
+    }
+
+    public AlertException(int code, String message) {
+        this.code = code;
+        this.message = message;
+        this.success = false;
     }
 
     public Result<String> fail() {
-        return Result.failure(this.resultCode, getMessage());
+        return Result.fail(this.code, this.message, this.success);
     }
 }

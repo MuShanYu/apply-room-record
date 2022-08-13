@@ -190,4 +190,7 @@ public class RedisCacheUtil<T> {
         return map;
     }
 
+    public Long getExpire(String key) {
+        return redisTemplate.getExpire(key, TimeUnit.SECONDS);
+    }
 }

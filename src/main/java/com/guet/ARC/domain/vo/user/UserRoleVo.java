@@ -1,4 +1,4 @@
-package com.guet.ARC.domain.vo;
+package com.guet.ARC.domain.vo.user;
 
 import com.guet.ARC.domain.Role;
 import com.guet.ARC.domain.User;
