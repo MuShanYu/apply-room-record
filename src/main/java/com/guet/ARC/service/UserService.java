@@ -4,6 +4,7 @@ import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
+import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.domain.User;
@@ -184,13 +185,18 @@ public class UserService {
     }
 
 
-    public List<UserRoleVo> queryUserList(UserListQueryDTO userListQueryDTO) {
+    public PageInfo<UserRoleVo> queryUserList(UserListQueryDTO userListQueryDTO) {
         Integer page = userListQueryDTO.getPage();
         Integer size = userListQueryDTO.getSize();
         String name = userListQueryDTO.getName();
         String institute = userListQueryDTO.getInstitute();
         name = StringUtils.hasLength(name) ? name + "%" : null;
         institute = StringUtils.hasLength(institute) ? institute + "%" : null;
+        SelectStatementProvider count = select(count())
+                .from(UserDynamicSqlSupport.user)
+                .where(UserDynamicSqlSupport.name, isLikeWhenPresent(name))
+                .and(UserDynamicSqlSupport.institute, isLikeWhenPresent(institute))
+                .build().render(RenderingStrategies.MYBATIS3);
         PageHelper.startPage(page, size);
         SelectStatementProvider queryStatement = select(UserMapper.selectList)
                 .from(UserDynamicSqlSupport.user)
@@ -206,7 +212,11 @@ public class UserService {
             userRoleVo.setRoleList(userRoleService.queryRoleByUserId(user.getId()));
             userRoleVos.add(userRoleVo);
         }
-        return userRoleVos;
+        PageInfo<UserRoleVo> pageInfo = new PageInfo<>();
+        pageInfo.setPage(page);
+        pageInfo.setPageData(userRoleVos);
+        pageInfo.setTotalSize(userMapper.count(count));
+        return pageInfo;
     }
 
     /**
@@ -302,6 +312,9 @@ public class UserService {
     }
 
     public void changeUserRole(String userId, String[] roleIds) {
+        if (!StringUtils.hasLength(userId)) {
+            throw new AlertException(1000, "用户ID不能为空");
+        }
         String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         if (userIdContext.equals(userId)) {
             throw new AlertException(ResultCode.OPERATE_OBJECT_NOT_SELF);

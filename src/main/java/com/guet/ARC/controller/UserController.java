@@ -2,8 +2,10 @@ package com.guet.ARC.controller;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
+import cn.dev33.satoken.stp.StpUtil;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
+import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.service.UserService;
@@ -14,7 +16,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -42,6 +43,12 @@ public class UserController {
     @ApiOperation(value = "用户登录")
     public Map<String, Object> loginApi(@RequestBody UserLoginDTO userLoginDTO) {
         return userService.login(userLoginDTO);
+    }
+
+    @GetMapping("/user/logout")
+    @ApiOperation(value = "用户退出登录")
+    public void logoutApi() {
+        StpUtil.logout();
     }
 
     @GetMapping("/user/refreshToken")
@@ -77,7 +84,7 @@ public class UserController {
     @PostMapping("/admin/query/userList")
     @ApiOperation(value = "查询用户列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public List<UserRoleVo> queryUserListApi(@Valid @RequestBody UserListQueryDTO userListQueryDTO) {
+    public PageInfo<UserRoleVo> queryUserListApi(@Valid @RequestBody UserListQueryDTO userListQueryDTO) {
         return userService.queryUserList(userListQueryDTO);
     }
 
