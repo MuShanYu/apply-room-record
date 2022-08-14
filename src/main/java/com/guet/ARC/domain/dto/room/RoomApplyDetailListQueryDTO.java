@@ -10,14 +10,16 @@ import javax.validation.constraints.Min;
  * @version 1.0
  */
 @Data
-public class RoomListQueryDTO {
+public class RoomApplyDetailListQueryDTO {
     @Min(1)
     private Integer page;
 
     @Range(min = 1, max = 100)
     private Integer size;
 
-    private String school;
+    private String roomId;
 
-    private String teachBuilding;
+    private Long startTime;
+
+    private Long endTime;
 }
