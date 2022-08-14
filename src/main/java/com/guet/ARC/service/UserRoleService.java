@@ -104,7 +104,7 @@ public class UserRoleService {
                 .from(RoleDynamicSqlSupport.role)
                 .leftJoin(UserRoleDynamicSqlSupport.userRole)
                 .on(RoleDynamicSqlSupport.id, equalTo(UserRoleDynamicSqlSupport.roleId))
-                .where(UserRoleDynamicSqlSupport.userId, isEqualToWhenPresent(userId))
+                .where(UserRoleDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(UserRoleDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         List<Role> roles = roleMapper.selectMany(statementProvider);
