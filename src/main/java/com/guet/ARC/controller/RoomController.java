@@ -46,7 +46,7 @@ public class RoomController {
         return roomService.queryRoomList(roomListQueryDTO);
     }
 
-    @GetMapping("/room/apply")
+    @PostMapping("/room/apply")
     @ApiOperation(value = "预约房间")
     public RoomReservation applyRoom(@RequestBody ApplyRoomDTO applyRoomDTO) {
         return roomService.applyRoom(applyRoomDTO);
