@@ -18,6 +18,4 @@ public class RoomListQueryDTO {
     private String category;
 
     private String teachBuilding;
-
-    private Short state;
 }
