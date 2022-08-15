@@ -20,4 +20,6 @@ public class RoomListQueryDTO {
     private String school;
 
     private String teachBuilding;
+
+    private String category;
 }
