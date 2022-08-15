@@ -1,11 +1,13 @@
 package com.guet.ARC.service;
 
 import com.guet.ARC.common.constant.CommonConstant;
+import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.RoomReservation;
 import com.guet.ARC.domain.User;
+import com.guet.ARC.domain.dto.apply.MyApplyQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.mapper.RoomDynamicSqlSupport;
 import com.guet.ARC.mapper.RoomMapper;
@@ -42,15 +44,8 @@ public class RoomReservationService {
         }
     }
 
-    /*public List<RoomReservation> queryMyApply(RoomQueryDTO roomQueryDTO) {
-        SelectStatementProvider statementProvider = select(RoomMapper.selectList)
-                .from(RoomDynamicSqlSupport.room)
-                .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
-                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
-                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomListQueryDTO.getCategory()))
-                .orderBy(RoomDynamicSqlSupport.school, RoomDynamicSqlSupport.teachBuilding, RoomDynamicSqlSupport.category, RoomDynamicSqlSupport.roomName)
-                .build().render(RenderingStrategies.MYBATIS3);
+    public PageInfo<RoomReservation> queryMyApply(MyApplyQueryDTO myApplyQueryDTO) {
+
         return null;
-    }*/
+    }
 }

@@ -83,6 +83,15 @@ public class RoomService {
         if (roomQueryDTO == null) {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
         }
+        if(roomQueryDTO.getCategory().equals("")){
+            roomQueryDTO.setCategory(null);
+        }
+        if (roomQueryDTO.getSchool().equals("")) {
+            roomQueryDTO.setSchool(null);
+        }
+        if (roomQueryDTO.getTeachBuilding().equals("")) {
+            roomQueryDTO.setTeachBuilding(null);
+        }
 
         // 先查询可以预约的空闲房间，再从中按照房间的类别等条件筛选
         SelectStatementProvider statementProvider = select(roomMapper.selectList)
@@ -135,6 +144,18 @@ public class RoomService {
 
     @Transactional(rollbackFor = Throwable.class)
     public PageInfo<RoomVo> queryRoomList(RoomListQueryDTO roomListQueryDTO) {
+        if (roomListQueryDTO.getCategory().equals("")) {
+            roomListQueryDTO.setCategory(null);
+        }
+
+        if (roomListQueryDTO.getSchool().equals("")) {
+            roomListQueryDTO.setSchool(null);
+        }
+
+        if (roomListQueryDTO.getTeachBuilding().equals("")) {
+            roomListQueryDTO.setTeachBuilding(null);
+        }
+
         SelectStatementProvider statementProvider = select(RoomMapper.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
