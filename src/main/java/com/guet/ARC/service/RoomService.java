@@ -169,6 +169,7 @@ public class RoomService {
                 .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomListQueryDTO.getCategory()))
                 .build().render(RenderingStrategies.MYBATIS3);
         PageHelper.startPage(roomListQueryDTO.getPage(), roomListQueryDTO.getSize());
         List<Room> rooms = roomMapper.selectMany(statementProvider);
