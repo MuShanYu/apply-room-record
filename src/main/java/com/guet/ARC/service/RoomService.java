@@ -46,7 +46,6 @@ public class RoomService {
         long now = System.currentTimeMillis();
         String id = CommonUtils.generateUUID();
         room.setId(id);
-        room.setState(CommonConstant.STATE_ACTIVE);
         room.setCreateTime(now);
         room.setUpdateTime(now);
         if (roomMapper.insert(room) == 0) {
@@ -57,7 +56,12 @@ public class RoomService {
 
     @Transactional(rollbackFor = Throwable.class)
     public void deleteRoom(String id) {
-        if (roomMapper.deleteByPrimaryKey(id) == 0) {
+        Optional<Room> optionalRoom = roomMapper.selectByPrimaryKey(id);
+        if(optionalRoom.isPresent()) {
+            Room room = optionalRoom.get();
+            room.setState(CommonConstant.STATE_NEGATIVE);
+            updateRoom(room);
+        } else {
             throw new AlertException(ResultCode.DELETE_ERROR);
         }
     }
@@ -75,8 +79,8 @@ public class RoomService {
     }
 
     @Transactional(rollbackFor = Throwable.class)
-    public List<Room> queryRoom(RoomQueryDTO roomListQueryDTO) {
-        if (roomListQueryDTO == null) {
+    public List<Room> queryRoom(RoomQueryDTO roomQueryDTO) {
+        if (roomQueryDTO == null) {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
         }
 
@@ -87,13 +91,13 @@ public class RoomService {
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.state, isNotIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED))
-                                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetween(roomListQueryDTO.getStartTime()).and(roomListQueryDTO.getEndTime()))
-                                .or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetween(roomListQueryDTO.getStartTime()).and(roomListQueryDTO.getEndTime()))
+                                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetween(roomQueryDTO.getStartTime()).and(roomQueryDTO.getEndTime()))
+                                .or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetween(roomQueryDTO.getStartTime()).and(roomQueryDTO.getEndTime()))
                 ))
                 .and(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomListQueryDTO.getCategory()))
-                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
-                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomQueryDTO.getCategory()))
+                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomQueryDTO.getSchool()))
+                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomQueryDTO.getTeachBuilding()))
                 .build().render(RenderingStrategies.MYBATIS3);
 
         return roomMapper.selectMany(statementProvider);
@@ -136,6 +140,8 @@ public class RoomService {
                 .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomListQueryDTO.getCategory()))
+                .orderBy(RoomDynamicSqlSupport.school, RoomDynamicSqlSupport.teachBuilding, RoomDynamicSqlSupport.category, RoomDynamicSqlSupport.roomName)
                 .build().render(RenderingStrategies.MYBATIS3);
         SelectStatementProvider statementProviderCount = select(count())
                 .from(RoomDynamicSqlSupport.room)
@@ -144,7 +150,6 @@ public class RoomService {
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
                 .build().render(RenderingStrategies.MYBATIS3);
         PageHelper.startPage(roomListQueryDTO.getPage(), roomListQueryDTO.getSize());
-
         List<Room> rooms = roomMapper.selectMany(statementProvider);
         List<RoomVo> roomVos = new ArrayList<>();
         BeanCopier beanCopier = BeanCopier.create(Room.class, RoomVo.class, false);
@@ -167,18 +172,17 @@ public class RoomService {
         // 查询相应房间的所有预约记录
         SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .leftJoin(UserDynamicSqlSupport.user).on(RoomReservationDynamicSqlSupport.userId, equalTo(UserDynamicSqlSupport.id))
-                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED))
+                .where(RoomReservationDynamicSqlSupport.state, isIn(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED, CommonConstant.ROOM_RESERVE_TO_BE_REJECTED))
                 .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomApplyDetailListQueryDTO.getRoomId()))
-                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetween(roomApplyDetailListQueryDTO.getStartTime()).and(roomApplyDetailListQueryDTO.getEndTime()))
+                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(roomApplyDetailListQueryDTO.getStartTime()).and(roomApplyDetailListQueryDTO.getEndTime()))
+                .orderBy(RoomReservationDynamicSqlSupport.reserveStartTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
 
         SelectStatementProvider statementProviderCount = select(count())
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .leftJoin(UserDynamicSqlSupport.user).on(RoomReservationDynamicSqlSupport.userId, equalTo(UserDynamicSqlSupport.id))
                 .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED))
                 .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomApplyDetailListQueryDTO.getRoomId()))
-                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetween(roomApplyDetailListQueryDTO.getStartTime()).and(roomApplyDetailListQueryDTO.getEndTime()))
+                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(roomApplyDetailListQueryDTO.getStartTime()).and(roomApplyDetailListQueryDTO.getEndTime()))
                 .build().render(RenderingStrategies.MYBATIS3);
 
         PageHelper.startPage(roomApplyDetailListQueryDTO.getPage(), roomApplyDetailListQueryDTO.getSize());
