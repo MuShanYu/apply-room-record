@@ -1,6 +1,7 @@
 package com.guet.ARC.controller;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaMode;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
@@ -31,21 +32,21 @@ public class RoomController {
 
     @PostMapping("/room/add")
     @ApiOperation(value = "新增房间")
-    @SaCheckRole(CommonConstant.ADMIN_ROLE)
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public Room addRoom(@RequestBody Room room) {
         return roomService.addRoom(room);
     }
 
     @GetMapping("/room/delete")
     @ApiOperation(value = "删除房间")
-    @SaCheckRole(CommonConstant.ADMIN_ROLE)
+    @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
     public void deleteRoom(@RequestParam("id") String id) {
         roomService.deleteRoom(id);
     }
 
     @PostMapping("/room/update")
     @ApiOperation(value = "修改房间")
-    @SaCheckRole(CommonConstant.ADMIN_ROLE)
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public Room updateRoom(@RequestBody Room room) {
         return roomService.updateRoom(room);
     }
@@ -62,17 +63,17 @@ public class RoomController {
         return roomService.applyRoom(applyRoomDTO);
     }
 
-    @GetMapping("/room/queryRoomList")
+    @PostMapping("/room/queryRoomList")
     @ApiOperation("查询会议室")
-    @SaCheckRole(CommonConstant.ADMIN_ROLE)
-    public PageInfo<RoomVo> queryRoomList(RoomListQueryDTO roomListQueryDTO) {
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public PageInfo<RoomVo> queryRoomList(@RequestBody RoomListQueryDTO roomListQueryDTO) {
         return roomService.queryRoomList(roomListQueryDTO);
     }
 
-    @GetMapping("/room/queryRoomApplyDetailList")
+    @PostMapping("/room/queryRoomApplyDetailList")
     @ApiOperation("查询会议室预约详细信息")
-    @SaCheckRole(CommonConstant.ADMIN_ROLE)
-    public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(@RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
         return roomService.queryRoomApplyDetailList(roomApplyDetailListQueryDTO);
     }
 }
