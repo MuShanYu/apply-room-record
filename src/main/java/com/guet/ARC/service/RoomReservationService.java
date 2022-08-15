@@ -1,5 +1,7 @@
 package com.guet.ARC.service;
 
+import cn.dev33.satoken.stp.StpUtil;
+import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
@@ -11,6 +13,7 @@ import com.guet.ARC.domain.dto.apply.MyApplyQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.mapper.RoomDynamicSqlSupport;
 import com.guet.ARC.mapper.RoomMapper;
+import com.guet.ARC.mapper.RoomReservationDynamicSqlSupport;
 import com.guet.ARC.mapper.RoomReservationMapper;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -45,7 +48,47 @@ public class RoomReservationService {
     }
 
     public PageInfo<RoomReservation> queryMyApply(MyApplyQueryDTO myApplyQueryDTO) {
+        if (myApplyQueryDTO.getCategory().equals("")) {
+            myApplyQueryDTO.setCategory(null);
+        }
 
-        return null;
+        if (myApplyQueryDTO.getSchool().equals("")) {
+            myApplyQueryDTO.setSchool(null);
+        }
+
+        if (myApplyQueryDTO.getTeachBuilding().equals("")) {
+            myApplyQueryDTO.setTeachBuilding(null);
+        }
+        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        SelectStatementProvider statementProviderCount = select(count())
+                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                .leftJoin(RoomDynamicSqlSupport.room).on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
+                .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
+                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime()).and(myApplyQueryDTO.getEndTime()))
+                .and(RoomReservationDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
+                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(myApplyQueryDTO.getSchool()))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(myApplyQueryDTO.getCategory()))
+                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
+                .build().render(RenderingStrategies.MYBATIS3);
+
+        SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
+                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                .leftJoin(RoomDynamicSqlSupport.room).on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
+                .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
+                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime()).and(myApplyQueryDTO.getEndTime()))
+                .and(RoomReservationDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
+                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(myApplyQueryDTO.getSchool()))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(myApplyQueryDTO.getCategory()))
+                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
+                .orderBy(RoomReservationDynamicSqlSupport.reserveStartTime.descending())
+                .build().render(RenderingStrategies.MYBATIS3);
+
+        PageHelper.startPage(myApplyQueryDTO.getPage(), myApplyQueryDTO.getSize());
+        List<RoomReservation> roomReservationList = roomReservationMapper.selectMany(statementProvider);
+        PageInfo<RoomReservation> roomReservationPageInfo = new PageInfo<>();
+        roomReservationPageInfo.setPage(myApplyQueryDTO.getPage());
+        roomReservationPageInfo.setTotalSize(roomReservationMapper.count(statementProviderCount));
+        roomReservationPageInfo.setPageData(roomReservationList);
+        return roomReservationPageInfo;
     }
 }

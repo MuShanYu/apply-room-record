@@ -1,11 +1,8 @@
 package com.guet.ARC.domain.dto.apply;
 
-import com.guet.ARC.domain.dto.room.ApplyRoomDTO;
+import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.validator.constraints.Range;
-
-import javax.validation.constraints.Min;
 
 /**
  * @author liduo
@@ -13,10 +10,8 @@ import javax.validation.constraints.Min;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class MyApplyQueryDTO extends ApplyRoomDTO {
-    @Min(1)
-    private Integer page;
+public class MyApplyQueryDTO extends RoomListQueryDTO {
+    private Long startTime;
 
-    @Range(min = 1, max = 100)
-    private Integer size;
+    private Long endTime;
 }
