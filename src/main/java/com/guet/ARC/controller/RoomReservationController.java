@@ -1,16 +1,16 @@
 package com.guet.ARC.controller;
 
 import com.guet.ARC.common.anno.ResponseBodyResult;
+import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.domain.RoomReservation;
+import com.guet.ARC.domain.dto.apply.MyApplyQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.service.RoomReservationService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -29,7 +29,9 @@ public class RoomReservationController {
         roomReservationService.cancelApply(roomReservationId);
     }
 
-    /*public List<RoomReservation> queryMyApply(RoomQueryDTO roomQueryDTO) {
-        return roomReservationService.queryMyApply(roomQueryDTO);
-    }*/
+    @PostMapping("/roomReservation/queryMyApply")
+    @ApiOperation(value = "查询我的预约")
+    public PageInfo<RoomReservation> queryMyApply(@RequestBody MyApplyQueryDTO myApplyQueryDTO) {
+        return roomReservationService.queryMyApply(myApplyQueryDTO);
+    }
 }
