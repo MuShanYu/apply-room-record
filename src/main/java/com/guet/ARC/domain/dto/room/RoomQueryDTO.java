@@ -1,6 +1,9 @@
 package com.guet.ARC.domain.dto.room;
 
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
+
+import javax.validation.constraints.Min;
 
 /**
  * @author liduo
@@ -9,8 +12,10 @@ import lombok.Data;
 
 @Data
 public class RoomQueryDTO {
+    @Min(1)
     private Integer page;
 
+    @Range(min = 1, max = 100)
     private Integer size;
 
     private Long startTime;
