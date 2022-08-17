@@ -59,7 +59,11 @@ public class RoomService {
         Optional<Room> optionalRoom = roomMapper.selectByPrimaryKey(id);
         if(optionalRoom.isPresent()) {
             Room room = optionalRoom.get();
-            room.setState(CommonConstant.STATE_NEGATIVE);
+            if (room.getState().equals(CommonConstant.STATE_ACTIVE)) {
+                room.setState(CommonConstant.STATE_NEGATIVE);
+            } else {
+                room.setState(CommonConstant.STATE_ACTIVE);
+            }
             updateRoom(room);
         } else {
             throw new AlertException(ResultCode.DELETE_ERROR);
