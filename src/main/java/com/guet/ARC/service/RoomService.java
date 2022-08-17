@@ -41,7 +41,7 @@ public class RoomService {
     @Autowired
     private UserMapper userMapper;
 
-    @Transactional(rollbackFor = Throwable.class)
+    @Transactional(rollbackFor = RuntimeException.class)
     public Room addRoom(Room room) {
         long now = System.currentTimeMillis();
         String id = CommonUtils.generateUUID();
@@ -54,7 +54,7 @@ public class RoomService {
         return room;
     }
 
-    @Transactional(rollbackFor = Throwable.class)
+    @Transactional(rollbackFor = RuntimeException.class)
     public void deleteRoom(String id) {
         Optional<Room> optionalRoom = roomMapper.selectByPrimaryKey(id);
         if(optionalRoom.isPresent()) {
@@ -66,7 +66,7 @@ public class RoomService {
         }
     }
 
-    @Transactional(rollbackFor = Throwable.class)
+    @Transactional(rollbackFor = RuntimeException.class)
     public Room updateRoom(Room room) {
         if (room.getId() == null || room.getId().trim().equals("")) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
@@ -78,7 +78,7 @@ public class RoomService {
         return room;
     }
 
-    @Transactional(rollbackFor = Throwable.class)
+    @Transactional(rollbackFor = RuntimeException.class)
     public List<Room> queryRoom(RoomQueryDTO roomQueryDTO) {
         if (roomQueryDTO == null) {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
@@ -112,7 +112,7 @@ public class RoomService {
         return roomMapper.selectMany(statementProvider);
     }
 
-    @Transactional(rollbackFor = Throwable.class)
+    @Transactional(rollbackFor = RuntimeException.class)
     public RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         long time = System.currentTimeMillis();
@@ -142,7 +142,7 @@ public class RoomService {
         return roomReservationMapper.count(statementProvider);
     }
 
-    @Transactional(rollbackFor = Throwable.class)
+    @Transactional(rollbackFor = RuntimeException.class)
     public PageInfo<RoomVo> queryRoomList(RoomListQueryDTO roomListQueryDTO) {
         if (roomListQueryDTO.getCategory().equals("")) {
             roomListQueryDTO.setCategory(null);
@@ -162,7 +162,7 @@ public class RoomService {
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomListQueryDTO.getCategory()))
-                .orderBy(RoomDynamicSqlSupport.school, RoomDynamicSqlSupport.teachBuilding, RoomDynamicSqlSupport.category, RoomDynamicSqlSupport.roomName)
+                .orderBy(RoomDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         SelectStatementProvider statementProviderCount = select(count())
                 .from(RoomDynamicSqlSupport.room)
@@ -189,7 +189,7 @@ public class RoomService {
         return pageInfo;
     }
 
-    @Transactional(rollbackFor = Throwable.class)
+    @Transactional(rollbackFor = RuntimeException.class)
     public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
         // 查询相应房间的所有预约记录
         SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
