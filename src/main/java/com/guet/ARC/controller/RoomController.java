@@ -20,8 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @ResponseBodyResult
 @Api(tags = "房间模块")
@@ -53,7 +51,7 @@ public class RoomController {
 
     @PostMapping("/room/queryRoom")
     @ApiOperation(value = "查询可预约房间列表")
-    public List<Room> queryRoom(@RequestBody RoomQueryDTO roomListQueryDTO) {
+    public PageInfo<Room> queryRoom(@RequestBody RoomQueryDTO roomListQueryDTO) {
         return roomService.queryRoom(roomListQueryDTO);
     }
 

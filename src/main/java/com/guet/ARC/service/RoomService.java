@@ -83,7 +83,7 @@ public class RoomService {
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
-    public List<Room> queryRoom(RoomQueryDTO roomQueryDTO) {
+    public PageInfo<Room> queryRoom(RoomQueryDTO roomQueryDTO) {
         if (roomQueryDTO == null) {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
         }
@@ -96,7 +96,7 @@ public class RoomService {
         if (roomQueryDTO.getTeachBuilding().equals("")) {
             roomQueryDTO.setTeachBuilding(null);
         }
-
+        PageHelper.startPage(roomQueryDTO.getPage(), roomQueryDTO.getSize());
         // 先查询可以预约的空闲房间，再从中按照房间的类别等条件筛选
         SelectStatementProvider statementProvider = select(roomMapper.selectList)
                 .from(RoomDynamicSqlSupport.room)
@@ -112,8 +112,12 @@ public class RoomService {
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomQueryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomQueryDTO.getTeachBuilding()))
                 .build().render(RenderingStrategies.MYBATIS3);
-
-        return roomMapper.selectMany(statementProvider);
+        List<Room> rooms = roomMapper.selectMany(statementProvider);
+        PageInfo<Room> pageInfo = new PageInfo<>();
+        pageInfo.setPage(roomQueryDTO.getPage());
+        pageInfo.setPageData(rooms);
+        pageInfo.setTotalSize(Long.parseLong(rooms.size() + ""));
+        return pageInfo;
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
