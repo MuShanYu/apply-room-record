@@ -9,6 +9,10 @@ import lombok.Data;
 
 @Data
 public class RoomQueryDTO {
+    private Integer page;
+
+    private Integer size;
+
     private Long startTime;
 
     private Long endTime;
