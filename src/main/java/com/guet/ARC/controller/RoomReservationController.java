@@ -10,6 +10,7 @@ import com.guet.ARC.domain.dto.apply.MyApplyQueryDTO;
 import com.guet.ARC.domain.dto.room.ApplyRoomDTO;
 import com.guet.ARC.domain.dto.room.RoomApplyDetailListQueryDTO;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
+import com.guet.ARC.domain.vo.room.RoomReservationVo;
 import com.guet.ARC.service.RoomReservationService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -43,7 +44,7 @@ public class RoomReservationController {
 
     @PostMapping("/roomReservation/queryMyApply")
     @ApiOperation(value = "查询我的预约")
-    public PageInfo<RoomReservation> queryMyApply(@Valid @RequestBody MyApplyQueryDTO myApplyQueryDTO) {
+    public PageInfo<RoomReservationVo> queryMyApply(@Valid @RequestBody MyApplyQueryDTO myApplyQueryDTO) {
         return roomReservationService.queryMyApply(myApplyQueryDTO);
     }
 

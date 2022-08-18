@@ -1,21 +1,8 @@
 package com.guet.ARC.mapper;
 
-import static com.guet.ARC.mapper.RoomReservationDynamicSqlSupport.*;
-import static org.mybatis.dynamic.sql.SqlBuilder.*;
-
 import com.guet.ARC.domain.RoomReservation;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import javax.annotation.Generated;
-import org.apache.ibatis.annotations.DeleteProvider;
-import org.apache.ibatis.annotations.InsertProvider;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.ResultMap;
-import org.apache.ibatis.annotations.Results;
-import org.apache.ibatis.annotations.SelectProvider;
-import org.apache.ibatis.annotations.UpdateProvider;
+import com.guet.ARC.domain.vo.room.RoomReservationVo;
+import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.type.JdbcType;
 import org.mybatis.dynamic.sql.BasicColumn;
 import org.mybatis.dynamic.sql.delete.DeleteDSLCompleter;
@@ -32,10 +19,23 @@ import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
 import org.mybatis.dynamic.sql.util.SqlProviderAdapter;
 import org.mybatis.dynamic.sql.util.mybatis3.MyBatis3Utils;
 
+import javax.annotation.Generated;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import static com.guet.ARC.mapper.RoomReservationDynamicSqlSupport.*;
+import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
+
 @Mapper
 public interface RoomReservationMapper {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.255+08:00", comments="Source Table: tbl_room_reservation")
     BasicColumn[] selectList = BasicColumn.columnList(id, roomUsage, reserveStartTime, reserveEndTime, verifyUserName, state, updateTime, createTime, userId, roomId);
+
+    BasicColumn[] roomReservationList = BasicColumn.columnList(id, roomUsage, reserveStartTime, reserveEndTime, verifyUserName,
+            state, updateTime, createTime, RoomDynamicSqlSupport.school,  RoomDynamicSqlSupport.teachBuilding,
+            RoomDynamicSqlSupport.category,  RoomDynamicSqlSupport.roomName,  RoomDynamicSqlSupport.equipmentInfo,
+            RoomDynamicSqlSupport.capacity, roomId);
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.254+08:00", comments="Source Table: tbl_room_reservation")
     @SelectProvider(type=SqlProviderAdapter.class, method="select")
@@ -73,6 +73,26 @@ public interface RoomReservationMapper {
         @Result(column="room_id", property="roomId", jdbcType=JdbcType.VARCHAR)
     })
     List<RoomReservation> selectMany(SelectStatementProvider selectStatement);
+
+    @SelectProvider(type=SqlProviderAdapter.class, method="select")
+    @Results(id="RoomReservationVoResult", value = {
+            @Result(column="id", property="id", jdbcType=JdbcType.VARCHAR, id=true),
+            @Result(column="room_usage", property="roomUsage", jdbcType=JdbcType.VARCHAR),
+            @Result(column="reserve_start_time", property="reserveStartTime", jdbcType=JdbcType.BIGINT),
+            @Result(column="reserve_end_time", property="reserveEndTime", jdbcType=JdbcType.BIGINT),
+            @Result(column="verify_user_name", property="verifyUserName", jdbcType=JdbcType.VARCHAR),
+            @Result(column="state", property="state", jdbcType=JdbcType.SMALLINT),
+            @Result(column="update_time", property="updateTime", jdbcType=JdbcType.BIGINT),
+            @Result(column="create_time", property="createTime", jdbcType=JdbcType.BIGINT),
+            @Result(column="room_id", property="roomId", jdbcType=JdbcType.VARCHAR),
+            @Result(column="school", property="school", jdbcType=JdbcType.VARCHAR),
+            @Result(column="teach_building", property="teachBuilding", jdbcType=JdbcType.VARCHAR),
+            @Result(column="category", property="category", jdbcType=JdbcType.VARCHAR),
+            @Result(column="room_name", property="roomName", jdbcType=JdbcType.VARCHAR),
+            @Result(column="equipment_info", property="equipmentInfo", jdbcType=JdbcType.VARCHAR),
+            @Result(column="capacity", property="capacity", jdbcType=JdbcType.VARCHAR)
+    })
+    List<RoomReservationVo> selectRoomReservationsVo(SelectStatementProvider selectStatement);
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.254+08:00", comments="Source Table: tbl_room_reservation")
     @UpdateProvider(type=SqlProviderAdapter.class, method="update")

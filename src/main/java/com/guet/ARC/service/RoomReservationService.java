@@ -12,6 +12,7 @@ import com.guet.ARC.domain.dto.apply.MyApplyQueryDTO;
 import com.guet.ARC.domain.dto.room.ApplyRoomDTO;
 import com.guet.ARC.domain.dto.room.RoomApplyDetailListQueryDTO;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
+import com.guet.ARC.domain.vo.room.RoomReservationVo;
 import com.guet.ARC.mapper.RoomDynamicSqlSupport;
 import com.guet.ARC.mapper.RoomReservationDynamicSqlSupport;
 import com.guet.ARC.mapper.RoomReservationMapper;
@@ -57,7 +58,6 @@ public class RoomReservationService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     public RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
-        System.out.println(applyRoomDTO.getRoomId());
         // 检测是否已经预约
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         // 是待审核状态且在这段预约时间内代表我已经预约过了, 预约起始时间不能在准备预约的时间范围内，结束时间蹦年在准备结束预约的时间范围内
@@ -130,7 +130,7 @@ public class RoomReservationService {
         return pageInfo;
     }
 
-    public PageInfo<RoomReservation> queryMyApply(MyApplyQueryDTO myApplyQueryDTO) {
+    public PageInfo<RoomReservationVo> queryMyApply(MyApplyQueryDTO myApplyQueryDTO) {
         if (myApplyQueryDTO.getCategory().equals("")) {
             myApplyQueryDTO.setCategory(null);
         }
@@ -158,7 +158,7 @@ public class RoomReservationService {
                                 .and(myApplyQueryDTO.getEndTime())))
                 .build().render(RenderingStrategies.MYBATIS3);
 
-        SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
+        SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
@@ -171,15 +171,15 @@ public class RoomReservationService {
                                 .and(myApplyQueryDTO.getEndTime()),
                         or(RoomReservationDynamicSqlSupport.reserveEndTime,isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
                                 .and(myApplyQueryDTO.getEndTime())))
-                .orderBy(RoomReservationDynamicSqlSupport.reserveStartTime.descending())
+                .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
 
         PageHelper.startPage(myApplyQueryDTO.getPage(), myApplyQueryDTO.getSize());
-        List<RoomReservation> roomReservationList = roomReservationMapper.selectMany(statementProvider);
-        PageInfo<RoomReservation> roomReservationPageInfo = new PageInfo<>();
+        List<RoomReservationVo> roomReservationVos = roomReservationMapper.selectRoomReservationsVo(statementProvider);
+        PageInfo<RoomReservationVo> roomReservationPageInfo = new PageInfo<>();
         roomReservationPageInfo.setPage(myApplyQueryDTO.getPage());
         roomReservationPageInfo.setTotalSize(roomReservationMapper.count(statementProviderCount));
-        roomReservationPageInfo.setPageData(roomReservationList);
+        roomReservationPageInfo.setPageData(roomReservationVos);
         return roomReservationPageInfo;
     }
 }
