@@ -32,4 +32,6 @@ public class DataStatisticsController {
     public Map<String, Object> getInstituteApi() {
         return dataStatisticsService.queryUserInstitute();
     }
+
+
 }

@@ -305,6 +305,7 @@ public class UserService {
         user.setStuNum(userUpdateDTO.getStuNum());
         user.setName(userUpdateDTO.getName());
         user.setInstitute(userUpdateDTO.getInstitute());
+        user.setNickname(userUpdateDTO.getStuNum() + user.getName());
         int update = userMapper.updateByPrimaryKeySelective(user);
         if (update == 0) {
             throw new AlertException(ResultCode.SYSTEM_ERROR);

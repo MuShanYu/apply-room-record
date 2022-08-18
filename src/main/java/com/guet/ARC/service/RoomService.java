@@ -42,6 +42,7 @@ public class RoomService {
         room.setId(id);
         room.setCreateTime(now);
         room.setUpdateTime(now);
+        room.setState(CommonConstant.STATE_ACTIVE);
         if (roomMapper.insert(room) == 0) {
             throw new AlertException(ResultCode.INSERT_ERROR);
         }
