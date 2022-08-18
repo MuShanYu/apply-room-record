@@ -94,7 +94,7 @@ public class RoomService {
         SelectStatementProvider statementProvider = select(roomMapper.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.id, isNotIn(
-                        select(RoomReservationMapper.selectList)
+                        select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
                                 .and(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
