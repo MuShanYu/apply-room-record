@@ -57,7 +57,21 @@ public class RoomReservationService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     public RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
+        // 检测是否已经预约
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        // 是待审核状态且在这段预约时间内代表我已经预约过了
+        SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
+                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                .where(RoomReservationDynamicSqlSupport.roomId, isEqualTo(applyRoomDTO.getRoomId()))
+                .and(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
+                .and(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
+                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isLessThanOrEqualTo(applyRoomDTO.getStartTime()))
+                .and(RoomReservationDynamicSqlSupport.reserveEndTime, isGreaterThanOrEqualTo(applyRoomDTO.getEndTime()))
+                .build().render(RenderingStrategies.MYBATIS3);
+        List<RoomReservation> roomReservations = roomReservationMapper.selectMany(statementProvider);
+        if (roomReservations.size() != 0) {
+            throw new AlertException(1000, "您已经预约过该房间，请勿重复操作");
+        }
         long time = System.currentTimeMillis();
         RoomReservation roomReservation = new RoomReservation();
         roomReservation.setId(CommonUtils.generateUUID());
