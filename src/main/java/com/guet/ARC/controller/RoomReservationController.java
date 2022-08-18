@@ -9,6 +9,9 @@ import com.guet.ARC.domain.RoomReservation;
 import com.guet.ARC.domain.dto.apply.MyApplyQueryDTO;
 import com.guet.ARC.domain.dto.room.ApplyRoomDTO;
 import com.guet.ARC.domain.dto.room.RoomApplyDetailListQueryDTO;
+import com.guet.ARC.domain.dto.room.RoomReserveReviewedDTO;
+import com.guet.ARC.domain.dto.room.UserRoomReservationDetailQueryDTO;
+import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
 import com.guet.ARC.service.RoomReservationService;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 @RestController
 @ResponseBodyResult
@@ -53,5 +57,27 @@ public class RoomReservationController {
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(@Valid @RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
         return roomReservationService.queryRoomApplyDetailList(roomApplyDetailListQueryDTO);
+    }
+
+    @PostMapping("/roomReservation/userRecord")
+    @ApiOperation("查询用户预约详细信息")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public PageInfo<RoomReservationVo> queryUserReserveRecordApi(@Valid @RequestBody UserRoomReservationDetailQueryDTO userRoomReservationDetailQueryDTO) {
+        return roomReservationService.queryUserReserveRecord(userRoomReservationDetailQueryDTO);
+    }
+
+    @PostMapping("/roomReservation/reviewed/userRecord")
+    @ApiOperation("查询待审核房间列表信息")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public PageInfo<RoomReservationAdminVo> queryRoomReserveToBeReviewedApi(@Valid @RequestBody RoomReserveReviewedDTO roomReserveReviewedDTO) {
+        return roomReservationService.queryRoomReserveToBeReviewed(roomReserveReviewedDTO);
+    }
+
+    @GetMapping("/roomReservation/approval")
+    @ApiOperation("审批房间预约")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public void passOrRejectReserveApi(@NotEmpty @RequestParam("reserveId") String reserveId,
+                                       @NotNull @RequestParam("passed") boolean passed) {
+        roomReservationService.passOrRejectReserve(reserveId, passed);
     }
 }

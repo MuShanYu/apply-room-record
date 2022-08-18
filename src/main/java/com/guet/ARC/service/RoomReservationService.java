@@ -11,6 +11,9 @@ import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.apply.MyApplyQueryDTO;
 import com.guet.ARC.domain.dto.room.ApplyRoomDTO;
 import com.guet.ARC.domain.dto.room.RoomApplyDetailListQueryDTO;
+import com.guet.ARC.domain.dto.room.RoomReserveReviewedDTO;
+import com.guet.ARC.domain.dto.room.UserRoomReservationDetailQueryDTO;
+import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
 import com.guet.ARC.mapper.RoomDynamicSqlSupport;
@@ -119,7 +122,7 @@ public class RoomReservationService {
             Optional<User> optionalUser = userMapper.selectByPrimaryKey(roomReservation.getUserId());
             if (optionalUser.isPresent()) {
                 User user = optionalUser.get();
-                roomReservationUserVo.setUsername(user.getName());
+                roomReservationUserVo.setName(user.getName());
             }
             roomReservationUserVos.add(roomReservationUserVo);
         }
@@ -181,5 +184,122 @@ public class RoomReservationService {
         roomReservationPageInfo.setTotalSize(roomReservationMapper.count(statementProviderCount));
         roomReservationPageInfo.setPageData(roomReservationVos);
         return roomReservationPageInfo;
+    }
+
+    public PageInfo<RoomReservationVo> queryUserReserveRecord(UserRoomReservationDetailQueryDTO queryDTO) {
+        if (queryDTO.getCategory().equals("")) {
+            queryDTO.setCategory(null);
+        }
+
+        if (queryDTO.getSchool().equals("")) {
+            queryDTO.setSchool(null);
+        }
+
+        if (queryDTO.getTeachBuilding().equals("")) {
+            queryDTO.setTeachBuilding(null);
+        }
+        SelectStatementProvider statementProviderCount = select(count())
+                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                .leftJoin(RoomDynamicSqlSupport.room)
+                .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
+                .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(queryDTO.getUserId()))
+                .and(RoomReservationDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
+                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
+                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
+                .build().render(RenderingStrategies.MYBATIS3);
+
+        SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
+                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                .leftJoin(RoomDynamicSqlSupport.room)
+                .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
+                .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(queryDTO.getUserId()))
+                .and(RoomReservationDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
+                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
+                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
+                .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
+                .build().render(RenderingStrategies.MYBATIS3);
+
+        PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
+        List<RoomReservationVo> roomReservationVos = roomReservationMapper.selectRoomReservationsVo(statementProvider);
+        PageInfo<RoomReservationVo> roomReservationPageInfo = new PageInfo<>();
+        roomReservationPageInfo.setPage(queryDTO.getPage());
+        roomReservationPageInfo.setTotalSize(roomReservationMapper.count(statementProviderCount));
+        roomReservationPageInfo.setPageData(roomReservationVos);
+        return roomReservationPageInfo;
+    }
+
+    // 获取待审核列表
+    public PageInfo<RoomReservationAdminVo> queryRoomReserveToBeReviewed(RoomReserveReviewedDTO queryDTO) {
+        if (queryDTO.getCategory().equals("")) {
+            queryDTO.setCategory(null);
+        }
+
+        if (queryDTO.getSchool().equals("")) {
+            queryDTO.setSchool(null);
+        }
+
+        if (queryDTO.getTeachBuilding().equals("")) {
+            queryDTO.setTeachBuilding(null);
+        }
+        SelectStatementProvider statementProviderCount = select(count())
+                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                .leftJoin(RoomDynamicSqlSupport.room)
+                .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
+                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
+                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
+                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
+                .build().render(RenderingStrategies.MYBATIS3);
+
+        SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
+                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                .leftJoin(RoomDynamicSqlSupport.room)
+                .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
+                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
+                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
+                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
+                .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
+                .build().render(RenderingStrategies.MYBATIS3);
+
+        PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
+        List<RoomReservationAdminVo> roomReservationAdminVos = roomReservationMapper.selectRoomReservationsAdminVo(statementProvider);
+        for (RoomReservationAdminVo roomReservationAdminVo : roomReservationAdminVos) {
+            Optional<User> optionalUser = userMapper.selectByPrimaryKey(roomReservationAdminVo.getUserId());
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                roomReservationAdminVo.setName(user.getNickname());
+            }
+        }
+        PageInfo<RoomReservationAdminVo> roomReservationPageInfo = new PageInfo<>();
+        roomReservationPageInfo.setPage(queryDTO.getPage());
+        roomReservationPageInfo.setTotalSize(roomReservationMapper.count(statementProviderCount));
+        roomReservationPageInfo.setPageData(roomReservationAdminVos);
+        return roomReservationPageInfo;
+    }
+
+    // 通过或者驳回预约
+    public void passOrRejectReserve(String reserveId, boolean pass) {
+        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        Optional<RoomReservation> roomReservationOptional = roomReservationMapper.selectByPrimaryKey(reserveId);
+        Optional<User> userOptional = userMapper.selectByPrimaryKey(userId);
+        if (roomReservationOptional.isPresent() && userOptional.isPresent()) {
+            RoomReservation roomReservation = roomReservationOptional.get();
+            User user = userOptional.get();
+            if (pass) {
+                roomReservation.setState(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED);
+            } else {
+                roomReservation.setState(CommonConstant.ROOM_RESERVE_TO_BE_REJECTED);
+            }
+            roomReservation.setVerifyUserName(user.getName());
+            int update = roomReservationMapper.updateByPrimaryKeySelective(roomReservation);
+            if (update == 0) {
+                throw new AlertException(ResultCode.SYSTEM_ERROR);
+            }
+        } else {
+            throw new AlertException(ResultCode.PARAM_IS_INVALID);
+        }
     }
 }
