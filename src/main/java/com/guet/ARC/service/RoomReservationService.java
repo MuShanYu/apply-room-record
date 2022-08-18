@@ -72,7 +72,6 @@ public class RoomReservationService {
                 .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(applyRoomDTO.getRoomId()))
                 .build().render(RenderingStrategies.MYBATIS3);
         List<RoomReservation> roomReservations = roomReservationMapper.selectMany(statementProvider);
-        roomReservations.forEach(e -> System.out.println(e.getRoomId()));
         if (roomReservations.size() != 0) {
             throw new AlertException(1000, "您已经预约过该房间，请勿重复操作");
         }

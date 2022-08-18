@@ -1,6 +1,5 @@
 package com.guet.ARC.service;
 
-import cn.dev33.satoken.stp.StpUtil;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
@@ -10,7 +9,10 @@ import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.domain.vo.room.RoomVo;
-import com.guet.ARC.mapper.*;
+import com.guet.ARC.mapper.RoomDynamicSqlSupport;
+import com.guet.ARC.mapper.RoomMapper;
+import com.guet.ARC.mapper.RoomReservationDynamicSqlSupport;
+import com.guet.ARC.mapper.RoomReservationMapper;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -89,7 +91,6 @@ public class RoomService {
             roomQueryDTO.setTeachBuilding(null);
         }
         // 查询出这段时间内已经预约的房间列表，然后再从总的中去除
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         // 先查询可以预约的空闲房间，再从中按照房间的类别等条件筛选
         SelectStatementProvider statementProvider = select(roomMapper.selectList)
                 .from(RoomDynamicSqlSupport.room)
