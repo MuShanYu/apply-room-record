@@ -98,9 +98,10 @@ public class RoomService {
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
                                 .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(roomQueryDTO.getStartTime())
-                                        .and(roomQueryDTO.getEndTime()))
-                                .or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(roomQueryDTO.getStartTime())
-                                        .and(roomQueryDTO.getEndTime()))
+                                                .and(roomQueryDTO.getEndTime()),
+                                        or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(roomQueryDTO.getStartTime())
+                                                .and(roomQueryDTO.getEndTime()))
+                                )
                 ))
                 .and(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomQueryDTO.getCategory()))
