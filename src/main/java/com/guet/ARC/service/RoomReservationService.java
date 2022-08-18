@@ -57,20 +57,22 @@ public class RoomReservationService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     public RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
+        System.out.println(applyRoomDTO.getRoomId());
         // 检测是否已经预约
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         // 是待审核状态且在这段预约时间内代表我已经预约过了, 预约起始时间不能在准备预约的时间范围内，结束时间蹦年在准备结束预约的时间范围内
         SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .where(RoomReservationDynamicSqlSupport.roomId, isEqualTo(applyRoomDTO.getRoomId()))
-                .and(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
+                .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
                 .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(applyRoomDTO.getStartTime())
-                        .and(applyRoomDTO.getEndTime()))
-                .or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(applyRoomDTO.getStartTime())
-                        .and(applyRoomDTO.getEndTime()))
+                        .and(applyRoomDTO.getEndTime()),
+                        or(RoomReservationDynamicSqlSupport.reserveEndTime,isBetweenWhenPresent(applyRoomDTO.getStartTime())
+                                .and(applyRoomDTO.getEndTime())))
+                .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(applyRoomDTO.getRoomId()))
                 .build().render(RenderingStrategies.MYBATIS3);
         List<RoomReservation> roomReservations = roomReservationMapper.selectMany(statementProvider);
+        roomReservations.forEach(e -> System.out.println(e.getRoomId()));
         if (roomReservations.size() != 0) {
             throw new AlertException(1000, "您已经预约过该房间，请勿重复操作");
         }
@@ -151,9 +153,9 @@ public class RoomReservationService {
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(myApplyQueryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
                 .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
-                        .and(myApplyQueryDTO.getEndTime()))
-                .or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
-                        .and(myApplyQueryDTO.getEndTime()))
+                                .and(myApplyQueryDTO.getEndTime()),
+                        or(RoomReservationDynamicSqlSupport.reserveEndTime,isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
+                                .and(myApplyQueryDTO.getEndTime())))
                 .build().render(RenderingStrategies.MYBATIS3);
 
         SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
@@ -165,9 +167,9 @@ public class RoomReservationService {
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(myApplyQueryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
                 .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
-                        .and(myApplyQueryDTO.getEndTime()))
-                .or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
-                        .and(myApplyQueryDTO.getEndTime()))
+                                .and(myApplyQueryDTO.getEndTime()),
+                        or(RoomReservationDynamicSqlSupport.reserveEndTime,isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
+                                .and(myApplyQueryDTO.getEndTime())))
                 .orderBy(RoomReservationDynamicSqlSupport.reserveStartTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
 
