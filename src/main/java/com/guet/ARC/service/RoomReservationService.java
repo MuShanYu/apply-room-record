@@ -145,7 +145,8 @@ public class RoomReservationService {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         SelectStatementProvider statementProviderCount = select(count())
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .leftJoin(RoomDynamicSqlSupport.room).on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
+                .leftJoin(RoomDynamicSqlSupport.room)
+                .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
                 .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(RoomReservationDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(myApplyQueryDTO.getSchool()))
@@ -159,7 +160,8 @@ public class RoomReservationService {
 
         SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .leftJoin(RoomDynamicSqlSupport.room).on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
+                .leftJoin(RoomDynamicSqlSupport.room)
+                .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
                 .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(RoomReservationDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(myApplyQueryDTO.getSchool()))
