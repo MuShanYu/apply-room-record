@@ -6,12 +6,8 @@ import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.domain.Room;
-import com.guet.ARC.domain.RoomReservation;
-import com.guet.ARC.domain.dto.room.ApplyRoomDTO;
-import com.guet.ARC.domain.dto.room.RoomApplyDetailListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
-import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomVo;
 import com.guet.ARC.service.RoomService;
 import io.swagger.annotations.Api;
@@ -55,23 +51,10 @@ public class RoomController {
         return roomService.queryRoom(roomListQueryDTO);
     }
 
-    @PostMapping("/room/apply")
-    @ApiOperation(value = "预约房间")
-    public RoomReservation applyRoom(@RequestBody ApplyRoomDTO applyRoomDTO) {
-        return roomService.applyRoom(applyRoomDTO);
-    }
-
     @PostMapping("/room/queryRoomList")
     @ApiOperation("查询会议室")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public PageInfo<RoomVo> queryRoomList(@RequestBody RoomListQueryDTO roomListQueryDTO) {
         return roomService.queryRoomList(roomListQueryDTO);
-    }
-
-    @PostMapping("/room/queryRoomApplyDetailList")
-    @ApiOperation("查询会议室预约详细信息")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(@RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
-        return roomService.queryRoomApplyDetailList(roomApplyDetailListQueryDTO);
     }
 }
