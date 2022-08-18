@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+
 @RestController
 @ResponseBodyResult
 @Api(tags = "预约模块")
@@ -34,7 +36,7 @@ public class RoomReservationController {
 
     @PostMapping("/roomReservation/apply")
     @ApiOperation(value = "预约房间")
-    public RoomReservation applyRoom(@RequestBody ApplyRoomDTO applyRoomDTO) {
+    public RoomReservation applyRoom(@Valid @RequestBody ApplyRoomDTO applyRoomDTO) {
         return roomReservationService.applyRoom(applyRoomDTO);
     }
 
