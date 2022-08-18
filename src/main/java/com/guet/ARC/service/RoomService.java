@@ -1,5 +1,6 @@
 package com.guet.ARC.service;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
@@ -48,7 +49,7 @@ public class RoomService {
     @Transactional(rollbackFor = RuntimeException.class)
     public void deleteRoom(String id) {
         Optional<Room> optionalRoom = roomMapper.selectByPrimaryKey(id);
-        if(optionalRoom.isPresent()) {
+        if (optionalRoom.isPresent()) {
             Room room = optionalRoom.get();
             if (room.getState().equals(CommonConstant.STATE_ACTIVE)) {
                 room.setState(CommonConstant.STATE_NEGATIVE);
@@ -78,7 +79,7 @@ public class RoomService {
         if (roomQueryDTO == null) {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
         }
-        if(roomQueryDTO.getCategory().equals("")){
+        if (roomQueryDTO.getCategory().equals("")) {
             roomQueryDTO.setCategory(null);
         }
         if (roomQueryDTO.getSchool().equals("")) {
@@ -87,15 +88,18 @@ public class RoomService {
         if (roomQueryDTO.getTeachBuilding().equals("")) {
             roomQueryDTO.setTeachBuilding(null);
         }
+        // 查询出这段时间内已经预约的房间列表，然后再从总的中去除
+        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         // 先查询可以预约的空闲房间，再从中按照房间的类别等条件筛选
         SelectStatementProvider statementProvider = select(roomMapper.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.id, isNotIn(
-                        select(RoomReservationDynamicSqlSupport.roomId)
+                        select(RoomReservationMapper.selectList)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                                .where(RoomReservationDynamicSqlSupport.state, isNotIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED))
-                                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isLessThanOrEqualToWhenPresent(roomQueryDTO.getStartTime()))
-                                .and(RoomReservationDynamicSqlSupport.reserveEndTime, isGreaterThanOrEqualToWhenPresent(roomQueryDTO.getStartTime()))
+                                .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
+                                .and(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
+                                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isLessThanOrEqualTo(roomQueryDTO.getStartTime()))
+                                .and(RoomReservationDynamicSqlSupport.reserveEndTime, isGreaterThanOrEqualTo(roomQueryDTO.getEndTime()))
                 ))
                 .and(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomQueryDTO.getCategory()))
