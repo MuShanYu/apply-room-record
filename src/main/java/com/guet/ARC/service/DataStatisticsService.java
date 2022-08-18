@@ -1,5 +1,6 @@
 package com.guet.ARC.service;
 
+import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.mapper.*;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -62,7 +63,7 @@ public class DataStatisticsService {
     }
 
     // TODO: 待完善，先吃饭去了
-    public void countRoomReservationTimes(String roomId, Long startTime) {
+    public Map<String, Object> countRoomReservationTimes(String roomId, Long startTime) {
         // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
         // 获取这一天的午夜12点
         Calendar calendar = Calendar.getInstance();
@@ -78,7 +79,7 @@ public class DataStatisticsService {
         List<Long> canceledTimes = new ArrayList<>(); // 3
         List<Long> rejectTimes = new ArrayList<>(); // 4
         List<Long> reviewTimes = new ArrayList<>();// 2
-        SelectStatementProvider countStatement = null;
+        SelectStatementProvider countStatement;
         Short[] states = {0, 2, 3, 4};
         for (int i = 0; i < 7; i++) {
             // 分别获取四个数量
@@ -106,6 +107,45 @@ public class DataStatisticsService {
             webAppDateStart -= oneDayInMills;
         }
 
+        map.put("reviewedTimes", reviewedTimes);
+        map.put("canceledTimes", canceledTimes);
+        map.put("rejectTimes", rejectTimes);
+        map.put("reviewTimes", reviewTimes);
+
+        return map;
+    }
+
+    public Map<String, Object> countRoomValidTimes(String roomId, Long startTime) {
+        // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
+        // 获取这一天的午夜12点
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(startTime);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        long webAppDateStart = calendar.getTimeInMillis();
+        long oneDayInMills = 24 * 60 * 60 * 1000;
+        List<Long> reviewTimes = new ArrayList<>();
+        SelectStatementProvider countStatement;
+        for (int i = 0; i < 7; i++) {
+            countStatement = select(count())
+                    .from(RoomReservationDynamicSqlSupport.roomReservation)
+                    .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED))
+                    .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomId))
+                    .and(RoomReservationDynamicSqlSupport.createTime, isBetween(webAppDateStart)
+                            .and(startTime))
+                    .build().render(RenderingStrategies.MYBATIS3);
+            reviewTimes.add(roomReservationMapper.count(countStatement));
+
+            // 更新当前flag时间
+            startTime = webAppDateStart;
+            // 一天前
+            webAppDateStart -= oneDayInMills;
+        }
+        Map<String, Object> map = new HashMap<>();
+        map.put("reviewTimes", reviewTimes);
+
+        return map;
     }
 
 }
