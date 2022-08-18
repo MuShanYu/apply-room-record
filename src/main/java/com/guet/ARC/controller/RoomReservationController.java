@@ -18,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 
 @RestController
 @ResponseBodyResult
@@ -30,7 +31,7 @@ public class RoomReservationController {
 
     @GetMapping("/roomReservation/cancel")
     @ApiOperation(value = "取消预约")
-    public void cancelApply(@RequestParam(value = "roomReservationId") String roomReservationId) {
+    public void cancelApply(@NotEmpty @RequestParam(value = "roomReservationId") String roomReservationId) {
         roomReservationService.cancelApply(roomReservationId);
     }
 
@@ -42,14 +43,14 @@ public class RoomReservationController {
 
     @PostMapping("/roomReservation/queryMyApply")
     @ApiOperation(value = "查询我的预约")
-    public PageInfo<RoomReservation> queryMyApply(@RequestBody MyApplyQueryDTO myApplyQueryDTO) {
+    public PageInfo<RoomReservation> queryMyApply(@Valid @RequestBody MyApplyQueryDTO myApplyQueryDTO) {
         return roomReservationService.queryMyApply(myApplyQueryDTO);
     }
 
     @PostMapping("/roomReservation/queryRoomApplyDetailList")
     @ApiOperation("查询房间预约详细信息")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(@RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
+    public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(@Valid @RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
         return roomReservationService.queryRoomApplyDetailList(roomApplyDetailListQueryDTO);
     }
 }
