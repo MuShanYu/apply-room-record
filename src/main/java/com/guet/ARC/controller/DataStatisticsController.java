@@ -33,5 +33,17 @@ public class DataStatisticsController {
         return dataStatisticsService.queryUserInstitute();
     }
 
+    @GetMapping("/admin/get/roomReservationTimes")
+    @ApiOperation(value = "获取会议室预约情况")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public Map<String, Object> countRoomReservationTimes(String roomId, Long startTime) {
+        return dataStatisticsService.countRoomReservationTimes(roomId, startTime);
+    }
 
+    @GetMapping("/admin/get/roomValidTimes")
+    @ApiOperation(value = "获取会议室有效预约情况")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public Map<String, Object> countRoomValidTimes(String roomId, Long startTime) {
+        return dataStatisticsService.countRoomValidTimes(roomId, startTime);
+    }
 }
