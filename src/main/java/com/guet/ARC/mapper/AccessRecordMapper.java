@@ -1,21 +1,9 @@
 package com.guet.ARC.mapper;
 
-import static com.guet.ARC.mapper.AccessRecordDynamicSqlSupport.*;
-import static org.mybatis.dynamic.sql.SqlBuilder.*;
-
 import com.guet.ARC.domain.AccessRecord;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import javax.annotation.Generated;
-import org.apache.ibatis.annotations.DeleteProvider;
-import org.apache.ibatis.annotations.InsertProvider;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.ResultMap;
-import org.apache.ibatis.annotations.Results;
-import org.apache.ibatis.annotations.SelectProvider;
-import org.apache.ibatis.annotations.UpdateProvider;
+import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
+import com.guet.ARC.domain.vo.record.UserAccessRecordVo;
+import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.type.JdbcType;
 import org.mybatis.dynamic.sql.BasicColumn;
 import org.mybatis.dynamic.sql.delete.DeleteDSLCompleter;
@@ -32,10 +20,25 @@ import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
 import org.mybatis.dynamic.sql.util.SqlProviderAdapter;
 import org.mybatis.dynamic.sql.util.mybatis3.MyBatis3Utils;
 
+import javax.annotation.Generated;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import static com.guet.ARC.mapper.AccessRecordDynamicSqlSupport.*;
+import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
+
 @Mapper
 public interface AccessRecordMapper {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.258+08:00", comments="Source Table: tbl_access_record")
     BasicColumn[] selectList = BasicColumn.columnList(id, entryTime, outTime, state, updateTime, createTime, userId, roomId);
+
+    BasicColumn[] selectVoList = BasicColumn.columnList(id, entryTime, outTime, state, updateTime, createTime,
+            userId, roomId, RoomDynamicSqlSupport.school,  RoomDynamicSqlSupport.teachBuilding,
+            RoomDynamicSqlSupport.category,  RoomDynamicSqlSupport.roomName);
+
+    BasicColumn[] selectCountVoList = BasicColumn.columnList(roomId, RoomDynamicSqlSupport.school,
+            RoomDynamicSqlSupport.teachBuilding, RoomDynamicSqlSupport.category,  RoomDynamicSqlSupport.roomName);
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.257+08:00", comments="Source Table: tbl_access_record")
     @SelectProvider(type=SqlProviderAdapter.class, method="select")
@@ -71,6 +74,33 @@ public interface AccessRecordMapper {
         @Result(column="room_id", property="roomId", jdbcType=JdbcType.VARCHAR)
     })
     List<AccessRecord> selectMany(SelectStatementProvider selectStatement);
+
+    @SelectProvider(type=SqlProviderAdapter.class, method="select")
+    @Results(id="AccessRecordResultVo", value = {
+            @Result(column="id", property="id", jdbcType=JdbcType.VARCHAR, id=true),
+            @Result(column="entry_time", property="entryTime", jdbcType=JdbcType.BIGINT),
+            @Result(column="out_time", property="outTime", jdbcType=JdbcType.BIGINT),
+            @Result(column="state", property="state", jdbcType=JdbcType.SMALLINT),
+            @Result(column="update_time", property="updateTime", jdbcType=JdbcType.BIGINT),
+            @Result(column="create_time", property="createTime", jdbcType=JdbcType.BIGINT),
+            @Result(column="user_id", property="userId", jdbcType=JdbcType.VARCHAR),
+            @Result(column="room_id", property="roomId", jdbcType=JdbcType.VARCHAR),
+            @Result(column="school", property="school", jdbcType=JdbcType.VARCHAR),
+            @Result(column="teach_building", property="teachBuilding", jdbcType=JdbcType.VARCHAR),
+            @Result(column="category", property="category", jdbcType=JdbcType.VARCHAR),
+            @Result(column="room_name", property="roomName", jdbcType=JdbcType.VARCHAR)
+    })
+    List<UserAccessRecordVo> selectVo(SelectStatementProvider selectStatement);
+
+    @SelectProvider(type=SqlProviderAdapter.class, method="select")
+    @Results(id="AccessRecordResultCountVo", value = {
+            @Result(column="room_id", property="roomId", jdbcType=JdbcType.VARCHAR),
+            @Result(column="school", property="school", jdbcType=JdbcType.VARCHAR),
+            @Result(column="teach_building", property="teachBuilding", jdbcType=JdbcType.VARCHAR),
+            @Result(column="category", property="category", jdbcType=JdbcType.VARCHAR),
+            @Result(column="room_name", property="roomName", jdbcType=JdbcType.VARCHAR)
+    })
+    List<UserAccessRecordCountVo> selectCountVo(SelectStatementProvider selectStatement);
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.257+08:00", comments="Source Table: tbl_access_record")
     @UpdateProvider(type=SqlProviderAdapter.class, method="update")
