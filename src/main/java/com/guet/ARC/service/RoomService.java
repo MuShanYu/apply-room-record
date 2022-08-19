@@ -77,6 +77,10 @@ public class RoomService {
         return room;
     }
 
+    public Room queryRoomById(String id) {
+        return roomMapper.selectByPrimaryKey(id).orElse(null);
+    }
+
     @Transactional(rollbackFor = RuntimeException.class)
     public PageInfo<Room> queryRoom(RoomQueryDTO roomQueryDTO) {
         if (roomQueryDTO == null) {

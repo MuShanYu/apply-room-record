@@ -57,4 +57,10 @@ public class RoomController {
     public PageInfo<RoomVo> queryRoomList(@RequestBody RoomListQueryDTO roomListQueryDTO) {
         return roomService.queryRoomList(roomListQueryDTO);
     }
+
+    @PostMapping("/room/get/byId")
+    @ApiOperation("根据id获取房间信息")
+    public Room queryRoomByIdApi(@RequestParam("id") String id) {
+        return roomService.queryRoomById(id);
+    }
 }
