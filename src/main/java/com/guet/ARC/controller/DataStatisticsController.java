@@ -40,10 +40,4 @@ public class DataStatisticsController {
         return dataStatisticsService.countRoomReservationTimes(roomId, startTime);
     }
 
-    @GetMapping("/admin/get/roomValidTimes")
-    @ApiOperation(value = "获取会议室有效预约情况")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public Map<String, Object> countRoomValidTimes(String roomId, Long startTime) {
-        return dataStatisticsService.countRoomValidTimes(roomId, startTime);
-    }
 }
