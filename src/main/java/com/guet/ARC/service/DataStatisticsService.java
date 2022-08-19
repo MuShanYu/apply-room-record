@@ -1,11 +1,13 @@
 package com.guet.ARC.service;
 
 import com.guet.ARC.common.constant.CommonConstant;
+import com.guet.ARC.domain.Room;
 import com.guet.ARC.mapper.*;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 
@@ -22,6 +24,9 @@ public class DataStatisticsService {
 
     @Autowired
     private RoomReservationMapper roomReservationMapper;
+
+    @Autowired
+    private AccessRecordMapper accessRecordMapper;
 
     public Map<String, Object> queryClassifyInfo() {
         SelectStatementProvider teachBuildingState = selectDistinct(RoomDynamicSqlSupport.teachBuilding)
@@ -63,6 +68,9 @@ public class DataStatisticsService {
     }
 
     public Map<String, Object> countRoomReservationTimes(String roomId, Long startTime) {
+        if (!StringUtils.hasLength(roomId)) {
+            roomId = null;
+        }
         // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
         // 获取这一天的午夜12点
         Calendar calendar = Calendar.getInstance();
@@ -71,8 +79,11 @@ public class DataStatisticsService {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
-        long webAppDateStart = calendar.getTimeInMillis();
+        // 获取这一天午夜12点的毫秒值
+        long webAppDateEnd = calendar.getTimeInMillis();
         long oneDayInMills = 24 * 60 * 60 * 1000;
+        // 上一天
+        long webAppDateStart = webAppDateEnd - oneDayInMills;
         Map<String, Object> map = new HashMap<>();
         // 求和
         long reviewedTimesCount = 0; // 0
@@ -88,12 +99,13 @@ public class DataStatisticsService {
         for (int i = 0; i < 7; i++) {
             // 分别获取四个数量
             for (Short state : states) {
+                // 上一天的午夜12点，到当前的午夜12点
                 countStatement = select(count())
                         .from(RoomReservationDynamicSqlSupport.roomReservation)
                         .where(RoomReservationDynamicSqlSupport.state, isEqualTo(state))
-                        .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomId))
+                        .and(RoomReservationDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                         .and(RoomReservationDynamicSqlSupport.createTime, isBetween(webAppDateStart)
-                                .and(startTime))
+                                .and(webAppDateEnd))
                         .build().render(RenderingStrategies.MYBATIS3);
                 if (state.equals(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)) {
                     // 通过审批的次数
@@ -118,7 +130,7 @@ public class DataStatisticsService {
                 }
             }
             // 更新当前flag时间
-            startTime = webAppDateStart;
+            webAppDateEnd = webAppDateStart;
             // 一天前
             webAppDateStart -= oneDayInMills;
         }
@@ -135,6 +147,86 @@ public class DataStatisticsService {
         map.put("cancelTimesCount", cancelTimesCount);
         map.put("rejectTimesCount", rejectTimesCount);
         map.put("reviewTimesCount", reviewTimesCount);
+        return map;
+    }
+
+    // 根据房间名称搜索房间
+    public List<Room> searchRoomByRoomName(String roomName) {
+        if (!StringUtils.hasLength(roomName)) {
+            roomName = null;
+        } else {
+            roomName = "%" + roomName + "%";
+        }
+        SelectStatementProvider statementProvider = selectDistinct(
+                RoomDynamicSqlSupport.id,
+                RoomDynamicSqlSupport.roomName)
+                .from(RoomDynamicSqlSupport.room)
+                .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .and(RoomDynamicSqlSupport.roomName, isLikeWhenPresent(roomName))
+                .build().render(RenderingStrategies.MYBATIS3);
+        return roomMapper.selectMany(statementProvider);
+    }
+
+    public Map<String, Object> countAccessRecord(String roomId, Long startTime) {
+        if (!StringUtils.hasLength(roomId)) {
+            roomId = null;
+        }
+        // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
+        // 获取这一天的午夜12点
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(startTime);
+        // 设置时间
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        // 获取这一天午夜12点的毫秒值
+        long webAppDateEnd = calendar.getTimeInMillis();
+        long oneDayInMills = 24 * 60 * 60 * 1000;
+        // 上一天
+        long webAppDateStart = webAppDateEnd - oneDayInMills;
+        // 结果存储
+        Map<String, Object> map = new HashMap<>();
+        List<Long> entryTimes = new ArrayList<>();
+        List<Long> outTimes = new ArrayList<>();
+        long entryTimesCount = 0;
+        long outTimesCount = 0;
+        SelectStatementProvider countEntryTimesStatement = null;
+        SelectStatementProvider countOutTimesStatement = null;
+        for (int i = 0; i < 7; i++) {
+            // 统计进入的次数,进入时间不为空
+            countEntryTimesStatement = select(count())
+                    .from(AccessRecordDynamicSqlSupport.accessRecord)
+                    .where(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
+                            .and(webAppDateEnd))
+                    .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
+                    .and(AccessRecordDynamicSqlSupport.entryTime,isNotNull())
+                    .build().render(RenderingStrategies.MYBATIS3);
+            // 统计出去的次数，出去的时间不为空
+            countOutTimesStatement = select(count())
+                    .from(AccessRecordDynamicSqlSupport.accessRecord)
+                    .where(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
+                            .and(webAppDateEnd))
+                    .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
+                    .and(AccessRecordDynamicSqlSupport.outTime,isNotNull())
+                    .build().render(RenderingStrategies.MYBATIS3);
+            // 处理数据
+            long entry = accessRecordMapper.count(countEntryTimesStatement);
+            long out = accessRecordMapper.count(countOutTimesStatement);
+            entryTimesCount += entry;
+            outTimesCount += out;
+            entryTimes.add(entry);
+            outTimes.add(out);
+            // 更新当前flag时间
+            webAppDateEnd = webAppDateStart;
+            // 一天前
+            webAppDateStart -= oneDayInMills;
+        }
+        Collections.reverse(entryTimes);
+        Collections.reverse(outTimes);
+        map.put("entryTimes", entryTimes);
+        map.put("outTimes", outTimes);
+        map.put("entryTimesCount", entryTimesCount);
+        map.put("outTimesCount", outTimesCount);
         return map;
     }
 }
