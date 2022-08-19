@@ -62,7 +62,6 @@ public class DataStatisticsService {
         return map;
     }
 
-    // TODO: 待完善，先吃饭去了
     public Map<String, Object> countRoomReservationTimes(String roomId, Long startTime) {
         // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
         // 获取这一天的午夜12点
@@ -75,10 +74,15 @@ public class DataStatisticsService {
         long webAppDateStart = calendar.getTimeInMillis();
         long oneDayInMills = 24 * 60 * 60 * 1000;
         Map<String, Object> map = new HashMap<>();
-        List<Long> reviewedTimes = new ArrayList<>(); // 0
+        // 求和
+        long reviewedTimesCount = 0; // 0
+        long cancelTimesCount = 0; // 3
+        long rejectTimesCount = 0; // 4
+        long reviewTimesCount = 0;// 2
+        List<Long> reviewedTimes = new ArrayList<>();// 2
         List<Long> canceledTimes = new ArrayList<>(); // 3
         List<Long> rejectTimes = new ArrayList<>(); // 4
-        List<Long> reviewTimes = new ArrayList<>();// 2
+        List<Long> reviewTimes = new ArrayList<>();// 0
         SelectStatementProvider countStatement;
         Short[] states = {0, 2, 3, 4};
         for (int i = 0; i < 7; i++) {
@@ -91,14 +95,26 @@ public class DataStatisticsService {
                         .and(RoomReservationDynamicSqlSupport.createTime, isBetween(webAppDateStart)
                                 .and(startTime))
                         .build().render(RenderingStrategies.MYBATIS3);
-                if (state.equals(new Short(2 + ""))) {
-                    reviewTimes.add(roomReservationMapper.count(countStatement));
-                } else if (state.equals(new Short(0 + ""))) {
-                    reviewedTimes.add(roomReservationMapper.count(countStatement));
-                } else if (state.equals(new Short(3 + ""))) {
-                    canceledTimes.add(roomReservationMapper.count(countStatement));
-                } else if (state.equals(new Short(4 + ""))) {
-                    rejectTimes.add(roomReservationMapper.count(countStatement));
+                if (state.equals(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)) {
+                    // 通过审批的次数
+                    long count = roomReservationMapper.count(countStatement);
+                    reviewedTimesCount += count;
+                    reviewedTimes.add(count);
+                } else if (state.equals(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED)) {
+                    // 待审批的总次数
+                    long count = roomReservationMapper.count(countStatement);
+                    reviewTimesCount += count;
+                    reviewTimes.add(count);
+                } else if (state.equals(CommonConstant.ROOM_RESERVE_CANCELED)) {
+                    // 取消预约的总次数
+                    long count = roomReservationMapper.count(countStatement);
+                    canceledTimes.add(count);
+                    cancelTimesCount += count;
+                } else if (state.equals(CommonConstant.ROOM_RESERVE_TO_BE_REJECTED)) {
+                    // 驳回的总次数
+                    long count = roomReservationMapper.count(countStatement);
+                    rejectTimesCount += count;
+                    rejectTimes.add(count);
                 }
             }
             // 更新当前flag时间
@@ -106,46 +122,19 @@ public class DataStatisticsService {
             // 一天前
             webAppDateStart -= oneDayInMills;
         }
-
+        // 从后往前进行加入，反转，顺序正确
+        Collections.reverse(reviewTimes);
+        Collections.reverse(reviewedTimes);
+        Collections.reverse(canceledTimes);
+        Collections.reverse(rejectTimes);
         map.put("reviewedTimes", reviewedTimes);
         map.put("canceledTimes", canceledTimes);
         map.put("rejectTimes", rejectTimes);
         map.put("reviewTimes", reviewTimes);
-
+        map.put("reviewedTimesCount", reviewedTimesCount);
+        map.put("cancelTimesCount", cancelTimesCount);
+        map.put("rejectTimesCount", rejectTimesCount);
+        map.put("reviewTimesCount", reviewTimesCount);
         return map;
     }
-
-    public Map<String, Object> countRoomValidTimes(String roomId, Long startTime) {
-        // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
-        // 获取这一天的午夜12点
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(startTime);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        long webAppDateStart = calendar.getTimeInMillis();
-        long oneDayInMills = 24 * 60 * 60 * 1000;
-        List<Long> reviewTimes = new ArrayList<>();
-        SelectStatementProvider countStatement;
-        for (int i = 0; i < 7; i++) {
-            countStatement = select(count())
-                    .from(RoomReservationDynamicSqlSupport.roomReservation)
-                    .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED))
-                    .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomId))
-                    .and(RoomReservationDynamicSqlSupport.createTime, isBetween(webAppDateStart)
-                            .and(startTime))
-                    .build().render(RenderingStrategies.MYBATIS3);
-            reviewTimes.add(roomReservationMapper.count(countStatement));
-
-            // 更新当前flag时间
-            startTime = webAppDateStart;
-            // 一天前
-            webAppDateStart -= oneDayInMills;
-        }
-        Map<String, Object> map = new HashMap<>();
-        map.put("reviewTimes", reviewTimes);
-
-        return map;
-    }
-
 }
