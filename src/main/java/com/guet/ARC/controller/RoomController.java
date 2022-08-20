@@ -58,9 +58,9 @@ public class RoomController {
         return roomService.queryRoomList(roomListQueryDTO);
     }
 
-    @PostMapping("/room/get/byId")
+    @GetMapping("/room/get/{id}")
     @ApiOperation("根据id获取房间信息")
-    public Room queryRoomByIdApi(@RequestParam("id") String id) {
+    public Room queryRoomByIdApi(@PathVariable("id") String id) {
         return roomService.queryRoomById(id);
     }
 }

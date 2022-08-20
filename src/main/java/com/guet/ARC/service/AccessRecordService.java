@@ -56,7 +56,7 @@ public class AccessRecordService {
             accessRecord.setUserId(userId);
             accessRecord.setState(CommonConstant.STATE_ACTIVE);
             // 添加记录
-            redisCacheUtil.setCacheObject(key, accessRecord, 10, TimeUnit.MINUTES);
+            redisCacheUtil.setCacheObject(key, accessRecord, 2, TimeUnit.HOURS);
             int insert = accessRecordMapper.insertSelective(accessRecord);
             if (insert == 0) {
                 throw new AlertException(ResultCode.SYSTEM_ERROR);
@@ -64,10 +64,11 @@ public class AccessRecordService {
         } else {
             // 已经有记录，说明是出场
             if (type != 2) {
-                throw new AlertException(1000, "已有您的入场记录，请先出场");
+                throw new AlertException(1000, "2小时内已有您的入场记录，请先出场");
             }
-            accessRecordCache.setEntryTime(System.currentTimeMillis());
+            accessRecordCache.setOutTime(System.currentTimeMillis());
             accessRecordCache.setUpdateTime(System.currentTimeMillis());
+            redisCacheUtil.deleteObject(key);
             int update = accessRecordMapper.updateByPrimaryKeySelective(accessRecordCache);
             if (update == 0) {
                 throw new AlertException(ResultCode.SYSTEM_ERROR);
@@ -155,7 +156,7 @@ public class AccessRecordService {
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         long count = accessRecordMapper.count(countStatement);
-        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectVoList)
+        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectCountVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
@@ -201,7 +202,7 @@ public class AccessRecordService {
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         long count = accessRecordMapper.count(countStatement);
-        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectVoList)
+        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectCountVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))

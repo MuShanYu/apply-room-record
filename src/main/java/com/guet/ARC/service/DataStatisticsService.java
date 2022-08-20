@@ -43,7 +43,7 @@ public class DataStatisticsService {
                 .build().render(RenderingStrategies.MYBATIS3);
         List<String> teachBuildings = new ArrayList<>();
         List<String> schools = new ArrayList<>();
-        List<String> categories =new ArrayList<>();
+        List<String> categories = new ArrayList<>();
         roomMapper.selectMany(teachBuildingState).forEach(v -> teachBuildings.add(v.getTeachBuilding()));
         roomMapper.selectMany(schoolState).forEach(v -> schools.add(v.getSchool()));
         roomMapper.selectMany(categoryState).forEach(v -> categories.add(v.getCategory()));
@@ -76,9 +76,9 @@ public class DataStatisticsService {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(startTime);
         // 设置时间
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
         // 获取这一天午夜12点的毫秒值
         long webAppDateEnd = calendar.getTimeInMillis();
         long oneDayInMills = 24 * 60 * 60 * 1000;
@@ -176,9 +176,9 @@ public class DataStatisticsService {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(startTime);
         // 设置时间
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
         // 获取这一天午夜12点的毫秒值
         long webAppDateEnd = calendar.getTimeInMillis();
         long oneDayInMills = 24 * 60 * 60 * 1000;
@@ -199,7 +199,6 @@ public class DataStatisticsService {
                     .where(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
                             .and(webAppDateEnd))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
-                    .and(AccessRecordDynamicSqlSupport.entryTime,isNotNull())
                     .build().render(RenderingStrategies.MYBATIS3);
             // 统计出去的次数，出去的时间不为空
             countOutTimesStatement = select(count())
@@ -207,7 +206,7 @@ public class DataStatisticsService {
                     .where(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
                             .and(webAppDateEnd))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
-                    .and(AccessRecordDynamicSqlSupport.outTime,isNotNull())
+                    .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
                     .build().render(RenderingStrategies.MYBATIS3);
             // 处理数据
             long entry = accessRecordMapper.count(countEntryTimesStatement);
@@ -228,5 +227,30 @@ public class DataStatisticsService {
         map.put("entryTimesCount", entryTimesCount);
         map.put("outTimesCount", outTimesCount);
         return map;
+    }
+
+    // 获取系统统计信息
+    public Map<String, Map<String, Object>> getSystemCount() {
+        SelectStatementProvider countUser = select(count())
+                .from(UserDynamicSqlSupport.user)
+                .build().render(RenderingStrategies.MYBATIS3);
+        SelectStatementProvider countRoom = select(count())
+                .from(RoomDynamicSqlSupport.room)
+                .build().render(RenderingStrategies.MYBATIS3);
+        SelectStatementProvider countRoomReserve = select(count())
+                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED))
+                .build().render(RenderingStrategies.MYBATIS3);
+        SelectStatementProvider countAccessRecord = select(count())
+                .from(AccessRecordDynamicSqlSupport.accessRecord)
+                .build().render(RenderingStrategies.MYBATIS3);
+        Map<String, Object> map = new HashMap<>();
+        map.put("userCount", userMapper.count(countUser));
+        map.put("roomCount", roomMapper.count(countRoom));
+        map.put("roomReserveReviewed", roomReservationMapper.count(countRoomReserve));
+        map.put("accessRecordCount", accessRecordMapper.count(countAccessRecord));
+        Map<String, Map<String, Object>> res = new HashMap<>();
+        res.put("countData", map);
+        return res;
     }
 }
