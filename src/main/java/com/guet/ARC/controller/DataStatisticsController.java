@@ -59,4 +59,11 @@ public class DataStatisticsController {
                                                     @RequestParam("startTime") Long startTime) {
         return dataStatisticsService.countAccessRecord(roomId, startTime);
     }
+
+    @GetMapping("/admin/get/sys/count")
+    @ApiOperation(value = "获取系统统计信息")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public Map<String, Map<String, Object>> getSystemCount() {
+        return dataStatisticsService.getSystemCount();
+    }
 }

@@ -14,4 +14,6 @@ public class UserAccessRecordVo extends AccessRecord {
     private String teachBuilding;
 
     private String school;
+
+    private String capacity;
 }
