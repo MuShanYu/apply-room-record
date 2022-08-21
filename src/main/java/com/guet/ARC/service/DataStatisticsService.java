@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
@@ -71,6 +72,8 @@ public class DataStatisticsService {
         if (!StringUtils.hasLength(roomId)) {
             roomId = null;
         }
+        // 格式化时间
+        SimpleDateFormat sdf = new SimpleDateFormat("MM.dd");
         // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
         // 获取这一天的午夜12点
         Calendar calendar = Calendar.getInstance();
@@ -94,6 +97,7 @@ public class DataStatisticsService {
         List<Long> canceledTimes = new ArrayList<>(); // 3
         List<Long> rejectTimes = new ArrayList<>(); // 4
         List<Long> reviewTimes = new ArrayList<>();// 0
+        List<String> dates = new ArrayList<>();
         SelectStatementProvider countStatement;
         Short[] states = {0, 2, 3, 4};
         for (int i = 0; i < 7; i++) {
@@ -129,6 +133,8 @@ public class DataStatisticsService {
                     rejectTimes.add(count);
                 }
             }
+            // 存储查询的是哪一天的数据
+            dates.add(sdf.format(webAppDateEnd));
             // 更新当前flag时间
             webAppDateEnd = webAppDateStart;
             // 一天前
@@ -139,6 +145,7 @@ public class DataStatisticsService {
         Collections.reverse(reviewedTimes);
         Collections.reverse(canceledTimes);
         Collections.reverse(rejectTimes);
+        Collections.reverse(dates);
         map.put("reviewedTimes", reviewedTimes);
         map.put("canceledTimes", canceledTimes);
         map.put("rejectTimes", rejectTimes);
@@ -147,6 +154,7 @@ public class DataStatisticsService {
         map.put("cancelTimesCount", cancelTimesCount);
         map.put("rejectTimesCount", rejectTimesCount);
         map.put("reviewTimesCount", reviewTimesCount);
+        map.put("dates", dates);
         return map;
     }
 
@@ -171,6 +179,8 @@ public class DataStatisticsService {
         if (!StringUtils.hasLength(roomId)) {
             roomId = null;
         }
+        // 时间格式化
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM.dd");
         // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
         // 获取这一天的午夜12点
         Calendar calendar = Calendar.getInstance();
@@ -188,8 +198,8 @@ public class DataStatisticsService {
         Map<String, Object> map = new HashMap<>();
         List<Long> entryTimes = new ArrayList<>();
         List<Long> outTimes = new ArrayList<>();
-        long entryTimesCount = 0;
-        long outTimesCount = 0;
+        List<Long> totalTimes = new ArrayList<>();
+        List<String> dates = new ArrayList<>();
         SelectStatementProvider countEntryTimesStatement = null;
         SelectStatementProvider countOutTimesStatement = null;
         for (int i = 0; i < 7; i++) {
@@ -211,10 +221,11 @@ public class DataStatisticsService {
             // 处理数据
             long entry = accessRecordMapper.count(countEntryTimesStatement);
             long out = accessRecordMapper.count(countOutTimesStatement);
-            entryTimesCount += entry;
-            outTimesCount += out;
+            totalTimes.add(entry + out);
             entryTimes.add(entry);
             outTimes.add(out);
+            // 记录数据是当前第几天的数据
+            dates.add(simpleDateFormat.format(webAppDateEnd));
             // 更新当前flag时间
             webAppDateEnd = webAppDateStart;
             // 一天前
@@ -222,10 +233,12 @@ public class DataStatisticsService {
         }
         Collections.reverse(entryTimes);
         Collections.reverse(outTimes);
+        Collections.reverse(totalTimes);
+        Collections.reverse(dates);
         map.put("entryTimes", entryTimes);
         map.put("outTimes", outTimes);
-        map.put("entryTimesCount", entryTimesCount);
-        map.put("outTimesCount", outTimesCount);
+        map.put("totalTimes", totalTimes);
+        map.put("dates", dates);
         return map;
     }
 
