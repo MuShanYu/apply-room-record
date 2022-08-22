@@ -150,7 +150,7 @@ public class AccessRecordService {
     // 查询用户进出房间的次数
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCount(Integer page, Integer size) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider countStatement = select(count())
+        SelectStatementProvider countStatement = select(countDistinct(AccessRecordDynamicSqlSupport.roomId))
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
@@ -158,7 +158,7 @@ public class AccessRecordService {
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         long count = accessRecordMapper.count(countStatement);
-        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectCountVoList)
+        SelectStatementProvider statementProvider = selectDistinct(AccessRecordMapper.selectCountVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
@@ -196,14 +196,14 @@ public class AccessRecordService {
     }
 
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCountAdmin(Integer page, Integer size, String userId) {
-        SelectStatementProvider countStatement = select(count())
+        SelectStatementProvider countStatement = select(countDistinct(AccessRecordDynamicSqlSupport.roomId))
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
                 .build().render(RenderingStrategies.MYBATIS3);
         long count = accessRecordMapper.count(countStatement);
-        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectCountVoList)
+        SelectStatementProvider statementProvider = selectDistinct(AccessRecordMapper.selectCountVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))

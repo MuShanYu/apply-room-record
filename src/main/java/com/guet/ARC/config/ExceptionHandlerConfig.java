@@ -95,7 +95,7 @@ public class ExceptionHandlerConfig {
 
     @ExceptionHandler(NotLoginException.class)
     public Result<String> handleNotLoginException(NotLoginException e) {
-        e.printStackTrace();
+//        e.printStackTrace();
         String message = "";
         int code = 0;
         if(e.getType().equals(NotLoginException.NOT_TOKEN)) {
