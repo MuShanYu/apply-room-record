@@ -147,7 +147,7 @@
                 <configuration>
                     <verbose>true</verbose>
                     <contexts>default</contexts>
-                    <overwrite>true</overwrite>
+                    <overwrite>false</overwrite>
                     <configurationFile>${basedir}/src/main/resources/generatorConfig.xml</configurationFile>
                     <includeCompileDependencies>true</includeCompileDependencies>
                 </configuration>
