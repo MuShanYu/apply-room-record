@@ -16,6 +16,8 @@ public interface CommonConstant {
 
     Short ROOM_CAN_NOT_BE_RESERVED = 5; // 房间不可被预约
 
+    Short ROOM_RESERVE_IS_TIME_OUT = 6; // 超过预约结束时间未处理
+
     String ROLE_USER_ID = "0";
 
     String ROLE_ADMIN_ID = "1";

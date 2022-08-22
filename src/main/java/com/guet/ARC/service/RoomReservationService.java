@@ -61,6 +61,14 @@ public class RoomReservationService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     public RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
+        // 检测预约起始和预约结束时间
+        long subTime = applyRoomDTO.getEndTime() - applyRoomDTO.getStartTime();
+        long hour_12 = 43200000;
+        if (subTime <= 0) {
+            throw new AlertException(1000, "预约起始时间不能大于等于结束时间");
+        } else if (subTime > hour_12) {
+            throw new AlertException(1000, "单次房间的预约时间不能大于12小时");
+        }
         // 检测是否已经预约
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         // 是待审核状态且在这段预约时间内代表我已经预约过了, 预约起始时间不能在准备预约的时间范围内，结束时间蹦年在准备结束预约的时间范围内
@@ -69,8 +77,8 @@ public class RoomReservationService {
                 .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
                 .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(applyRoomDTO.getStartTime())
-                        .and(applyRoomDTO.getEndTime()),
-                        or(RoomReservationDynamicSqlSupport.reserveEndTime,isBetweenWhenPresent(applyRoomDTO.getStartTime())
+                                .and(applyRoomDTO.getEndTime()),
+                        or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(applyRoomDTO.getStartTime())
                                 .and(applyRoomDTO.getEndTime())))
                 .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(applyRoomDTO.getRoomId()))
                 .build().render(RenderingStrategies.MYBATIS3);
@@ -116,6 +124,7 @@ public class RoomReservationService {
         List<RoomReservationUserVo> roomReservationUserVos = new ArrayList<>();
         BeanCopier beanCopier = BeanCopier.create(RoomReservation.class, RoomReservationUserVo.class, false);
         // 添加每条预约记录的预约人姓名
+        long now = System.currentTimeMillis();
         for (RoomReservation roomReservation : roomReservationList) {
             RoomReservationUserVo roomReservationUserVo = new RoomReservationUserVo();
             beanCopier.copy(roomReservation, roomReservationUserVo, null);
@@ -157,7 +166,7 @@ public class RoomReservationService {
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
                 .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
                                 .and(myApplyQueryDTO.getEndTime()),
-                        or(RoomReservationDynamicSqlSupport.reserveEndTime,isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
+                        or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
                                 .and(myApplyQueryDTO.getEndTime())))
                 .build().render(RenderingStrategies.MYBATIS3);
 
@@ -172,7 +181,7 @@ public class RoomReservationService {
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
                 .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
                                 .and(myApplyQueryDTO.getEndTime()),
-                        or(RoomReservationDynamicSqlSupport.reserveEndTime,isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
+                        or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
                                 .and(myApplyQueryDTO.getEndTime())))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
@@ -247,7 +256,9 @@ public class RoomReservationService {
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
-                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
+                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED),
+                        or(RoomReservationDynamicSqlSupport.state,
+                                isEqualTo(CommonConstant.ROOM_RESERVE_IS_TIME_OUT)))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
@@ -257,7 +268,9 @@ public class RoomReservationService {
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
-                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
+                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED),
+                        or(RoomReservationDynamicSqlSupport.state,
+                                isEqualTo(CommonConstant.ROOM_RESERVE_IS_TIME_OUT)))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
@@ -266,11 +279,15 @@ public class RoomReservationService {
 
         PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
         List<RoomReservationAdminVo> roomReservationAdminVos = roomReservationMapper.selectRoomReservationsAdminVo(statementProvider);
+        long now = System.currentTimeMillis();
         for (RoomReservationAdminVo roomReservationAdminVo : roomReservationAdminVos) {
             Optional<User> optionalUser = userMapper.selectByPrimaryKey(roomReservationAdminVo.getUserId());
             if (optionalUser.isPresent()) {
                 User user = optionalUser.get();
                 roomReservationAdminVo.setName(user.getNickname());
+            }
+            if (now > roomReservationAdminVo.getReserveEndTime()) {
+                handleTimeOutReservationAdmin(roomReservationAdminVo);
             }
         }
         PageInfo<RoomReservationAdminVo> roomReservationPageInfo = new PageInfo<>();
@@ -288,6 +305,10 @@ public class RoomReservationService {
         if (roomReservationOptional.isPresent() && userOptional.isPresent()) {
             RoomReservation roomReservation = roomReservationOptional.get();
             User user = userOptional.get();
+            // 是否超出预约结束时间
+            if (System.currentTimeMillis() >= roomReservation.getReserveEndTime()) {
+                throw new AlertException(1000, "已超过预约结束时间,无法操作");
+            }
             if (pass) {
                 roomReservation.setState(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED);
             } else {
@@ -300,6 +321,18 @@ public class RoomReservationService {
             }
         } else {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
+        }
+    }
+
+    private void handleTimeOutReservationAdmin(RoomReservationAdminVo roomReservationVo) {
+        roomReservationVo.setState(CommonConstant.ROOM_RESERVE_IS_TIME_OUT);
+        roomReservationVo.setUpdateTime(System.currentTimeMillis());
+        BeanCopier copier = BeanCopier.create(RoomReservationAdminVo.class, RoomReservation.class, false);
+        RoomReservation roomReservation = new RoomReservation();
+        copier.copy(roomReservationVo, roomReservation, null);
+        int update = roomReservationMapper.updateByPrimaryKeySelective(roomReservation);
+        if (update == 0) {
+            throw new AlertException(ResultCode.SYSTEM_ERROR);
         }
     }
 }
