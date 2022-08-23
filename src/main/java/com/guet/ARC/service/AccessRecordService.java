@@ -191,6 +191,8 @@ public class AccessRecordService {
                     .and(AccessRecordDynamicSqlSupport.roomId,
                             isEqualTo(userAccessRecordCountVo.getRoomId()))
                     .and(AccessRecordDynamicSqlSupport.entryTime, isNotNull())
+                    .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                    .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
             countOutTimes = select(count())
                     .from(AccessRecordDynamicSqlSupport.accessRecord)
@@ -198,6 +200,8 @@ public class AccessRecordService {
                     .and(AccessRecordDynamicSqlSupport.roomId,
                             isEqualTo(userAccessRecordCountVo.getRoomId()))
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
+                    .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                    .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
             userAccessRecordCountVo.setEntryTimes(accessRecordMapper.count(countEntryTimes));
             userAccessRecordCountVo.setOutTimes(accessRecordMapper.count(countOutTimes));
@@ -215,6 +219,7 @@ public class AccessRecordService {
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         long count = accessRecordMapper.count(countStatement);
         SelectStatementProvider statementProvider = selectDistinct(AccessRecordMapper.selectCountVoList)
@@ -222,6 +227,7 @@ public class AccessRecordService {
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         PageHelper.startPage(page, size);
         List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordMapper.selectCountVo(statementProvider);
@@ -233,12 +239,17 @@ public class AccessRecordService {
                     .from(AccessRecordDynamicSqlSupport.accessRecord)
                     .where(AccessRecordDynamicSqlSupport.roomId,
                             isEqualTo(userAccessRecordCountVo.getRoomId()))
+                    .and(AccessRecordDynamicSqlSupport.entryTime, isNotNull())
+                    .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                    .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
             countOutTimes = select(count())
                     .from(AccessRecordDynamicSqlSupport.accessRecord)
                     .where(AccessRecordDynamicSqlSupport.roomId,
                             isEqualTo(userAccessRecordCountVo.getRoomId()))
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
+                    .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                    .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
             userAccessRecordCountVo.setEntryTimes(accessRecordMapper.count(countEntryTimes));
             userAccessRecordCountVo.setOutTimes(accessRecordMapper.count(countOutTimes));
