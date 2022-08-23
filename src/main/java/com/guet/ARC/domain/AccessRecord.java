@@ -1,30 +1,42 @@
 package com.guet.ARC.domain;
 
+import com.alibaba.excel.annotation.ExcelIgnore;
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.guet.ARC.domain.converter.DateConverter;
+
 import javax.annotation.Generated;
 
 public class AccessRecord {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.256+08:00", comments="Source field: tbl_access_record.id")
+    @ExcelIgnore
     private String id;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.256+08:00", comments="Source field: tbl_access_record.entry_time")
+    @ExcelProperty(value = "进入时间", order = 4, converter = DateConverter.class)
     private Long entryTime;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.256+08:00", comments="Source field: tbl_access_record.out_time")
+    @ExcelProperty(value = "离开时间", order = 5, converter = DateConverter.class)
     private Long outTime;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.256+08:00", comments="Source field: tbl_access_record.state")
+    @ExcelIgnore
     private Short state;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.256+08:00", comments="Source field: tbl_access_record.update_time")
+    @ExcelIgnore
     private Long updateTime;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.256+08:00", comments="Source field: tbl_access_record.create_time")
+    @ExcelIgnore
     private Long createTime;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.256+08:00", comments="Source field: tbl_access_record.user_id")
+    @ExcelIgnore
     private String userId;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.256+08:00", comments="Source field: tbl_access_record.room_id")
+    @ExcelIgnore
     private String roomId;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.256+08:00", comments="Source field: tbl_access_record.id")

@@ -31,6 +31,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
         loginExcludePathPatterns.add("/user/get/verifyCode");
         loginExcludePathPatterns.add("/v3/**");
         loginExcludePathPatterns.add("/user/get/classify/room");
+        loginExcludePathPatterns.add("/config/get/by/**");
 
         // 注解权限拦截!!!!!
         registry.addInterceptor(new SaAnnotationInterceptor()).addPathPatterns("/**");

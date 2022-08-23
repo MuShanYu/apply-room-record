@@ -6,7 +6,9 @@ import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.domain.dto.record.AddRecordDTO;
+import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
 import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
+import com.guet.ARC.domain.vo.record.UserAccessRecordRoomVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordVo;
 import com.guet.ARC.service.AccessRecordService;
 import io.swagger.annotations.Api;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
@@ -49,6 +52,23 @@ public class AccessRecordController {
         return accessRecordService.queryUserAccessRecordList(page, size);
     }
 
+    @PostMapping("/record/query/list/byRoomId")
+    @ApiOperation(value = "根据房间ID查询用户记录列表")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public PageInfo<UserAccessRecordRoomVo> queryUserAccessRecordByRoomIdApi(@Valid @RequestBody
+                                                                             UserAccessQueryDTO userAccessQueryDTO) {
+        return accessRecordService.queryUserAccessRecordByRoomId(userAccessQueryDTO);
+    }
+
+    @PostMapping("/record/query/export/byRoomId")
+    @ApiOperation(value = "导出根据房间ID查询用户记录列表")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public void exportUserAccessRecordByRoomIdApi(HttpServletResponse response,
+                                                                             @Valid @RequestBody
+                                                                             UserAccessQueryDTO userAccessQueryDTO) {
+        accessRecordService.exportUserAccessRecordByRoomId(userAccessQueryDTO, response);
+    }
+
     @GetMapping("/admin/record/query/list")
     @ApiOperation(value = "管理员查询用户记录列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
@@ -72,10 +92,10 @@ public class AccessRecordController {
     @ApiOperation(value = "管理员查询用户房间进出统计列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCountAdminApi(@Min(1) @RequestParam("page") Integer page,
-                                                                               @Range(min = 1, max = 100)
-                                                                               @RequestParam("size") Integer size,
-                                                                               @NotEmpty @RequestParam("userId")
-                                                                               String userId) {
+                                                                          @Range(min = 1, max = 100)
+                                                                          @RequestParam("size") Integer size,
+                                                                          @NotEmpty @RequestParam("userId")
+                                                                          String userId) {
         return accessRecordService.queryUserAccessCountAdmin(page, size, userId);
     }
 }
