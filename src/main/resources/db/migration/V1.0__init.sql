@@ -1,15 +1,15 @@
 create table tbl_user
 (
     id          varchar(32) primary key,
-    nickname    varchar(16)   null,
-    pwd         varchar(512)  null,
-    stu_num      varchar(62)   null,
-    `name`        varchar(16)   null,
-    tel         varchar(16)   null,
-    institute   varchar(128)  null,
-    state       smallint      null comment '状态：-1：代表数据已经逻辑删除，1：代表数据正常',
-    update_time bigint        null,
-    create_time bigint        null
+    nickname    varchar(16)  null,
+    pwd         varchar(512) null,
+    stu_num     varchar(62)  null,
+    `name`      varchar(16)  null,
+    tel         varchar(16)  null,
+    institute   varchar(128) null,
+    state       smallint     null comment '状态：-1：代表数据已经逻辑删除，1：代表数据正常',
+    update_time bigint       null,
+    create_time bigint       null
 ) comment '用户表';
 
 create table tbl_room
@@ -28,16 +28,16 @@ create table tbl_room
 
 create table tbl_room_reservation
 (
-    id               varchar(32) primary key,
-    room_usage       varchar(521) null comment '预约用途',
+    id                 varchar(32) primary key,
+    room_usage         varchar(521) null comment '预约用途',
     reserve_start_time bigint       null comment '预约起始时间',
     reserve_end_time   bigint       null comment '预约结束时间',
-    verify_user_name varchar(16)  null comment '审核人姓名',
-    state            smallint     null comment '状态：0：代表会议室为待审核状态，2：代表会议室为预约成功状态，3：代表会议室预约主动取消，4：代表会议室的预约被驳回',
-    update_time      bigint       null,
-    create_time      bigint       null,
-    user_id          varchar(32)  null comment '预约用户id',
-    room_id          varchar(32)  null comment '房间id',
+    verify_user_name   varchar(16)  null comment '审核人姓名',
+    state              smallint     null comment '状态：0：代表会议室为待审核状态，2：代表会议室为预约成功状态，3：代表会议室预约主动取消，4：代表会议室的预约被驳回',
+    update_time        bigint       null,
+    create_time        bigint       null,
+    user_id            varchar(32)  null comment '预约用户id',
+    room_id            varchar(32)  null comment '房间id',
     constraint user_room_apply_fk foreign key (user_id) references tbl_user (id),
     constraint room_room_apply_fk foreign key (room_id) references tbl_room (id)
 ) comment '房间预约表';
@@ -77,3 +77,14 @@ create table tbl_user_role
     constraint role_user_fk foreign key (user_id) references tbl_user (id),
     constraint role_role_user_id foreign key (role_id) references tbl_role (id)
 ) comment '用户角色表';
+
+create table tbl_sys_config
+(
+    id           varchar(32) primary key,
+    config_key   varchar(32) null comment '配置key',
+    config_value longtext    null comment '配置value',
+    config_desc  varchar(62) null comment '配置描述',
+    state        smallint    null comment '状态：-1：代表数据已经逻辑删除，1：代表数据正常',
+    create_time  bigint      null comment '创建时间',
+    update_time  bigint      null comment '修改时间'
+) comment '配置表';
