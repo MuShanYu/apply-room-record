@@ -63,9 +63,18 @@ public class UserService {
                 .where(UserDynamicSqlSupport.stuNum, isEqualTo(userRegisterDTO.getStuNum()))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
+        SelectStatementProvider telStatement = select(UserMapper.selectList)
+                .from(UserDynamicSqlSupport.user)
+                .where(UserDynamicSqlSupport.tel, isEqualTo(userRegisterDTO.getTel()))
+                .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .build().render(RenderingStrategies.MYBATIS3);
         List<User> users = userMapper.selectMany(statement);
+        List<User> usersTel = userMapper.selectMany(telStatement);
         if (!users.isEmpty()) {
             throw new AlertException(1000, "学号" + userRegisterDTO.getStuNum() + "已被注册");
+        }
+        if (!usersTel.isEmpty()) {
+            throw new AlertException(1000, "手机号" + userRegisterDTO.getTel() + "已被注册");
         }
         User user = new User();
         long now = System.currentTimeMillis();
@@ -73,7 +82,7 @@ public class UserService {
         user.setCreateTime(now);
         user.setUpdateTime(now);
         String userId = CommonUtils.generateUUID();
-        String pwd = SaSecureUtil.md5("123456");
+        String pwd = SaSecureUtil.md5(System.currentTimeMillis() + "");
         String name = userRegisterDTO.getName();
         String stuNum = userRegisterDTO.getStuNum();
         String institute = userRegisterDTO.getInstitute();

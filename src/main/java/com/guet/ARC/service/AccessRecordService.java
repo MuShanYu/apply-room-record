@@ -1,24 +1,38 @@
 package com.guet.ARC.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.support.ExcelTypeEnum;
+import com.alibaba.excel.write.metadata.WriteSheet;
+import com.alibaba.excel.write.metadata.WriteWorkbook;
+import com.alibaba.excel.write.metadata.style.WriteCellStyle;
+import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.domain.AccessRecord;
+import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
 import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
+import com.guet.ARC.domain.vo.record.UserAccessRecordRoomVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordVo;
 import com.guet.ARC.mapper.AccessRecordDynamicSqlSupport;
 import com.guet.ARC.mapper.AccessRecordMapper;
 import com.guet.ARC.mapper.RoomDynamicSqlSupport;
+import com.guet.ARC.mapper.UserDynamicSqlSupport;
 import com.guet.ARC.util.CommonUtils;
+import com.guet.ARC.util.ExcelUtil;
 import com.guet.ARC.util.RedisCacheUtil;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -234,5 +248,75 @@ public class AccessRecordService {
         pageInfo.setPageData(userAccessRecordCountVos);
         pageInfo.setTotalSize(count);
         return pageInfo;
+    }
+
+    // 查询用户在某个房间的出入情况
+    public PageInfo<UserAccessRecordRoomVo> queryUserAccessRecordByRoomId(UserAccessQueryDTO userAccessQueryDTO) {
+        SelectStatementProvider countStatement = select(count())
+                .from(AccessRecordDynamicSqlSupport.accessRecord)
+                .leftJoin(RoomDynamicSqlSupport.room)
+                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
+                .where(AccessRecordDynamicSqlSupport.roomId, isEqualTo(userAccessQueryDTO.getRoomId()))
+                .and(AccessRecordDynamicSqlSupport.createTime, isBetweenWhenPresent(userAccessQueryDTO.getStartTime())
+                        .and(userAccessQueryDTO.getEndTime()))
+                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .build().render(RenderingStrategies.MYBATIS3);
+        long count = accessRecordMapper.count(countStatement);
+        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectAccessRoomVoList)
+                .from(AccessRecordDynamicSqlSupport.accessRecord)
+                .leftJoin(RoomDynamicSqlSupport.room)
+                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
+                .leftJoin(UserDynamicSqlSupport.user)
+                .on(UserDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.userId))
+                .where(AccessRecordDynamicSqlSupport.roomId, isEqualTo(userAccessQueryDTO.getRoomId()))
+                .and(AccessRecordDynamicSqlSupport.createTime, isBetweenWhenPresent(userAccessQueryDTO.getStartTime())
+                        .and(userAccessQueryDTO.getEndTime()))
+                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .build().render(RenderingStrategies.MYBATIS3);
+        PageHelper.startPage(userAccessQueryDTO.getPage(), userAccessQueryDTO.getSize());
+        PageInfo<UserAccessRecordRoomVo> pageInfo = new PageInfo<>();
+        List<UserAccessRecordRoomVo> userAccessRecordVos = accessRecordMapper.selectUserAccessRoomVo(statementProvider);
+        pageInfo.setPageData(userAccessRecordVos);
+        pageInfo.setTotalSize(count);
+        pageInfo.setPage(userAccessQueryDTO.getPage());
+        return pageInfo;
+    }
+
+    public void exportUserAccessRecordByRoomId(UserAccessQueryDTO userAccessQueryDTO, HttpServletResponse response) {
+        userAccessQueryDTO.setSize(300);
+        try {
+            String fileName = URLEncoder.encode("足迹详情_" + System.currentTimeMillis(),"utf-8");
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("utf-8");
+            response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
+            response.addHeader("Pragma", "No-cache");
+            response.addHeader("Cache-Control", "No-cache");
+            response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
+            response.setCharacterEncoding("utf8");
+            WriteCellStyle writeCellStyle = ExcelUtil.buildHeadCellStyle();
+            HorizontalCellStyleStrategy horizontalCellStyleStrategy = new HorizontalCellStyleStrategy(writeCellStyle,
+                    new ArrayList<WriteCellStyle>());
+            WriteWorkbook writeWorkbook = new WriteWorkbook();
+            writeWorkbook.setAutoCloseStream(false);
+            writeWorkbook.setExcelType(ExcelTypeEnum.XLSX);
+            writeWorkbook.setOutputStream(response.getOutputStream());
+            writeWorkbook.setAutoTrim(true);
+            writeWorkbook.setUseDefaultStyle(true);
+            writeWorkbook.setClazz(UserAccessRecordRoomVo.class);
+            writeWorkbook.setCustomWriteHandlerList(Collections.singletonList(horizontalCellStyleStrategy));
+            WriteSheet writeSheet = new WriteSheet();
+            writeSheet.setSheetName("进出数据");
+            writeSheet.setSheetNo(0);
+            ExcelWriter excelWriter = new ExcelWriter(writeWorkbook);
+            List<UserAccessRecordRoomVo> pageData = queryUserAccessRecordByRoomId(userAccessQueryDTO).getPageData();
+            while (pageData.size() != 0) {
+                excelWriter.write(pageData, writeSheet);
+                userAccessQueryDTO.setPage(userAccessQueryDTO.getPage() + 1);
+                pageData = queryUserAccessRecordByRoomId(userAccessQueryDTO).getPageData();
+            }
+            excelWriter.finish();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
