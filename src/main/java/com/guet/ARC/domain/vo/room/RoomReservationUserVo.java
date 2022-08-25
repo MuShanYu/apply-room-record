@@ -11,5 +11,5 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class RoomReservationUserVo extends RoomReservation {
-    private String name;
+    private String nickname;
 }

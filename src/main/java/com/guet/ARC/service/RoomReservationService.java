@@ -124,14 +124,13 @@ public class RoomReservationService {
         List<RoomReservationUserVo> roomReservationUserVos = new ArrayList<>();
         BeanCopier beanCopier = BeanCopier.create(RoomReservation.class, RoomReservationUserVo.class, false);
         // 添加每条预约记录的预约人姓名
-        long now = System.currentTimeMillis();
         for (RoomReservation roomReservation : roomReservationList) {
             RoomReservationUserVo roomReservationUserVo = new RoomReservationUserVo();
             beanCopier.copy(roomReservation, roomReservationUserVo, null);
             Optional<User> optionalUser = userMapper.selectByPrimaryKey(roomReservation.getUserId());
             if (optionalUser.isPresent()) {
                 User user = optionalUser.get();
-                roomReservationUserVo.setName(user.getName());
+                roomReservationUserVo.setNickname(user.getNickname());
             }
             roomReservationUserVos.add(roomReservationUserVo);
         }
