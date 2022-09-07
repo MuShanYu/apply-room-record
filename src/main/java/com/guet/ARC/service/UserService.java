@@ -144,6 +144,8 @@ public class UserService {
 
     public Map<String, String> refreshToken(String userId) {
         // toekn已经过期，token被顶下线，被剔下线
+        // 清除旧的登录状态
+        StpUtil.logout(userId);
         // 更新登录状态
         StpUtil.login(userId);
         StpUtil.getSessionByLoginId(userId).set("userId", userId);
