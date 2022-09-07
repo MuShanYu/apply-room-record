@@ -1,6 +1,9 @@
 server:
   port: 8500
-
+  ssl:
+    key-store: classpath:7786432_mushanyu.xyz.pfx
+    key-store-password: li7JvhXp
+    key-store-type: PKCS12
 spring:
   mvc:
     pathmatch:
@@ -9,7 +12,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=UTC
     username: root
-    password: root
+    password: Zyxbsjwslx@66
   redis:
     host: 127.0.0.1
     port: 6379
@@ -29,7 +32,7 @@ spring:
 springfox:
   documentation:
     swagger-ui:
-      enabled: true
+      enabled: false
 
 # Sa-Token 配置
 sa-token:
@@ -46,8 +49,4 @@ sa-token:
   # token风格
   token-style: tik
   # 是否输出操作日志
-  is-log: true
-
-#logging:
-#  level:
-#    com.guet.ARC.mapper: debug
+  is-log: false

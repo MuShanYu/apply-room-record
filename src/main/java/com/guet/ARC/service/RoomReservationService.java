@@ -64,10 +64,13 @@ public class RoomReservationService {
         // 检测预约起始和预约结束时间
         long subTime = applyRoomDTO.getEndTime() - applyRoomDTO.getStartTime();
         long hour_12 = 43200000;
+        long ten_min = 600000;
         if (subTime <= 0) {
             throw new AlertException(1000, "预约起始时间不能大于等于结束时间");
         } else if (subTime > hour_12) {
             throw new AlertException(1000, "单次房间的预约时间不能大于12小时");
+        } else if (subTime < ten_min) {
+            throw new AlertException(1000, "单次房间的预约时间不能小于10分钟");
         }
         // 检测是否已经预约
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");

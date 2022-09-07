@@ -4,17 +4,15 @@ import lombok.Data;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotEmpty;
 
 @Data
 @ToString
 public class UserUpdateDTO {
-    @NotNull
-    @NotBlank
+    @NotEmpty
     private String id;
 
-    @Length(min = 10, max = 62)
+    @Length(min = 1, max = 32)
     private String stuNum;
 
     @Length(min = 1, max = 16)
