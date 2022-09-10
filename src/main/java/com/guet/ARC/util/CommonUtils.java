@@ -3,7 +3,6 @@ package com.guet.ARC.util;
 import com.alibaba.fastjson.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 import java.util.UUID;
 
 public class CommonUtils {
@@ -72,8 +71,8 @@ public class CommonUtils {
 
     public static boolean isJson(String jsonStr) {
         try {
-            JSONObject json= JSONObject.parseObject(jsonStr);
-            return  true;
+            JSONObject json = JSONObject.parseObject(jsonStr);
+            return true;
         } catch (Exception e) {
             return false;
         }
@@ -81,6 +80,16 @@ public class CommonUtils {
 
     // 加密手机号中间四位
     public static String encodeTel(String tel) {
-        return tel.replaceAll("(\\d{3})\\d{4}(\\d{4})","$1****$2");
+        return tel.replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
+    }
+
+    public static String encodeName(String name) {
+        if (name.length() == 2) {
+            return name.replaceFirst(name.substring(1), "*");
+        }
+        if (name.length() > 2) {
+            return name.replaceFirst(name.substring(1, name.length() - 1), "*");
+        }
+        return name;
     }
 }
