@@ -48,7 +48,7 @@ public class ExceptionHandlerConfig {
     // 参数校验错误处理
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Result<String> argumentNotValidExceptionHandler(MethodArgumentNotValidException validException) {
-        validException.printStackTrace();
+//        validException.printStackTrace();
         BindingResult exceptionBindingResult = validException.getBindingResult();
         Map<String, String> map = new HashMap<>();
         // 获取校验结果，遍历获取捕获到的每个校验结果
@@ -66,7 +66,7 @@ public class ExceptionHandlerConfig {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public Result<String> constraintValidExceptionHandler(ConstraintViolationException validException) {
-        validException.printStackTrace();
+//        validException.printStackTrace();
         Result<String> result = new Result<>();
         result.setCode(5001);
         result.setSuccess(false);
@@ -77,7 +77,7 @@ public class ExceptionHandlerConfig {
 
     @ExceptionHandler(BindException.class)
     public Result<String> constraintValidExceptionHandler(BindException bindException) {
-        bindException.printStackTrace();
+//        bindException.printStackTrace();
         BindingResult bindingResult = bindException.getBindingResult();
         Map<String, String> map = new HashMap<>();
         // 获取校验结果，遍历获取捕获到的每个校验结果

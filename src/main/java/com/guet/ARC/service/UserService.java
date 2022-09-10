@@ -221,6 +221,7 @@ public class UserService {
             UserRoleVo userRoleVo = new UserRoleVo();
             userCopier.copy(user, userRoleVo, null);
             userRoleVo.setRoleList(userRoleService.queryRoleByUserId(user.getId()));
+            userRoleVo.setName(CommonUtils.encodeName(userRoleVo.getName()));
             userRoleVos.add(userRoleVo);
         }
         PageInfo<UserRoleVo> pageInfo = new PageInfo<>();
