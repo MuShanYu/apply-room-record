@@ -168,6 +168,7 @@ public class AccessRecordService {
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         PageHelper.startPage(page, size);
         PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
@@ -192,6 +193,7 @@ public class AccessRecordService {
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         PageHelper.startPage(page, size);
         PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
@@ -324,6 +326,7 @@ public class AccessRecordService {
                 .and(AccessRecordDynamicSqlSupport.createTime, isBetweenWhenPresent(userAccessQueryDTO.getStartTime())
                         .and(userAccessQueryDTO.getEndTime()))
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         PageHelper.startPage(userAccessQueryDTO.getPage(), userAccessQueryDTO.getSize());
         PageInfo<UserAccessRecordRoomVo> pageInfo = new PageInfo<>();
