@@ -43,7 +43,7 @@ public class SysConfigController {
 
     @PostMapping("/config/post/update")
     @ApiOperation(value = "更新配置")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
     public void updateSysConfigApi(@RequestBody SysConfig sysConfig) {
         sysConfigService.updateSysConfig(sysConfig);
     }

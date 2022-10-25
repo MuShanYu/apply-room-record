@@ -32,12 +32,12 @@
         </javaClientGenerator>
 
         <!-- 指定数据库表 -->
-<!--        <table tableName="tbl_room" domainObjectName="Room"/>-->
+        <table tableName="tbl_room" domainObjectName="Room"/>
 <!--        <table tableName="tbl_room_reservation" domainObjectName="RoomReservation"/>-->
 <!--        <table tableName="tbl_access_record" domainObjectName="AccessRecord"/>-->
 <!--        <table tableName="tbl_user_role" domainObjectName="UserRole"/>-->
 <!--        <table tableName="tbl_role" domainObjectName="Role"/>-->
-        <table tableName="tbl_sys_config" domainObjectName="SysConfig"/>
+<!--        <table tableName="tbl_sys_config" domainObjectName="SysConfig"/>-->
 <!--        <table tableName="tbl_user" domainObjectName="User"/>-->
     </context>
 </generatorConfiguration>

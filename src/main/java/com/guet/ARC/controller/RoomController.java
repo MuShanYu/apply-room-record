@@ -6,8 +6,10 @@ import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.domain.Room;
+import com.guet.ARC.domain.dto.room.RoomAddUpdateDTO;
 import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
+import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
 import com.guet.ARC.domain.vo.room.RoomVo;
 import com.guet.ARC.service.RoomService;
 import io.swagger.annotations.Api;
@@ -26,14 +28,14 @@ public class RoomController {
 
     @PostMapping("/room/add")
     @ApiOperation(value = "新增房间")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public Room addRoom(@RequestBody Room room) {
+    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    public Room addRoom(@RequestBody RoomAddUpdateDTO room) {
         return roomService.addRoom(room);
     }
 
     @GetMapping("/room/delete")
     @ApiOperation(value = "删除房间")
-    @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public void deleteRoom(@RequestParam("id") String id) {
         roomService.deleteRoom(id);
     }
@@ -43,6 +45,13 @@ public class RoomController {
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public Room updateRoom(@RequestBody Room room) {
         return roomService.updateRoom(room);
+    }
+
+    @PostMapping("/room/updateCharger")
+    @ApiOperation(value = "修改房间负责人")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public void updateRoomCharger(@RequestBody UpdateRoomChargerDTO roomChargerDTO) {
+        roomService.updateRoomCharger(roomChargerDTO);
     }
 
     @PostMapping("/room/queryRoom")
@@ -62,5 +71,12 @@ public class RoomController {
     @ApiOperation("根据id获取房间信息")
     public Room queryRoomByIdApi(@PathVariable("id") String id) {
         return roomService.queryRoomById(id);
+    }
+
+    @PostMapping("/room/insert-and-register-admin")
+    @ApiOperation(value = "新增房间并自动注册负责人信息")
+    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    public Room insertRoomAndRegisterAdminUserApi(@RequestBody RoomAddUpdateDTO room) {
+        return roomService.insertRoomAndRegisterAdminUser(room);
     }
 }
