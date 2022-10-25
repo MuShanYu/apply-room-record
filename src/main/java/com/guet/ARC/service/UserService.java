@@ -7,14 +7,19 @@ import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.domain.Role;
 import com.guet.ARC.domain.User;
+import com.guet.ARC.domain.UserRole;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.mapper.UserDynamicSqlSupport;
 import com.guet.ARC.mapper.UserMapper;
+import com.guet.ARC.mapper.UserRoleDynamicSqlSupport;
+import com.guet.ARC.mapper.UserRoleMapper;
 import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.RSAUtils;
 import com.guet.ARC.util.RedisCacheUtil;
+import org.mybatis.dynamic.sql.insert.render.BatchInsert;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +45,9 @@ public class UserService {
     @Autowired
     private UserRoleService userRoleService;
 
+    @Autowired
+    private UserRoleMapper userRoleMapper;
+
     public Map<String, String> getPublicKey(Long currentTimeMillis) {
         Map<String, String> keyPair = null;
         try {
@@ -58,22 +66,20 @@ public class UserService {
     @Transactional(rollbackFor = RuntimeException.class)
     public Map<String, Object> register(UserRegisterDTO userRegisterDTO) {
         // 检验账号是否已经被注册
-        SelectStatementProvider statement = select(UserMapper.selectList)
+        SelectStatementProvider statement = select(count())
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.stuNum, isEqualTo(userRegisterDTO.getStuNum()))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        SelectStatementProvider telStatement = select(UserMapper.selectList)
+        SelectStatementProvider telStatement = select(count())
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.tel, isEqualTo(userRegisterDTO.getTel()))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        List<User> users = userMapper.selectMany(statement);
-        List<User> usersTel = userMapper.selectMany(telStatement);
-        if (!users.isEmpty()) {
+        if (userMapper.count(statement) > 0) {
             throw new AlertException(1000, "学号" + userRegisterDTO.getStuNum() + "已被注册");
         }
-        if (!usersTel.isEmpty()) {
+        if (userMapper.count(telStatement) > 0) {
             throw new AlertException(1000, "手机号" + userRegisterDTO.getTel() + "已被注册");
         }
         User user = new User();
@@ -82,17 +88,16 @@ public class UserService {
         user.setCreateTime(now);
         user.setUpdateTime(now);
         String userId = CommonUtils.generateUUID();
-        String pwd = SaSecureUtil.md5(System.currentTimeMillis() + "");
         String name = userRegisterDTO.getName();
         String stuNum = userRegisterDTO.getStuNum();
         String institute = userRegisterDTO.getInstitute();
         String tel = userRegisterDTO.getTel();
+        String pwd = SaSecureUtil.md5(tel);
         user.setTel(tel);
         user.setName(name);
         user.setStuNum(stuNum);
         user.setInstitute(institute);
-        String nickname = stuNum + name;
-        user.setNickname(nickname);
+        user.setNickname(name);
         user.setPwd(pwd);
         user.setId(userId);
         userMapper.insertSelective(user);
@@ -109,6 +114,96 @@ public class UserService {
         map.put("user", user);
         map.put("token", token);
         return map;
+    }
+
+    public List<User> batchRegister(List<UserRegisterDTO> userRegisterDTOS, List<String> errorMsg) {
+        SelectStatementProvider statement = null;
+        SelectStatementProvider telStatement = null;
+        long now = System.currentTimeMillis();
+        List<User> errorData = new ArrayList<>();
+        List<User> successData = new ArrayList<>();
+        List<UserRole> userRoles = new ArrayList<>();
+        for (UserRegisterDTO userRegisterDTO : userRegisterDTOS) {
+            // 初始化信息
+            User user = new User();
+            user.setState(CommonConstant.STATE_ACTIVE);
+            user.setCreateTime(now);
+            user.setUpdateTime(now);
+            String userId = CommonUtils.generateUUID();
+            String name = userRegisterDTO.getName();
+            String stuNum = userRegisterDTO.getStuNum();
+            String institute = userRegisterDTO.getInstitute();
+            String tel = userRegisterDTO.getTel();
+            String pwd = SaSecureUtil.md5(tel);
+            user.setTel(tel);
+            user.setName(name);
+            user.setStuNum(stuNum);
+            user.setInstitute(institute);
+            user.setNickname(name);
+            user.setPwd(pwd);
+            user.setId(userId);
+            UserRole userRole = new UserRole();
+            userRole.setId(CommonUtils.generateUUID());
+            userRole.setUserId(userId);
+            userRole.setRoleId(CommonConstant.ROLE_USER_ID);
+            userRole.setState(CommonConstant.STATE_ACTIVE);
+            userRole.setUpdateTime(now);
+            userRole.setCreateTime(now);
+            if (stuNum.equals("") || institute.equals("") || tel.equals("") || name.equals("")) {
+                errorData.add(user);
+                continue;
+            }
+            // 检验账号是否已经被注册
+            statement = select(count())
+                    .from(UserDynamicSqlSupport.user)
+                    .where(UserDynamicSqlSupport.stuNum, isEqualTo(userRegisterDTO.getStuNum()))
+                    .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                    .build().render(RenderingStrategies.MYBATIS3);
+            telStatement = select(count())
+                    .from(UserDynamicSqlSupport.user)
+                    .where(UserDynamicSqlSupport.tel, isEqualTo(userRegisterDTO.getTel()))
+                    .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                    .build().render(RenderingStrategies.MYBATIS3);
+            long userStuNumCount = userMapper.count(statement);
+            long userTelCount = userMapper.count(telStatement);
+            if (userStuNumCount > 0 || userTelCount > 0) {
+                errorData.add(user);
+                if (userStuNumCount > 0) {
+                    errorMsg.add(stuNum + "该学号已经被注册");
+                }
+                if (userTelCount > 0) {
+                    errorMsg.add(tel + "该手机号已经被注册");
+                }
+            } else {
+                successData.add(user);
+                userRoles.add(userRole);
+            }
+        }
+        BatchInsert<User> userBatchInsert = insertBatch(successData)
+                .into(UserDynamicSqlSupport.user)
+                .map(UserDynamicSqlSupport.id).toProperty("id")
+                .map(UserDynamicSqlSupport.nickname).toProperty("nickname")
+                .map(UserDynamicSqlSupport.pwd).toProperty("pwd")
+                .map(UserDynamicSqlSupport.stuNum).toProperty("stuNum")
+                .map(UserDynamicSqlSupport.name).toProperty("name")
+                .map(UserDynamicSqlSupport.tel).toProperty("tel")
+                .map(UserDynamicSqlSupport.institute).toProperty("institute")
+                .map(UserDynamicSqlSupport.state).toProperty("state")
+                .map(UserDynamicSqlSupport.updateTime).toProperty("updateTime")
+                .map(UserDynamicSqlSupport.createTime).toProperty("createTime")
+                .build().render(RenderingStrategies.MYBATIS3);
+        BatchInsert<UserRole> userRoleBatchInsert = insertBatch(userRoles)
+                .into(UserRoleDynamicSqlSupport.userRole)
+                .map(UserRoleDynamicSqlSupport.id).toProperty("id")
+                .map(UserRoleDynamicSqlSupport.userId).toProperty("userId")
+                .map(UserRoleDynamicSqlSupport.roleId).toProperty("roleId")
+                .map(UserRoleDynamicSqlSupport.state).toProperty("state")
+                .map(UserRoleDynamicSqlSupport.updateTime).toProperty("updateTime")
+                .map(UserRoleDynamicSqlSupport.createTime).toProperty("createTime")
+                .build().render(RenderingStrategies.MYBATIS3);
+        userBatchInsert.insertStatements().forEach(userMapper::insert);
+        userRoleBatchInsert.insertStatements().forEach(userRoleMapper::insert);
+        return errorData;
     }
 
     public Map<String, Object> login(UserLoginDTO userLoginDTO) {
@@ -189,7 +284,7 @@ public class UserService {
             } else {
                 // 权限不足，踢出下线，抛出错误
                 StpUtil.logout();
-                throw new AlertException(ResultCode.PERMISSION_REJECTED);
+                throw new AlertException(1000, "您不是管理员，没有权限登录后台管理");
             }
         }
         return map;
@@ -334,5 +429,109 @@ public class UserService {
             throw new AlertException(ResultCode.OPERATE_OBJECT_NOT_SELF);
         }
         userRoleService.changeRole(userId, roleIds);
+    }
+
+    public User userCanBeCurrentRoomCharger(String tel, String name) {
+        SelectStatementProvider statement = select(UserMapper.selectList)
+                .from(UserDynamicSqlSupport.user)
+                .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
+                .build().render(RenderingStrategies.MYBATIS3);
+        Optional<User> userOptional = userMapper.selectOne(statement);
+        User user = null;
+        if (userOptional.isPresent()) {
+            user = userOptional.get();
+            // 是否可用
+            if (user.getState().equals(CommonConstant.STATE_NEGATIVE)) {
+                throw new AlertException(1000, name + "负责人账户处于不可用状态");
+            }
+            // 是否对应
+            if (!user.getName().equals(name)) {
+                throw new AlertException(1000, "负责人" + name + "的手机号" + tel + "错误");
+            }
+            // 判断权限
+            List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
+            List<String> roleNames = new ArrayList<>();
+            roles.forEach(v -> roleNames.add(v.getRoleName()));
+            if (roleNames.contains(CommonConstant.ADMIN_ROLE) || roleNames.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
+                return user;
+            } else {
+                throw new AlertException(1000, name + "不是管理员，无法设置成负责人");
+            }
+        } else {
+            // 相同姓名用户是否已经存在
+            SelectStatementProvider statementProvider = select(UserMapper.selectList)
+                    .from(UserDynamicSqlSupport.user)
+                    .where(UserDynamicSqlSupport.name, isEqualTo(name))
+                    .build().render(RenderingStrategies.MYBATIS3);
+            Optional<User> oldUserOptional = userMapper.selectOne(statementProvider);
+            if (oldUserOptional.isPresent()) {
+                // 已经存在重名用户，所以手机号可能有问题
+                throw new AlertException(1000, name + "已经注册" + ",请检查手机号是否正确");
+            } else {
+                throw new AlertException(1000, name + "负责人的账号" + tel + "未注册");
+            }
+        }
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    public User userBeCurrentRoomCharger(String tel, String name) {
+        SelectStatementProvider statement = select(UserMapper.selectList)
+                .from(UserDynamicSqlSupport.user)
+                .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
+                .build().render(RenderingStrategies.MYBATIS3);
+        Optional<User> userOptional = userMapper.selectOne(statement);
+        User user = null;
+        if (userOptional.isPresent()) {
+            user = userOptional.get();
+            // 是否可用
+            if (user.getState().equals(CommonConstant.STATE_NEGATIVE)) {
+                throw new AlertException(999, name + "负责人账户处于不可用状态");
+            }
+            // 是否对应
+            if (!user.getName().equals(name)) {
+                throw new AlertException(999, "负责人" + name + "的手机号" + tel + "错误");
+            }
+            // 判断权限
+            List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
+            List<String> roleNames = new ArrayList<>();
+            roles.forEach(v -> roleNames.add(v.getRoleName()));
+            if (!roleNames.contains(CommonConstant.ADMIN_ROLE)) {
+                // 修改为管理员
+                userRoleService.setRole(user.getId(), CommonConstant.ROLE_ADMIN_ID);
+            }
+        } else {
+            // 相同姓名用户是否已经存在
+            SelectStatementProvider statementProvider = select(UserMapper.selectList)
+                    .from(UserDynamicSqlSupport.user)
+                    .where(UserDynamicSqlSupport.name, isEqualTo(name))
+                    .build().render(RenderingStrategies.MYBATIS3);
+            Optional<User> oldUserOptional = userMapper.selectOne(statementProvider);
+            if (oldUserOptional.isPresent()) {
+                // 已经存在重名用户，所以手机号可能有问题
+                throw new AlertException(999, name + "已经注册" + ",请检查手机号"+ tel +"是否正确");
+            } else {
+                // 给用户注册并设置为管理员
+                // 初始化信息
+                long now = System.currentTimeMillis();
+                User newUser = new User();
+                newUser.setState(CommonConstant.STATE_ACTIVE);
+                newUser.setCreateTime(now);
+                newUser.setUpdateTime(now);
+                String pwd = SaSecureUtil.md5(tel);
+                newUser.setTel(tel);
+                newUser.setName(name);
+                newUser.setNickname(name);
+                newUser.setStuNum(tel);
+                newUser.setInstitute("计算机与信息安全学院");
+                newUser.setPwd(pwd);
+                newUser.setId(CommonUtils.generateUUID());
+                userMapper.insertSelective(newUser);
+                // 设置权限
+                userRoleService.setRole(newUser.getId(), CommonConstant.ROLE_USER_ID);
+                userRoleService.setRole(newUser.getId(), CommonConstant.ROLE_ADMIN_ID);
+                return newUser;
+            }
+        }
+        return user;
     }
 }

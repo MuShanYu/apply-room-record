@@ -1,13 +1,17 @@
 package com.guet.ARC.service;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.domain.Room;
+import com.guet.ARC.domain.User;
+import com.guet.ARC.domain.dto.room.RoomAddUpdateDTO;
 import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
+import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
 import com.guet.ARC.domain.vo.room.RoomVo;
 import com.guet.ARC.mapper.RoomDynamicSqlSupport;
 import com.guet.ARC.mapper.RoomMapper;
@@ -16,6 +20,7 @@ import com.guet.ARC.mapper.RoomReservationMapper;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
+import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.stereotype.Service;
@@ -35,15 +40,33 @@ public class RoomService {
     @Autowired
     private RoomReservationMapper roomReservationMapper;
 
+    @Autowired
+    private UserService userService;
+
     @Transactional(rollbackFor = RuntimeException.class)
-    public Room addRoom(Room room) {
+    public Room addRoom(RoomAddUpdateDTO roomAddUpdateDTO) {
+        // 判断房间是否已经被添加过了
+        String roomName = roomAddUpdateDTO.getRoomName();
+        SelectStatementProvider statement = select(count())
+                .from(RoomDynamicSqlSupport.room)
+                .where(RoomDynamicSqlSupport.roomName, isEqualTo(roomName))
+                .build().render(RenderingStrategies.MYBATIS3);
+        if (roomMapper.count(statement) > 0) {
+            throw new AlertException(1000, roomAddUpdateDTO.getRoomName() + "房间已经创建");
+        }
+        BeanCopier copier = BeanCopier.create(RoomAddUpdateDTO.class, Room.class, false);
+        Room room = new Room();
+        copier.copy(roomAddUpdateDTO, room, null);
+        // 验证阶段，判断用户的基本信息，是否存在，是否是管理员
+        User user = userService.userCanBeCurrentRoomCharger(roomAddUpdateDTO.getChargePersonTel(), roomAddUpdateDTO.getChargePerson());
         long now = System.currentTimeMillis();
         String id = CommonUtils.generateUUID();
         room.setId(id);
         room.setCreateTime(now);
         room.setUpdateTime(now);
         room.setState(CommonConstant.STATE_ACTIVE);
-        if (roomMapper.insert(room) == 0) {
+        room.setChargePersonId(user.getId());
+        if (roomMapper.insertSelective(room) == 0) {
             throw new AlertException(ResultCode.INSERT_ERROR);
         }
         return room;
@@ -54,19 +77,41 @@ public class RoomService {
         Optional<Room> optionalRoom = roomMapper.selectByPrimaryKey(id);
         if (optionalRoom.isPresent()) {
             Room room = optionalRoom.get();
+            String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+            List<String> roleList = StpUtil.getRoleList();
+            if (!room.getChargePersonId().equals(currentUserId)) {
+                if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
+                    throw new AlertException(1000, "不允许删除非负责的房间或者您没有权限修改");
+                }
+            }
+            // 修改
             if (room.getState().equals(CommonConstant.STATE_ACTIVE)) {
                 room.setState(CommonConstant.STATE_NEGATIVE);
             } else {
                 room.setState(CommonConstant.STATE_ACTIVE);
             }
-            updateRoom(room);
+            UpdateStatementProvider update = update(RoomDynamicSqlSupport.room)
+                    .set(RoomDynamicSqlSupport.state).equalTo(room.getState())
+                    .where(RoomDynamicSqlSupport.id, isEqualTo(room.getId()))
+                    .build().render(RenderingStrategies.MYBATIS3);
+            roomMapper.update(update);
         } else {
             throw new AlertException(ResultCode.DELETE_ERROR);
         }
     }
 
+    // 修改房间基本信息
     @Transactional(rollbackFor = RuntimeException.class)
     public Room updateRoom(Room room) {
+        // 判断是否可以修改
+        String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        if (!currentUserId.equals(room.getChargePersonId())) {
+            List<String> roleList = StpUtil.getRoleList();
+            if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
+                throw new AlertException(1000, "不允许修改非负责房间或者您没有权限修改");
+            }
+        }
+        // 修改
         if (room.getId() == null || room.getId().trim().equals("")) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
         }
@@ -75,6 +120,28 @@ public class RoomService {
             throw new AlertException(ResultCode.UPDATE_ERROR);
         }
         return room;
+    }
+
+    public void updateRoomCharger(UpdateRoomChargerDTO roomChargerDTO) {
+        User user = userService.userCanBeCurrentRoomCharger(roomChargerDTO.getChargePersonTel(), roomChargerDTO.getChargePerson());
+        // 判断是否可以修改
+        String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        if (!currentUserId.equals(roomChargerDTO.getOriginChargePersonId())) {
+            List<String> roleList = StpUtil.getRoleList();
+            if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
+                throw new AlertException(1000, "不允许修改非负责房间或者您没有权限修改");
+            }
+        }
+        // 修改房间信息
+        UpdateStatementProvider updateStatementProvider = update(RoomDynamicSqlSupport.room)
+                .set(RoomDynamicSqlSupport.chargePerson).equalTo(roomChargerDTO.getChargePerson())
+                .set(RoomDynamicSqlSupport.chargePersonId).equalTo(user.getId())
+                .where(RoomDynamicSqlSupport.id, isEqualTo(roomChargerDTO.getId()))
+                .build().render(RenderingStrategies.MYBATIS3);
+        int update = roomMapper.update(updateStatementProvider);
+        if (update == 0) {
+            throw new AlertException(ResultCode.UPDATE_ERROR);
+        }
     }
 
     public Room queryRoomById(String id) {
@@ -136,7 +203,6 @@ public class RoomService {
         if (roomListQueryDTO.getTeachBuilding().equals("")) {
             roomListQueryDTO.setTeachBuilding(null);
         }
-
         SelectStatementProvider statementProvider = select(RoomMapper.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
@@ -177,4 +243,36 @@ public class RoomService {
         return roomReservationMapper.count(statementProvider);
     }
 
+    // 导入房间数据
+    public Room insertRoomAndRegisterAdminUser(RoomAddUpdateDTO roomAddUpdateDTO) {
+        // 判断房间是否已经被添加过了
+        String roomName = roomAddUpdateDTO.getRoomName();
+        SelectStatementProvider statement = select(count())
+                .from(RoomDynamicSqlSupport.room)
+                .where(RoomDynamicSqlSupport.roomName, isEqualTo(roomName))
+                .build().render(RenderingStrategies.MYBATIS3);
+        if (roomMapper.count(statement) > 0) {
+            throw new AlertException(999, roomAddUpdateDTO.getRoomName() + "房间已经创建");
+        }
+        BeanCopier copier = BeanCopier.create(RoomAddUpdateDTO.class, Room.class, false);
+        Room room = new Room();
+        copier.copy(roomAddUpdateDTO, room, null);
+        // 验证阶段，判断用户的基本信息，是否存在，是否是管理员
+        User user;
+        // 因为前端是循环调用，所以这里必须是线程安全的
+        synchronized (this) {
+            user = userService.userBeCurrentRoomCharger(roomAddUpdateDTO.getChargePersonTel(), roomAddUpdateDTO.getChargePerson());
+            long now = System.currentTimeMillis();
+            String id = CommonUtils.generateUUID();
+            room.setId(id);
+            room.setCreateTime(now);
+            room.setUpdateTime(now);
+            room.setState(CommonConstant.STATE_ACTIVE);
+            room.setChargePersonId(user.getId());
+            if (roomMapper.insertSelective(room) == 0) {
+                throw new AlertException(ResultCode.INSERT_ERROR);
+            }
+        }
+        return room;
+    }
 }
