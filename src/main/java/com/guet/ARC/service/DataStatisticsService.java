@@ -1,14 +1,28 @@
 package com.guet.ARC.service;
 
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.support.ExcelTypeEnum;
+import com.alibaba.excel.write.metadata.WriteSheet;
+import com.alibaba.excel.write.metadata.WriteWorkbook;
+import com.alibaba.excel.write.metadata.style.WriteCellStyle;
+import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.guet.ARC.common.constant.CommonConstant;
+import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.domain.Room;
+import com.guet.ARC.domain.dto.data.RoomRecordCountDTO;
+import com.guet.ARC.domain.dto.data.RoomReservationCountDTO;
+import com.guet.ARC.domain.excel.model.ExcelRoomRecordWriteModel;
 import com.guet.ARC.mapper.*;
+import com.guet.ARC.util.ExcelUtil;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -68,25 +82,49 @@ public class DataStatisticsService {
         return map;
     }
 
-    public Map<String, Object> countRoomReservationTimes(String roomId, Long startTime) {
+    // 加上房间类别，如果不为空，检查时间跨度，最大只能为14天
+    public Map<String, Object> countRoomReservationTimes(RoomReservationCountDTO roomReservationCountDTO) {
+        String roomCategory = roomReservationCountDTO.getRoomCategory();
+        String roomId = roomReservationCountDTO.getRoomId();
+        Long startTime = roomReservationCountDTO.getStartTime();
+        Long endTime = roomReservationCountDTO.getEndTime();
+        if (!StringUtils.hasLength(roomCategory)) {
+            roomCategory = null;
+        }
         if (!StringUtils.hasLength(roomId)) {
             roomId = null;
         }
+        long oneDayInMills = 24 * 60 * 60 * 1000;
         // 格式化时间
         SimpleDateFormat sdf = new SimpleDateFormat("MM.dd");
         // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
-        // 获取这一天的午夜12点
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(startTime);
+        // 获取endTime的午夜12点
+        Calendar endTimeCalendar = Calendar.getInstance();
+        endTimeCalendar.setTimeInMillis(endTime);
         // 设置时间
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 59);
-        calendar.set(Calendar.SECOND, 59);
-        // 获取这一天午夜12点的毫秒值
-        long webAppDateEnd = calendar.getTimeInMillis();
-        long oneDayInMills = 24 * 60 * 60 * 1000;
-        // 上一天
-        long webAppDateStart = webAppDateEnd - oneDayInMills;
+        endTimeCalendar.set(Calendar.HOUR_OF_DAY, 23);
+        endTimeCalendar.set(Calendar.MINUTE, 59);
+        endTimeCalendar.set(Calendar.SECOND, 59);
+        // 获取这endTime午夜12点的毫秒值
+        long webAppDateEnd = endTimeCalendar.getTimeInMillis();
+        // 获取startTime的凌晨00：00
+        Calendar startTimeCalendar = Calendar.getInstance();
+        startTimeCalendar.setTimeInMillis(startTime);
+        startTimeCalendar.set(Calendar.HOUR_OF_DAY, 0);
+        startTimeCalendar.set(Calendar.MINUTE, 0);
+        startTimeCalendar.set(Calendar.SECOND, 0);
+        // startTime当前时间的00：00
+        long webAppDateStart = startTimeCalendar.getTimeInMillis();
+        // 检查时间跨度是否超过14天
+        if (webAppDateEnd - webAppDateStart <= 0) {
+            throw new AlertException(1000, "结束时间不能小于等于开始时间");
+        }
+        long days = (webAppDateEnd - webAppDateStart) / 1000 / 60 / 60 / 24;
+        if (days > 14) {
+            throw new AlertException(1000, "时间跨度不允许超过14天");
+        }
+        // 起始日期一天后
+        long oneDayAfter = webAppDateStart + oneDayInMills;
         Map<String, Object> map = new HashMap<>();
         // 求和
         long reviewedTimesCount = 0; // 0
@@ -100,16 +138,20 @@ public class DataStatisticsService {
         List<String> dates = new ArrayList<>();
         SelectStatementProvider countStatement;
         Short[] states = {0, 2, 3, 4};
-        for (int i = 0; i < 7; i++) {
+        // 循环获取个天数的具体数量
+        // 按照这个算法，10.22到10.29是其他，应该包含22号和29号的数据，包含22号统计七天只能到28号，所以要加一统计29号的数据
+        for (int i = 0; i <= days; i++) {
             // 分别获取四个数量
             for (Short state : states) {
                 // 上一天的午夜12点，到当前的午夜12点
                 countStatement = select(count())
                         .from(RoomReservationDynamicSqlSupport.roomReservation)
+                        .leftJoin(RoomDynamicSqlSupport.room)
+                        .on(RoomDynamicSqlSupport.id, equalTo(RoomReservationDynamicSqlSupport.roomId))
                         .where(RoomReservationDynamicSqlSupport.state, isEqualTo(state))
                         .and(RoomReservationDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
-                        .and(RoomReservationDynamicSqlSupport.createTime, isBetween(webAppDateStart)
-                                .and(webAppDateEnd))
+                        .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
+                        .and(RoomReservationDynamicSqlSupport.createTime, isBetween(webAppDateStart).and(oneDayAfter))
                         .build().render(RenderingStrategies.MYBATIS3);
                 if (state.equals(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)) {
                     // 通过审批的次数
@@ -134,18 +176,12 @@ public class DataStatisticsService {
                 }
             }
             // 存储查询的是哪一天的数据
-            dates.add(sdf.format(webAppDateEnd));
+            dates.add(sdf.format(webAppDateStart));
             // 更新当前flag时间
-            webAppDateEnd = webAppDateStart;
-            // 一天前
-            webAppDateStart -= oneDayInMills;
+            webAppDateStart = oneDayAfter;
+            // 起始日期一天后
+            oneDayAfter += oneDayInMills;
         }
-        // 从后往前进行加入，反转，顺序正确
-        Collections.reverse(reviewTimes);
-        Collections.reverse(reviewedTimes);
-        Collections.reverse(canceledTimes);
-        Collections.reverse(rejectTimes);
-        Collections.reverse(dates);
         map.put("reviewedTimes", reviewedTimes);
         map.put("canceledTimes", canceledTimes);
         map.put("rejectTimes", rejectTimes);
@@ -175,47 +211,80 @@ public class DataStatisticsService {
         return roomMapper.selectMany(statementProvider);
     }
 
-    public Map<String, Object> countAccessRecord(String roomId, Long startTime) {
+
+    // 加上房间类别，如果不为空
+    public Map<String, Object> countAccessRecord(RoomRecordCountDTO roomRecordCountDTO) {
+        String roomCategory = roomRecordCountDTO.getRoomCategory();
+        String roomId = roomRecordCountDTO.getRoomId();
+        Long startTime = roomRecordCountDTO.getStartTime();
+        Long endTime = roomRecordCountDTO.getEndTime();
+        if (!StringUtils.hasLength(roomCategory)) {
+            roomCategory = null;
+        }
         if (!StringUtils.hasLength(roomId)) {
             roomId = null;
         }
-        // 时间格式化
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM.dd");
-        // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
-        // 获取这一天的午夜12点
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(startTime);
-        // 设置时间
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 59);
-        calendar.set(Calendar.SECOND, 59);
-        // 获取这一天午夜12点的毫秒值
-        long webAppDateEnd = calendar.getTimeInMillis();
         long oneDayInMills = 24 * 60 * 60 * 1000;
-        // 上一天
-        long webAppDateStart = webAppDateEnd - oneDayInMills;
+        // 时间格式化
+        SimpleDateFormat sdf = new SimpleDateFormat("MM.dd");
+        // 获取endTime的午夜12点
+        Calendar endTimeCalendar = Calendar.getInstance();
+        endTimeCalendar.setTimeInMillis(endTime);
+        // 设置时间
+        endTimeCalendar.set(Calendar.HOUR_OF_DAY, 23);
+        endTimeCalendar.set(Calendar.MINUTE, 59);
+        endTimeCalendar.set(Calendar.SECOND, 59);
+        // 获取这endTime午夜12点的毫秒值
+        long webAppDateEnd = endTimeCalendar.getTimeInMillis();
+        // 获取startTime的凌晨00：00
+        Calendar startTimeCalendar = Calendar.getInstance();
+        startTimeCalendar.setTimeInMillis(startTime);
+        startTimeCalendar.set(Calendar.HOUR_OF_DAY, 0);
+        startTimeCalendar.set(Calendar.MINUTE, 0);
+        startTimeCalendar.set(Calendar.SECOND, 0);
+        // startTime
+        long webAppDateStart = startTimeCalendar.getTimeInMillis();
+        // 检查时间跨度是否超过14天
+        if (webAppDateEnd - webAppDateStart <= 0) {
+            throw new AlertException(1000, "结束时间不能小于等于开始时间");
+        }
+        long days = (webAppDateEnd - webAppDateStart) / 1000 / 60 / 60 / 24;
+        if (days > 14) {
+            throw new AlertException(1000, "时间跨度不允许超过14天");
+        }
+        // 起始日期一天后
+        long oneDayAfter = webAppDateStart + oneDayInMills;
         // 结果存储
         Map<String, Object> map = new HashMap<>();
         List<Long> entryTimes = new ArrayList<>();
         List<Long> outTimes = new ArrayList<>();
         List<Long> totalTimes = new ArrayList<>();
         List<String> dates = new ArrayList<>();
-        SelectStatementProvider countEntryTimesStatement = null;
-        SelectStatementProvider countOutTimesStatement = null;
-        for (int i = 0; i < 7; i++) {
+        SelectStatementProvider countEntryTimesStatement;
+        SelectStatementProvider countOutTimesStatement;
+        // 按照这个算法，10.22到10.29是其他，应该包含22号和29号的数据，包含22号统计七天只能到28号，所以要加一统计29号的数据
+        for (int i = 0; i <= days; i++) {
             // 统计进入的次数,进入时间不为空
             countEntryTimesStatement = select(count())
                     .from(AccessRecordDynamicSqlSupport.accessRecord)
-                    .where(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
-                            .and(webAppDateEnd))
+                    .leftJoin(RoomDynamicSqlSupport.room)
+                    .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
+                    .where(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
+                            .and(oneDayAfter))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
+                    .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
+                    .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
             // 统计出去的次数，出去的时间不为空
             countOutTimesStatement = select(count())
                     .from(AccessRecordDynamicSqlSupport.accessRecord)
+                    .leftJoin(RoomDynamicSqlSupport.room)
+                    .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
                     .where(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
-                            .and(webAppDateEnd))
+                            .and(oneDayAfter))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
+                    .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
+                    .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
                     .build().render(RenderingStrategies.MYBATIS3);
             // 处理数据
@@ -224,17 +293,13 @@ public class DataStatisticsService {
             totalTimes.add(entry + out);
             entryTimes.add(entry);
             outTimes.add(out);
-            // 记录数据是当前第几天的数据
-            dates.add(simpleDateFormat.format(webAppDateEnd));
+            // 存储查询的是哪一天的数据
+            dates.add(sdf.format(webAppDateStart));
             // 更新当前flag时间
-            webAppDateEnd = webAppDateStart;
-            // 一天前
-            webAppDateStart -= oneDayInMills;
+            webAppDateStart = oneDayAfter;
+            // 起始日期一天后
+            oneDayAfter += oneDayInMills;
         }
-        Collections.reverse(entryTimes);
-        Collections.reverse(outTimes);
-        Collections.reverse(totalTimes);
-        Collections.reverse(dates);
         map.put("entryTimes", entryTimes);
         map.put("outTimes", outTimes);
         map.put("totalTimes", totalTimes);
@@ -265,5 +330,138 @@ public class DataStatisticsService {
         Map<String, Map<String, Object>> res = new HashMap<>();
         res.put("countData", map);
         return res;
+    }
+
+    public void exportCountRoomRecordCountData(HttpServletResponse response, RoomRecordCountDTO roomRecordCountDTO) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日");
+            String startDateStr = sdf.format(new Date(roomRecordCountDTO.getStartTime()));
+            String endDateStr = sdf.format(new Date(roomRecordCountDTO.getEndTime()));
+            String fileName = URLEncoder.encode(startDateStr + "_" + endDateStr + "_房间进出统计记录", "utf-8");
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("utf-8");
+            response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
+            response.addHeader("Pragma", "No-cache");
+            response.addHeader("Cache-Control", "No-cache");
+            response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
+            response.setCharacterEncoding("utf8");
+            WriteCellStyle writeCellStyle = ExcelUtil.buildHeadCellStyle();
+            HorizontalCellStyleStrategy horizontalCellStyleStrategy = new HorizontalCellStyleStrategy(writeCellStyle,
+                    new ArrayList<>());
+            WriteWorkbook writeWorkbook = new WriteWorkbook();
+            writeWorkbook.setAutoCloseStream(false);
+            writeWorkbook.setExcelType(ExcelTypeEnum.XLSX);
+            writeWorkbook.setOutputStream(response.getOutputStream());
+            writeWorkbook.setAutoTrim(true);
+            writeWorkbook.setUseDefaultStyle(true);
+            writeWorkbook.setClazz(ExcelRoomRecordWriteModel.class);
+            writeWorkbook.setCustomWriteHandlerList(Collections.singletonList(horizontalCellStyleStrategy));
+            WriteSheet writeSheet = new WriteSheet();
+            writeSheet.setSheetName("统计数据");
+            writeSheet.setSheetNo(0);
+            ExcelWriter excelWriter = new ExcelWriter(writeWorkbook);
+            excelWriter.write(countRoomRecordCountData(roomRecordCountDTO), writeSheet);
+            excelWriter.finish();
+        } catch (IOException e) {
+            throw new AlertException(1000, "文件导出错误");
+        }
+    }
+
+    // 按照指定时间段导出房间出入信息
+    private List<ExcelRoomRecordWriteModel> countRoomRecordCountData(RoomRecordCountDTO roomRecordCountDTO) {
+        String roomCategory = roomRecordCountDTO.getRoomCategory();
+        String roomId = roomRecordCountDTO.getRoomId();
+        Long startTime = roomRecordCountDTO.getStartTime();
+        Long endTime = roomRecordCountDTO.getEndTime();
+        if (!StringUtils.hasLength(roomCategory)) {
+            roomCategory = null;
+        }
+        if (!StringUtils.hasLength(roomId)) {
+            roomId = null;
+        }
+        // 获取startTime的凌晨00：00
+        Calendar startTimeCalendar = Calendar.getInstance();
+        startTimeCalendar.setTimeInMillis(startTime);
+        startTimeCalendar.set(Calendar.HOUR_OF_DAY, 0);
+        startTimeCalendar.set(Calendar.MINUTE, 0);
+        startTimeCalendar.set(Calendar.SECOND, 0);
+        // startTime的00：00
+        long webAppDateStart = startTimeCalendar.getTimeInMillis();
+        // 获取endTime的午夜12点
+        Calendar endTimeCalendar = Calendar.getInstance();
+        endTimeCalendar.setTimeInMillis(endTime);
+        // 设置时间
+        endTimeCalendar.set(Calendar.HOUR_OF_DAY, 23);
+        endTimeCalendar.set(Calendar.MINUTE, 59);
+        endTimeCalendar.set(Calendar.SECOND, 59);
+        // 获取这endTime午夜12点的毫秒值
+        long webAppDateEnd = endTimeCalendar.getTimeInMillis();
+        // 限制导出的时间跨度为一个月，防止出现内存溢出
+        if (webAppDateEnd - webAppDateStart <= 0) {
+            throw new AlertException(1000, "结束时间不能小于等于开始时间");
+        }
+        long days = (webAppDateEnd - webAppDateStart) / 1000 / 60 / 60 / 24;
+        if (days > 30) {
+            throw new AlertException(1000, "数据导出时间跨度不允许超过30天");
+        }
+        // 先查出相应的房间列表，是指在这段时间内有记录的房间，不是所有房间
+        SelectStatementProvider statement = select(RoomMapper.selectRoomRecordExcelModelColumns)
+                .from(RoomDynamicSqlSupport.room)
+                .leftJoin(AccessRecordDynamicSqlSupport.accessRecord)
+                .on(AccessRecordDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
+                .where(RoomDynamicSqlSupport.id, isEqualToWhenPresent(roomId))
+                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
+                .and(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
+                        .and(webAppDateEnd))
+                .and(RoomDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
+                .build().render(RenderingStrategies.MYBATIS3);
+        List<ExcelRoomRecordWriteModel> roomRecordWriteModels = roomMapper.selectRoomRecordExcelModels(statement);
+        SelectStatementProvider countEntryTimesStatement;
+        SelectStatementProvider countOutTimesStatement;
+        SelectStatementProvider countPeopleInAndOut;
+        // 查询每个房间的状态信息
+        for (ExcelRoomRecordWriteModel roomRecordWriteModel : roomRecordWriteModels) {
+            String roomExcelModelId = roomRecordWriteModel.getId();
+            // 查询该房间的进入的人数
+            countPeopleInAndOut = select(count())
+                    .from(select(AccessRecordDynamicSqlSupport.userId)
+                            .from(AccessRecordDynamicSqlSupport.accessRecord)
+                            .where(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                            .and(AccessRecordDynamicSqlSupport.roomId, isEqualTo(roomExcelModelId))
+                            .and(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
+                                    .and(webAppDateEnd))
+                            .groupBy(AccessRecordDynamicSqlSupport.userId), "a")
+                    .build().render(RenderingStrategies.MYBATIS3);
+            // 统计进入的次数
+            countEntryTimesStatement = select(count())
+                    .from(AccessRecordDynamicSqlSupport.accessRecord)
+                    .leftJoin(RoomDynamicSqlSupport.room)
+                    .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
+                    .where(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
+                            .and(webAppDateEnd))
+                    .and(AccessRecordDynamicSqlSupport.roomId, isEqualTo(roomExcelModelId))
+                    .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                    .build().render(RenderingStrategies.MYBATIS3);
+            // 统计出去的次数
+            countOutTimesStatement = select(count())
+                    .from(AccessRecordDynamicSqlSupport.accessRecord)
+                    .leftJoin(RoomDynamicSqlSupport.room)
+                    .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
+                    .where(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
+                            .and(webAppDateEnd))
+                    .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomExcelModelId))
+                    .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                    .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
+                    .build().render(RenderingStrategies.MYBATIS3);
+            // 设置当前对象
+            long peopleInAndOut = accessRecordMapper.count(countPeopleInAndOut);
+            long entry = accessRecordMapper.count(countEntryTimesStatement);
+            long out = accessRecordMapper.count(countOutTimesStatement);
+            roomRecordWriteModel.setTotalNumPeopleInAndOut(peopleInAndOut);
+            roomRecordWriteModel.setEntryTimes(entry);
+            roomRecordWriteModel.setOutTimes(out);
+            roomRecordWriteModel.setTotalPeopleTimes(entry + out);
+        }
+        return roomRecordWriteModels;
     }
 }

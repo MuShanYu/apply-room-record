@@ -1,21 +1,8 @@
 package com.guet.ARC.mapper;
 
-import static com.guet.ARC.mapper.RoomDynamicSqlSupport.*;
-import static org.mybatis.dynamic.sql.SqlBuilder.*;
-
 import com.guet.ARC.domain.Room;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import javax.annotation.Generated;
-import org.apache.ibatis.annotations.DeleteProvider;
-import org.apache.ibatis.annotations.InsertProvider;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.ResultMap;
-import org.apache.ibatis.annotations.Results;
-import org.apache.ibatis.annotations.SelectProvider;
-import org.apache.ibatis.annotations.UpdateProvider;
+import com.guet.ARC.domain.excel.model.ExcelRoomRecordWriteModel;
+import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.type.JdbcType;
 import org.mybatis.dynamic.sql.BasicColumn;
 import org.mybatis.dynamic.sql.delete.DeleteDSLCompleter;
@@ -32,10 +19,20 @@ import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
 import org.mybatis.dynamic.sql.util.SqlProviderAdapter;
 import org.mybatis.dynamic.sql.util.mybatis3.MyBatis3Utils;
 
+import javax.annotation.Generated;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import static com.guet.ARC.mapper.RoomDynamicSqlSupport.*;
+import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
+
 @Mapper
 public interface RoomMapper {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-10-24T13:45:23.52+08:00", comments="Source Table: tbl_room")
     BasicColumn[] selectList = BasicColumn.columnList(id, school, teachBuilding, category, roomName, equipmentInfo, capacity, state, updateTime, createTime, chargePerson, chargePersonId);
+
+    BasicColumn[] selectRoomRecordExcelModelColumns = BasicColumn.columnList(id, roomName, category, chargePerson);
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-10-24T13:45:23.512+08:00", comments="Source Table: tbl_room")
     @SelectProvider(type=SqlProviderAdapter.class, method="select")
@@ -75,6 +72,15 @@ public interface RoomMapper {
         @Result(column="charge_person_id", property="chargePersonId", jdbcType=JdbcType.VARCHAR)
     })
     List<Room> selectMany(SelectStatementProvider selectStatement);
+
+    @SelectProvider(type=SqlProviderAdapter.class, method="select")
+    @Results(id="RoomResultExcelModel", value = {
+            @Result(column="id", property="id", jdbcType=JdbcType.VARCHAR, id=true),
+            @Result(column="room_name", property="roomName", jdbcType=JdbcType.VARCHAR),
+            @Result(column="category", property="category", jdbcType=JdbcType.VARCHAR),
+            @Result(column="charge_person", property="chargePerson", jdbcType=JdbcType.VARCHAR)
+    })
+    List<ExcelRoomRecordWriteModel> selectRoomRecordExcelModels(SelectStatementProvider selectStatement);
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-10-24T13:45:23.516+08:00", comments="Source Table: tbl_room")
     @UpdateProvider(type=SqlProviderAdapter.class, method="update")

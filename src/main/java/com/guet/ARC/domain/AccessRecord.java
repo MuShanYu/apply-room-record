@@ -2,7 +2,7 @@ package com.guet.ARC.domain;
 
 import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
-import com.guet.ARC.domain.converter.DateConverter;
+import com.guet.ARC.domain.excel.converter.DateConverter;
 
 import javax.annotation.Generated;
 

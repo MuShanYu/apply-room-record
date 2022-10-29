@@ -33,11 +33,11 @@ public class RoomController {
         return roomService.addRoom(room);
     }
 
-    @GetMapping("/room/delete")
-    @ApiOperation(value = "删除房间")
+    @GetMapping("/room/disable")
+    @ApiOperation(value = "禁用房间")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public void deleteRoom(@RequestParam("id") String id) {
-        roomService.deleteRoom(id);
+        roomService.disableRoom(id);
     }
 
     @PostMapping("/room/update")

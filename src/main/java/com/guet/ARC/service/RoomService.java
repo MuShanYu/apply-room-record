@@ -73,7 +73,7 @@ public class RoomService {
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
-    public void deleteRoom(String id) {
+    public void disableRoom(String id) {
         Optional<Room> optionalRoom = roomMapper.selectByPrimaryKey(id);
         if (optionalRoom.isPresent()) {
             Room room = optionalRoom.get();
@@ -81,7 +81,7 @@ public class RoomService {
             List<String> roleList = StpUtil.getRoleList();
             if (!room.getChargePersonId().equals(currentUserId)) {
                 if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                    throw new AlertException(1000, "不允许删除非负责的房间或者您没有权限修改");
+                    throw new AlertException(1000, "不允许禁用非负责的房间或者您没有权限修改");
                 }
             }
             // 修改

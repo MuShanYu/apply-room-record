@@ -64,8 +64,8 @@ public class AccessRecordController {
     @ApiOperation(value = "导出根据房间ID查询用户记录列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public void exportUserAccessRecordByRoomIdApi(HttpServletResponse response,
-                                                                             @Valid @RequestBody
-                                                                             UserAccessQueryDTO userAccessQueryDTO) {
+                                                  @Valid @RequestBody
+                                                  UserAccessQueryDTO userAccessQueryDTO) {
         accessRecordService.exportUserAccessRecordByRoomId(userAccessQueryDTO, response);
     }
 
