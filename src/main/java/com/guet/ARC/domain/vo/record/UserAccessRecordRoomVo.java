@@ -13,15 +13,15 @@ import lombok.ToString;
 @ColumnWidth(30)
 public class UserAccessRecordRoomVo extends AccessRecord {
 
-    @ExcelProperty(value = "房间名", index = 2)
+    @ExcelProperty(value = "房间名", order = 2)
     private String roomName;
 
-    @ExcelProperty(value = "楼栋", index = 1)
+    @ExcelProperty(value = "楼栋", order = 1)
     private String teachBuilding;
 
-    @ExcelProperty(value = "校区", index = 0)
+    @ExcelProperty(value = "校区", order = 0)
     private String school;
 
-    @ExcelProperty(value = "姓名", index = 3)
+    @ExcelProperty(value = "姓名", order = 3)
     private String nickname;
 }

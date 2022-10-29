@@ -5,14 +5,15 @@ import cn.dev33.satoken.annotation.SaMode;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.domain.Room;
+import com.guet.ARC.domain.dto.data.RoomRecordCountDTO;
+import com.guet.ARC.domain.dto.data.RoomReservationCountDTO;
 import com.guet.ARC.service.DataStatisticsService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
@@ -44,20 +45,18 @@ public class DataStatisticsController {
         return dataStatisticsService.searchRoomByRoomName(roomName);
     }
 
-    @GetMapping("/admin/get/roomReservationTimes/count")
-    @ApiOperation(value = "获取会议室预约情况")
+    @PostMapping("/admin/post/roomReservationTimes/count")
+    @ApiOperation(value = "获取房间预约情况")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public Map<String, Object> countRoomReservationTimes(@RequestParam("roomId") String roomId,
-                                                         @RequestParam("startTime") Long startTime) {
-        return dataStatisticsService.countRoomReservationTimes(roomId, startTime);
+    public Map<String, Object> countRoomReservationTimes(@RequestBody RoomReservationCountDTO roomReservationCountDTO) {
+        return dataStatisticsService.countRoomReservationTimes(roomReservationCountDTO);
     }
 
-    @GetMapping("/admin/get/access/record/count")
+    @PostMapping("/admin/post/access/record/count")
     @ApiOperation(value = "获取人员流动统计情况")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public Map<String, Object> countAccessRecordApi(@RequestParam("roomId") String roomId,
-                                                    @RequestParam("startTime") Long startTime) {
-        return dataStatisticsService.countAccessRecord(roomId, startTime);
+    public Map<String, Object> countAccessRecordApi(@RequestBody RoomRecordCountDTO roomRecordCountDTO) {
+        return dataStatisticsService.countAccessRecord(roomRecordCountDTO);
     }
 
     @GetMapping("/admin/get/sys/count")
@@ -65,5 +64,13 @@ public class DataStatisticsController {
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public Map<String, Map<String, Object>> getSystemCount() {
         return dataStatisticsService.getSystemCount();
+    }
+
+    @PostMapping("/admin/query/export/access/record")
+    @ApiOperation(value = "按照指定时间段指定条件导出房间出入信息")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public void exportUserAccessRecordByRoomIdApi(HttpServletResponse response,
+                                                  @RequestBody RoomRecordCountDTO roomRecordCountDTO) {
+        dataStatisticsService.exportCountRoomRecordCountData(response, roomRecordCountDTO);
     }
 }
