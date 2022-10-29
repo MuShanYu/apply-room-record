@@ -15,6 +15,9 @@ import javax.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 线上环境请注释printStackTrace
+ */
 @RestControllerAdvice
 public class ExceptionHandlerConfig {
 
@@ -25,7 +28,7 @@ public class ExceptionHandlerConfig {
 
     @ExceptionHandler(RuntimeException.class)
     public Result<String> runtimeExceptionHandler(RuntimeException runtimeException) {
-        runtimeException.printStackTrace();
+//        runtimeException.printStackTrace();
         Result<String> result = new Result<>();
         result.setSuccess(false);
         result.setCode(500);
@@ -36,7 +39,7 @@ public class ExceptionHandlerConfig {
 
     @ExceptionHandler(ServletException.class)
     public Result<String> servletExceptionHandler(ServletException servletException) {
-        servletException.printStackTrace();
+//        servletException.printStackTrace();
         Result<String> result = new Result<>();
         result.setSuccess(false);
         result.setCode(500);
