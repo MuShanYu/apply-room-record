@@ -1,6 +1,7 @@
 package com.guet.ARC.domain.dto.room;
 
 import lombok.Data;
+import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotEmpty;
 
@@ -10,6 +11,7 @@ import javax.validation.constraints.NotEmpty;
  */
 
 @Data
+@Validated
 public class ApplyRoomDTO {
     @NotEmpty
     private String roomId;

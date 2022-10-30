@@ -3,12 +3,14 @@ package com.guet.ARC.domain.dto.room;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Range;
+import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 
 @Data
 @ToString
+@Validated
 public class UserRoomReservationDetailQueryDTO {
     @Min(1)
     private Integer page;

@@ -3,11 +3,13 @@ package com.guet.ARC.domain.dto.user;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotEmpty;
 
 @Data
 @ToString
+@Validated
 public class UserUpdateDTO {
     @NotEmpty
     private String id;
