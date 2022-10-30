@@ -19,7 +19,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 
@@ -40,7 +39,7 @@ public class AccessRecordController {
 
     @PostMapping("/record/add/in/or/out")
     @ApiOperation(value = "添加进出记录")
-    public void addAccessRecordApi(@Valid @RequestBody AddRecordDTO addRecordDTO) {
+    public void addAccessRecordApi(@Validated @RequestBody AddRecordDTO addRecordDTO) {
         accessRecordService.addAccessRecord(addRecordDTO.getRoomId(), addRecordDTO.getType());
     }
 
@@ -55,7 +54,7 @@ public class AccessRecordController {
     @PostMapping("/record/query/list/byRoomId")
     @ApiOperation(value = "根据房间ID查询用户记录列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public PageInfo<UserAccessRecordRoomVo> queryUserAccessRecordByRoomIdApi(@Valid @RequestBody
+    public PageInfo<UserAccessRecordRoomVo> queryUserAccessRecordByRoomIdApi(@Validated @RequestBody
                                                                              UserAccessQueryDTO userAccessQueryDTO) {
         return accessRecordService.queryUserAccessRecordByRoomId(userAccessQueryDTO);
     }
@@ -64,7 +63,7 @@ public class AccessRecordController {
     @ApiOperation(value = "导出根据房间ID查询用户记录列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public void exportUserAccessRecordByRoomIdApi(HttpServletResponse response,
-                                                  @Valid @RequestBody
+                                                  @Validated @RequestBody
                                                   UserAccessQueryDTO userAccessQueryDTO) {
         accessRecordService.exportUserAccessRecordByRoomId(userAccessQueryDTO, response);
     }

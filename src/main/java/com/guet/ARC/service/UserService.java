@@ -22,6 +22,7 @@ import com.guet.ARC.util.RedisCacheUtil;
 import org.mybatis.dynamic.sql.insert.render.BatchInsert;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
+import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.stereotype.Service;
@@ -446,7 +447,7 @@ public class UserService {
             }
             // 是否对应
             if (!user.getName().equals(name)) {
-                throw new AlertException(1000, "负责人" + name + "的手机号" + tel + "错误");
+                throw new AlertException(999, "负责人" + name + "的手机号:" + tel + ",与注册的手机号:" + user.getTel() + "不符");
             }
             // 判断权限
             List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
@@ -466,7 +467,7 @@ public class UserService {
             Optional<User> oldUserOptional = userMapper.selectOne(statementProvider);
             if (oldUserOptional.isPresent()) {
                 // 已经存在重名用户，所以手机号可能有问题
-                throw new AlertException(1000, name + "已经注册" + ",请检查手机号是否正确");
+                throw new AlertException(1000, name + "已经注册" + ",请检查ta的手机号"+ tel +"是否正确");
             } else {
                 throw new AlertException(1000, name + "负责人的账号" + tel + "未注册");
             }
@@ -489,7 +490,7 @@ public class UserService {
             }
             // 是否对应
             if (!user.getName().equals(name)) {
-                throw new AlertException(999, "负责人" + name + "的手机号" + tel + "错误");
+                throw new AlertException(999, "负责人" + name + "的手机号:" + tel + ",与注册的手机号:" + user.getTel() + "不符");
             }
             // 判断权限
             List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
@@ -508,7 +509,8 @@ public class UserService {
             Optional<User> oldUserOptional = userMapper.selectOne(statementProvider);
             if (oldUserOptional.isPresent()) {
                 // 已经存在重名用户，所以手机号可能有问题
-                throw new AlertException(999, name + "已经注册" + ",请检查手机号"+ tel +"是否正确");
+                User oldUser = oldUserOptional.get();
+                throw new AlertException(999, name + "已经注册手机号:" + oldUser.getTel() + ",请检查手机号:"+ tel +"是否正确");
             } else {
                 // 给用户注册并设置为管理员
                 // 初始化信息
@@ -533,5 +535,38 @@ public class UserService {
             }
         }
         return user;
+    }
+
+    public void updateUserTel(UserUpdateTelDTO userUpdateTelDTO) {
+        UpdateStatementProvider update = update(UserDynamicSqlSupport.user)
+                .set(UserDynamicSqlSupport.tel).equalTo(userUpdateTelDTO.getTel())
+                .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
+                .where(UserDynamicSqlSupport.id, isEqualTo(userUpdateTelDTO.getUserId()))
+                .build().render(RenderingStrategies.MYBATIS3);
+        if (userMapper.update(update) == 0) {
+            throw new AlertException(ResultCode.UPDATE_ERROR);
+        }
+    }
+
+    public void updateUserName(UserUpdateNameDTO userUpdateNameDTO) {
+        UpdateStatementProvider update = update(UserDynamicSqlSupport.user)
+                .set(UserDynamicSqlSupport.name).equalTo(userUpdateNameDTO.getName())
+                .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
+                .where(UserDynamicSqlSupport.id, isEqualTo(userUpdateNameDTO.getUserId()))
+                .build().render(RenderingStrategies.MYBATIS3);
+        if (userMapper.update(update) == 0) {
+            throw new AlertException(ResultCode.UPDATE_ERROR);
+        }
+    }
+
+    public void updateUserNickname(UserUpdateNicknameDTO userUpdateNicknameDTO) {
+        UpdateStatementProvider update = update(UserDynamicSqlSupport.user)
+                .set(UserDynamicSqlSupport.nickname).equalTo(userUpdateNicknameDTO.getNickname())
+                .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
+                .where(UserDynamicSqlSupport.id, isEqualTo(userUpdateNicknameDTO.getUserId()))
+                .build().render(RenderingStrategies.MYBATIS3);
+        if (userMapper.update(update) == 0) {
+            throw new AlertException(ResultCode.UPDATE_ERROR);
+        }
     }
 }

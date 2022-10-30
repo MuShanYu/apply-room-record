@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +61,7 @@ public class UserController {
 
     @PostMapping("/user/update/userInfo")
     @ApiOperation(value = "修改用户信息")
-    public void updateUserInfoApi(@Valid @RequestBody UserUpdateDTO userUpdateDTO) {
+    public void updateUserInfoApi(@Validated @RequestBody UserUpdateDTO userUpdateDTO) {
         userService.updatePersonalInfo(userUpdateDTO);
     }
 
@@ -87,7 +86,7 @@ public class UserController {
     @PostMapping("/admin/query/userList")
     @ApiOperation(value = "查询用户列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public PageInfo<UserRoleVo> queryUserListApi(@Valid @RequestBody UserListQueryDTO userListQueryDTO) {
+    public PageInfo<UserRoleVo> queryUserListApi(@Validated @RequestBody UserListQueryDTO userListQueryDTO) {
         return userService.queryUserList(userListQueryDTO);
     }
 
@@ -109,18 +108,23 @@ public class UserController {
         return res;
     }
 
-    /*@PostMapping("/admin/batchInsert/users")
-    @ApiOperation(value = "批量导入用户信息")
+    @PostMapping("/admin/update/user/tel")
+    @ApiOperation(value = "更改用户的手机号")
     @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
-    public Map<String, List<User>> batchInsertUsersApi(MultipartFile file) throws IOException {
-        if (file.isEmpty()) {
-            throw new AlertException(1000, "请上传用户信息excel文件");
-        }
-        Map<String, List<User>> res = new HashMap<>();
-        List<User> errorData = new ArrayList<>();
-        EasyExcel.read(file.getInputStream(), UserRegisterDTO.class, new UserExcelDataListener(userService, errorData))
-                .sheet().doRead();
-        res.put("errorData",errorData);
-        return res;
-    }*/
+    public void updateUserTelApi(@Validated @RequestBody UserUpdateTelDTO userUpdateTelDTO) {
+        userService.updateUserTel(userUpdateTelDTO);
+    }
+
+    @PostMapping("/admin/update/user/name")
+    @ApiOperation(value = "更改用户的名字")
+    @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
+    public void updateUserTelApi(@Validated @RequestBody UserUpdateNameDTO userUpdateNameDTO) {
+        userService.updateUserName(userUpdateNameDTO);
+    }
+
+    @PostMapping("/user/update/nickname")
+    @ApiOperation(value = "用户更改昵称")
+    public void updateUserTelApi(@Validated @RequestBody UserUpdateNicknameDTO userUpdateNicknameDTO) {
+        userService.updateUserNickname(userUpdateNicknameDTO);
+    }
 }
