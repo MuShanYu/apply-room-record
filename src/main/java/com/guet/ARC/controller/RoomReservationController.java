@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -41,34 +42,34 @@ public class RoomReservationController {
 
     @PostMapping("/roomReservation/apply")
     @ApiOperation(value = "预约房间")
-    public RoomReservation applyRoom(@Validated @RequestBody ApplyRoomDTO applyRoomDTO) {
+    public RoomReservation applyRoom(@Valid @RequestBody ApplyRoomDTO applyRoomDTO) {
         return roomReservationService.applyRoom(applyRoomDTO);
     }
 
     @PostMapping("/roomReservation/queryMyApply")
     @ApiOperation(value = "查询我的预约")
-    public PageInfo<RoomReservationVo> queryMyApply(@Validated @RequestBody MyApplyQueryDTO myApplyQueryDTO) {
+    public PageInfo<RoomReservationVo> queryMyApply(@Valid @RequestBody MyApplyQueryDTO myApplyQueryDTO) {
         return roomReservationService.queryMyApply(myApplyQueryDTO);
     }
 
     @PostMapping("/roomReservation/queryRoomApplyDetailList")
     @ApiOperation("查询房间预约详细信息")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(@Validated @RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
+    public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(@Valid @RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
         return roomReservationService.queryRoomApplyDetailList(roomApplyDetailListQueryDTO);
     }
 
     @PostMapping("/roomReservation/userRecord")
     @ApiOperation("查询用户预约详细信息")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public PageInfo<RoomReservationVo> queryUserReserveRecordApi(@Validated @RequestBody UserRoomReservationDetailQueryDTO userRoomReservationDetailQueryDTO) {
+    public PageInfo<RoomReservationVo> queryUserReserveRecordApi(@Valid @RequestBody UserRoomReservationDetailQueryDTO userRoomReservationDetailQueryDTO) {
         return roomReservationService.queryUserReserveRecord(userRoomReservationDetailQueryDTO);
     }
 
     @PostMapping("/roomReservation/reviewed/userRecord")
     @ApiOperation("查询待审核房间列表信息")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public PageInfo<RoomReservationAdminVo> queryRoomReserveToBeReviewedApi(@Validated @RequestBody RoomReserveReviewedDTO roomReserveReviewedDTO) {
+    public PageInfo<RoomReservationAdminVo> queryRoomReserveToBeReviewedApi(@Valid @RequestBody RoomReserveReviewedDTO roomReserveReviewedDTO) {
         return roomReservationService.queryRoomReserveToBeReviewed(roomReserveReviewedDTO);
     }
 

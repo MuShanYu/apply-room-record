@@ -10,13 +10,15 @@ import com.guet.ARC.domain.dto.room.RoomAddUpdateDTO;
 import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
-import com.guet.ARC.domain.vo.room.RoomVo;
 import com.guet.ARC.service.RoomService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 
 @RestController
 @ResponseBodyResult
@@ -29,14 +31,14 @@ public class RoomController {
     @PostMapping("/room/add")
     @ApiOperation(value = "新增房间")
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
-    public Room addRoom(@RequestBody RoomAddUpdateDTO room) {
+    public Room addRoom(@Valid @RequestBody RoomAddUpdateDTO room) {
         return roomService.addRoom(room);
     }
 
     @GetMapping("/room/disable")
     @ApiOperation(value = "禁用房间")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public void deleteRoom(@RequestParam("id") String id) {
+    public void disableRoom(@NotEmpty(message = "id不能为空") @RequestParam("id") String id) {
         roomService.disableRoom(id);
     }
 
@@ -50,20 +52,20 @@ public class RoomController {
     @PostMapping("/room/updateCharger")
     @ApiOperation(value = "修改房间负责人")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public void updateRoomCharger(@RequestBody UpdateRoomChargerDTO roomChargerDTO) {
+    public void updateRoomCharger(@Valid @RequestBody UpdateRoomChargerDTO roomChargerDTO) {
         roomService.updateRoomCharger(roomChargerDTO);
     }
 
     @PostMapping("/room/queryRoom")
     @ApiOperation(value = "查询可预约房间列表")
-    public PageInfo<Room> queryRoom(@RequestBody RoomQueryDTO roomListQueryDTO) {
+    public PageInfo<Room> queryRoom(@Valid @RequestBody RoomQueryDTO roomListQueryDTO) {
         return roomService.queryRoom(roomListQueryDTO);
     }
 
     @PostMapping("/room/queryRoomList")
-    @ApiOperation("查询会议室")
+    @ApiOperation("查询房间列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public PageInfo<RoomVo> queryRoomList(@RequestBody RoomListQueryDTO roomListQueryDTO) {
+    public PageInfo<Room> queryRoomList(@Valid @RequestBody RoomListQueryDTO roomListQueryDTO) {
         return roomService.queryRoomList(roomListQueryDTO);
     }
 
@@ -78,5 +80,12 @@ public class RoomController {
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
     public Room insertRoomAndRegisterAdminUserApi(@RequestBody RoomAddUpdateDTO room) {
         return roomService.insertRoomAndRegisterAdminUser(room);
+    }
+
+    @GetMapping("/room/disable/reserve")
+    @ApiOperation(value = "禁止预约房间")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public void disableReserveRoomApi(@RequestParam("roomId") String roomId) {
+        roomService.disableReserveRoom(roomId);
     }
 }
