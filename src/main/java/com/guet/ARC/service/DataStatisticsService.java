@@ -297,8 +297,8 @@ public class DataStatisticsService {
                             .where(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                             .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                             .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
-                            .and(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
-                                    .and(webAppDateEnd))
+                            .and(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
+                                    .and(oneDayAfter))
                             .groupBy(AccessRecordDynamicSqlSupport.userId), "a")
                     .build().render(RenderingStrategies.MYBATIS3);
             // 处理数据
