@@ -262,6 +262,7 @@ public class DataStatisticsService {
         List<String> dates = new ArrayList<>();
         SelectStatementProvider countEntryTimesStatement;
         SelectStatementProvider countOutTimesStatement;
+        SelectStatementProvider countPeopleInAndOut;
         // 按照这个算法，10.22到10.29是其他，应该包含22号和29号的数据，包含22号统计七天只能到28号，所以要加一统计29号的数据
         for (int i = 0; i <= days; i++) {
             // 统计进入的次数,进入时间不为空
@@ -287,10 +288,24 @@ public class DataStatisticsService {
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
                     .build().render(RenderingStrategies.MYBATIS3);
+            // 查询该房间的进入的人数
+            countPeopleInAndOut = select(count())
+                    .from(select(AccessRecordDynamicSqlSupport.userId)
+                            .from(AccessRecordDynamicSqlSupport.accessRecord)
+                            .leftJoin(RoomDynamicSqlSupport.room)
+                            .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
+                            .where(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                            .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
+                            .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
+                            .and(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
+                                    .and(webAppDateEnd))
+                            .groupBy(AccessRecordDynamicSqlSupport.userId), "a")
+                    .build().render(RenderingStrategies.MYBATIS3);
             // 处理数据
             long entry = accessRecordMapper.count(countEntryTimesStatement);
             long out = accessRecordMapper.count(countOutTimesStatement);
-            totalTimes.add(entry + out);
+            long peopleInAndOutTimes = accessRecordMapper.count(countPeopleInAndOut);
+            totalTimes.add(peopleInAndOutTimes);
             entryTimes.add(entry);
             outTimes.add(out);
             // 存储查询的是哪一天的数据
@@ -302,7 +317,7 @@ public class DataStatisticsService {
         }
         map.put("entryTimes", entryTimes);
         map.put("outTimes", outTimes);
-        map.put("totalTimes", totalTimes);
+        map.put("totalEntryAndOutPeople", totalTimes);
         map.put("dates", dates);
         return map;
     }
