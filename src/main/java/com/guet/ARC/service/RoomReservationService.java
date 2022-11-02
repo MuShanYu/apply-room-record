@@ -26,7 +26,6 @@ import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +46,6 @@ public class RoomReservationService {
         if (roomReservationId == null || roomReservationId.trim().equals("")) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
         }
-
         Optional<RoomReservation> optionalRoomReservation = roomReservationMapper.selectByPrimaryKey(roomReservationId);
         if (optionalRoomReservation.isPresent()) {
             RoomReservation roomReservation = optionalRoomReservation.get();
@@ -59,7 +57,6 @@ public class RoomReservationService {
         }
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
     public RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
         // 检测预约起始和预约结束时间
         long subTime = applyRoomDTO.getEndTime() - applyRoomDTO.getStartTime();

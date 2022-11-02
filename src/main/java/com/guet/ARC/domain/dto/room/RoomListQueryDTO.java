@@ -5,10 +5,7 @@ import org.hibernate.validator.constraints.Range;
 
 import javax.validation.constraints.Min;
 
-/**
- * @author liduo
- * @version 1.0
- */
+
 @Data
 public class RoomListQueryDTO {
     @Min(1)
@@ -22,4 +19,6 @@ public class RoomListQueryDTO {
     private String teachBuilding;
 
     private String category;
+
+    private String roomName;
 }

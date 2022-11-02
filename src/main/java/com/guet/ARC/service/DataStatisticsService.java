@@ -205,7 +205,7 @@ public class DataStatisticsService {
                 RoomDynamicSqlSupport.id,
                 RoomDynamicSqlSupport.roomName)
                 .from(RoomDynamicSqlSupport.room)
-                .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .where(RoomDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
                 .and(RoomDynamicSqlSupport.roomName, isLikeWhenPresent(roomName))
                 .build().render(RenderingStrategies.MYBATIS3);
         return roomMapper.selectMany(statementProvider);

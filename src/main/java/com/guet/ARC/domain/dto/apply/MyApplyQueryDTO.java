@@ -2,7 +2,6 @@ package com.guet.ARC.domain.dto.apply;
 
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
-import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.Min;
 
@@ -11,7 +10,6 @@ import javax.validation.constraints.Min;
  * @version 1.0
  */
 @Data
-@Validated
 public class MyApplyQueryDTO {
     @Min(1)
     private Integer page;

@@ -29,7 +29,6 @@ public class UserRoleService {
     private UserRoleMapper userRoleMapper;
 
 
-    @Transactional(rollbackFor = RuntimeException.class)
     public void setRole(String userId, String roleId) {
         UserRole userRole = new UserRole();
         userRole.setId(CommonUtils.generateUUID());

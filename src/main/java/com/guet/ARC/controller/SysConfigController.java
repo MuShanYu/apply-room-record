@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Min;
 
 @RestController
@@ -36,7 +37,7 @@ public class SysConfigController {
     @PostMapping("/config/post/add")
     @ApiOperation(value = "添加配置")
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
-    public SysConfig addConfigApi(@Validated @RequestBody SysConfigAddDTO sysConfigAddDTO) {
+    public SysConfig addConfigApi(@Valid @RequestBody SysConfigAddDTO sysConfigAddDTO) {
         return sysConfigService.addConfig(sysConfigAddDTO);
     }
 

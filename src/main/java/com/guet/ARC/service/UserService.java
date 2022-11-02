@@ -474,7 +474,6 @@ public class UserService {
         }
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
     public User userBeCurrentRoomCharger(String tel, String name) {
         SelectStatementProvider statement = select(UserMapper.selectList)
                 .from(UserDynamicSqlSupport.user)

@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -61,7 +62,7 @@ public class UserController {
 
     @PostMapping("/user/update/userInfo")
     @ApiOperation(value = "修改用户信息")
-    public void updateUserInfoApi(@Validated @RequestBody UserUpdateDTO userUpdateDTO) {
+    public void updateUserInfoApi(@Valid @RequestBody UserUpdateDTO userUpdateDTO) {
         userService.updatePersonalInfo(userUpdateDTO);
     }
 
@@ -86,7 +87,7 @@ public class UserController {
     @PostMapping("/admin/query/userList")
     @ApiOperation(value = "查询用户列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public PageInfo<UserRoleVo> queryUserListApi(@Validated @RequestBody UserListQueryDTO userListQueryDTO) {
+    public PageInfo<UserRoleVo> queryUserListApi(@Valid @RequestBody UserListQueryDTO userListQueryDTO) {
         return userService.queryUserList(userListQueryDTO);
     }
 
@@ -111,20 +112,20 @@ public class UserController {
     @PostMapping("/admin/update/user/tel")
     @ApiOperation(value = "更改用户的手机号")
     @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
-    public void updateUserTelApi(@Validated @RequestBody UserUpdateTelDTO userUpdateTelDTO) {
+    public void updateUserTelApi(@Valid @RequestBody UserUpdateTelDTO userUpdateTelDTO) {
         userService.updateUserTel(userUpdateTelDTO);
     }
 
     @PostMapping("/admin/update/user/name")
     @ApiOperation(value = "更改用户的名字")
     @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
-    public void updateUserTelApi(@Validated @RequestBody UserUpdateNameDTO userUpdateNameDTO) {
+    public void updateUserTelApi(@Valid @RequestBody UserUpdateNameDTO userUpdateNameDTO) {
         userService.updateUserName(userUpdateNameDTO);
     }
 
     @PostMapping("/user/update/nickname")
     @ApiOperation(value = "用户更改昵称")
-    public void updateUserTelApi(@Validated @RequestBody UserUpdateNicknameDTO userUpdateNicknameDTO) {
+    public void updateUserTelApi(@Valid @RequestBody UserUpdateNicknameDTO userUpdateNicknameDTO) {
         userService.updateUserNickname(userUpdateNicknameDTO);
     }
 }
