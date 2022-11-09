@@ -3,6 +3,8 @@ package com.guet.ARC.domain.dto.data;
 import lombok.Data;
 import lombok.ToString;
 
+import javax.validation.constraints.NotNull;
+
 @Data
 @ToString
 public class RoomRecordCountDTO {
@@ -11,7 +13,9 @@ public class RoomRecordCountDTO {
 
     private String roomCategory;
 
+    @NotNull
     private Long startTime;
 
+    @NotNull
     private Long endTime;
 }

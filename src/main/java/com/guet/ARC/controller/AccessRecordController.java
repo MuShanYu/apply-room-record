@@ -6,6 +6,7 @@ import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.domain.dto.record.AddRecordDTO;
+import com.guet.ARC.domain.dto.record.UserAccessCountDataQueryDTO;
 import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
 import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordRoomVo;
@@ -67,6 +68,15 @@ public class AccessRecordController {
                                                   @Valid @RequestBody
                                                   UserAccessQueryDTO userAccessQueryDTO) {
         accessRecordService.exportUserAccessRecordByRoomId(userAccessQueryDTO, response);
+    }
+
+    @PostMapping("/record/query/export/byRoomId/count")
+    @ApiOperation(value = "导出根据房间ID查询用户记录统计信息")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public void exportUserAccessCountDataApi(HttpServletResponse response,
+                                                  @Valid @RequestBody
+                                                  UserAccessCountDataQueryDTO userAccessCountDataQueryDTO) {
+        accessRecordService.exportUserAccessCountData(userAccessCountDataQueryDTO, response);
     }
 
     @GetMapping("/admin/record/query/list")

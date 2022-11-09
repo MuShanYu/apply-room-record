@@ -10,7 +10,7 @@ import lombok.ToString;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString
-@ColumnWidth(30)
+@ColumnWidth(28)
 public class UserAccessRecordRoomVo extends AccessRecord {
 
     @ExcelProperty(value = "房间名", order = 2)

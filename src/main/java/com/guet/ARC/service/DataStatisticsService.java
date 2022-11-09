@@ -13,6 +13,7 @@ import com.guet.ARC.domain.dto.data.RoomRecordCountDTO;
 import com.guet.ARC.domain.dto.data.RoomReservationCountDTO;
 import com.guet.ARC.domain.excel.model.ExcelRoomRecordWriteModel;
 import com.guet.ARC.mapper.*;
+import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.ExcelUtil;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -97,24 +98,11 @@ public class DataStatisticsService {
         long oneDayInMills = 24 * 60 * 60 * 1000;
         // 格式化时间
         SimpleDateFormat sdf = new SimpleDateFormat("MM.dd");
-        // 传进来的时间到这一天的00：00：00为区间获取第一次的数据
-        // 获取endTime的午夜12点
-        Calendar endTimeCalendar = Calendar.getInstance();
-        endTimeCalendar.setTimeInMillis(endTime);
-        // 设置时间
-        endTimeCalendar.set(Calendar.HOUR_OF_DAY, 23);
-        endTimeCalendar.set(Calendar.MINUTE, 59);
-        endTimeCalendar.set(Calendar.SECOND, 59);
-        // 获取这endTime午夜12点的毫秒值
-        long webAppDateEnd = endTimeCalendar.getTimeInMillis();
+        Long[] standardTime = CommonUtils.getStandardStartTimeAndEndTime(startTime, endTime);
         // 获取startTime的凌晨00：00
-        Calendar startTimeCalendar = Calendar.getInstance();
-        startTimeCalendar.setTimeInMillis(startTime);
-        startTimeCalendar.set(Calendar.HOUR_OF_DAY, 0);
-        startTimeCalendar.set(Calendar.MINUTE, 0);
-        startTimeCalendar.set(Calendar.SECOND, 0);
-        // startTime当前时间的00：00
-        long webAppDateStart = startTimeCalendar.getTimeInMillis();
+        long webAppDateStart = standardTime[0];
+        // 获取这endTime 23:59:59的毫秒值
+        long webAppDateEnd = standardTime[1];
         // 检查时间跨度是否超过14天
         if (webAppDateEnd - webAppDateStart <= 0) {
             throw new AlertException(1000, "结束时间不能小于等于开始时间");
@@ -227,23 +215,11 @@ public class DataStatisticsService {
         long oneDayInMills = 24 * 60 * 60 * 1000;
         // 时间格式化
         SimpleDateFormat sdf = new SimpleDateFormat("MM.dd");
-        // 获取endTime的午夜12点
-        Calendar endTimeCalendar = Calendar.getInstance();
-        endTimeCalendar.setTimeInMillis(endTime);
-        // 设置时间
-        endTimeCalendar.set(Calendar.HOUR_OF_DAY, 23);
-        endTimeCalendar.set(Calendar.MINUTE, 59);
-        endTimeCalendar.set(Calendar.SECOND, 59);
-        // 获取这endTime午夜12点的毫秒值
-        long webAppDateEnd = endTimeCalendar.getTimeInMillis();
+        Long[] standardTime = CommonUtils.getStandardStartTimeAndEndTime(startTime, endTime);
         // 获取startTime的凌晨00：00
-        Calendar startTimeCalendar = Calendar.getInstance();
-        startTimeCalendar.setTimeInMillis(startTime);
-        startTimeCalendar.set(Calendar.HOUR_OF_DAY, 0);
-        startTimeCalendar.set(Calendar.MINUTE, 0);
-        startTimeCalendar.set(Calendar.SECOND, 0);
-        // startTime
-        long webAppDateStart = startTimeCalendar.getTimeInMillis();
+        long webAppDateStart = standardTime[0];
+        // 获取这endTime 23:59:59的毫秒值
+        long webAppDateEnd = standardTime[1];
         // 检查时间跨度是否超过14天
         if (webAppDateEnd - webAppDateStart <= 0) {
             throw new AlertException(1000, "结束时间不能小于等于开始时间");
@@ -265,7 +241,7 @@ public class DataStatisticsService {
         SelectStatementProvider countPeopleInAndOut;
         // 按照这个算法，10.22到10.29是其他，应该包含22号和29号的数据，包含22号统计七天只能到28号，所以要加一统计29号的数据
         for (int i = 0; i <= days; i++) {
-            // 统计进入的次数,进入时间不为空
+            // 统计扫码进入的次数,进入时间不为空
             countEntryTimesStatement = select(count())
                     .from(AccessRecordDynamicSqlSupport.accessRecord)
                     .leftJoin(RoomDynamicSqlSupport.room)
@@ -276,7 +252,7 @@ public class DataStatisticsService {
                     .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
-            // 统计出去的次数，出去的时间不为空
+            // 统计扫码出去的次数，出去的时间不为空
             countOutTimesStatement = select(count())
                     .from(AccessRecordDynamicSqlSupport.accessRecord)
                     .leftJoin(RoomDynamicSqlSupport.room)
@@ -394,23 +370,11 @@ public class DataStatisticsService {
         if (!StringUtils.hasLength(roomId)) {
             roomId = null;
         }
+        Long[] standardTime = CommonUtils.getStandardStartTimeAndEndTime(startTime, endTime);
         // 获取startTime的凌晨00：00
-        Calendar startTimeCalendar = Calendar.getInstance();
-        startTimeCalendar.setTimeInMillis(startTime);
-        startTimeCalendar.set(Calendar.HOUR_OF_DAY, 0);
-        startTimeCalendar.set(Calendar.MINUTE, 0);
-        startTimeCalendar.set(Calendar.SECOND, 0);
-        // startTime的00：00
-        long webAppDateStart = startTimeCalendar.getTimeInMillis();
-        // 获取endTime的午夜12点
-        Calendar endTimeCalendar = Calendar.getInstance();
-        endTimeCalendar.setTimeInMillis(endTime);
-        // 设置时间
-        endTimeCalendar.set(Calendar.HOUR_OF_DAY, 23);
-        endTimeCalendar.set(Calendar.MINUTE, 59);
-        endTimeCalendar.set(Calendar.SECOND, 59);
-        // 获取这endTime午夜12点的毫秒值
-        long webAppDateEnd = endTimeCalendar.getTimeInMillis();
+        long webAppDateStart = standardTime[0];
+        // 获取这endTime 23:59:59的毫秒值
+        long webAppDateEnd = standardTime[1];
         // 限制导出的时间跨度为一个月，防止出现内存溢出
         if (webAppDateEnd - webAppDateStart <= 0) {
             throw new AlertException(1000, "结束时间不能小于等于开始时间");

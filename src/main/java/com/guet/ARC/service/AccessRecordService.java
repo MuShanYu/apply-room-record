@@ -13,7 +13,9 @@ import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.domain.AccessRecord;
+import com.guet.ARC.domain.dto.record.UserAccessCountDataQueryDTO;
 import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
+import com.guet.ARC.domain.excel.model.UserAccessRecordCountDataExcelModel;
 import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordRoomVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordVo;
@@ -31,10 +33,8 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
@@ -306,13 +306,28 @@ public class AccessRecordService {
 
     // 查询用户在某个房间的出入情况
     public PageInfo<UserAccessRecordRoomVo> queryUserAccessRecordByRoomId(UserAccessQueryDTO userAccessQueryDTO) {
+        Long startTime = userAccessQueryDTO.getStartTime();
+        Long endTime = userAccessQueryDTO.getEndTime();
+        Long[] standardTime = CommonUtils.getStandardStartTimeAndEndTime(startTime, endTime);
+        // 获取startTime的凌晨00：00
+        long webAppDateStart = standardTime[0];
+        // 获取这endTime 23:59:59的毫秒值
+        long webAppDateEnd = standardTime[1];
+        // 检查时间跨度是否超过14天
+        if (webAppDateEnd - webAppDateStart <= 0) {
+            throw new AlertException(1000, "结束时间不能小于等于开始时间");
+        }
+        long days = (webAppDateEnd - webAppDateStart) / 1000 / 60 / 60 / 24;
+        if (days > 30) {
+            throw new AlertException(1000, "数据导出时间跨度不允许超过30天");
+        }
         SelectStatementProvider countStatement = select(count())
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
                 .where(AccessRecordDynamicSqlSupport.roomId, isEqualTo(userAccessQueryDTO.getRoomId()))
-                .and(AccessRecordDynamicSqlSupport.createTime, isBetweenWhenPresent(userAccessQueryDTO.getStartTime())
-                        .and(userAccessQueryDTO.getEndTime()))
+                .and(AccessRecordDynamicSqlSupport.createTime, isBetweenWhenPresent(webAppDateStart)
+                        .and(webAppDateEnd))
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         long count = accessRecordMapper.count(countStatement);
@@ -323,8 +338,8 @@ public class AccessRecordService {
                 .leftJoin(UserDynamicSqlSupport.user)
                 .on(UserDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.userId))
                 .where(AccessRecordDynamicSqlSupport.roomId, isEqualTo(userAccessQueryDTO.getRoomId()))
-                .and(AccessRecordDynamicSqlSupport.createTime, isBetweenWhenPresent(userAccessQueryDTO.getStartTime())
-                        .and(userAccessQueryDTO.getEndTime()))
+                .and(AccessRecordDynamicSqlSupport.createTime, isBetweenWhenPresent(webAppDateStart)
+                        .and(webAppDateEnd))
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
@@ -337,10 +352,14 @@ public class AccessRecordService {
         return pageInfo;
     }
 
+
     public void exportUserAccessRecordByRoomId(UserAccessQueryDTO userAccessQueryDTO, HttpServletResponse response) {
-        userAccessQueryDTO.setSize(300);
+        userAccessQueryDTO.setSize(500);
         try {
-            String fileName = URLEncoder.encode("足迹详情_" + System.currentTimeMillis(), "utf-8");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日");
+            String startDateStr = sdf.format(new Date(userAccessQueryDTO.getStartTime()));
+            String endDateStr = sdf.format(new Date(userAccessQueryDTO.getEndTime()));
+            String fileName = URLEncoder.encode(startDateStr + "_" + endDateStr + "_房间足迹详情", "utf-8");
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("utf-8");
             response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
@@ -350,7 +369,7 @@ public class AccessRecordService {
             response.setCharacterEncoding("utf8");
             WriteCellStyle writeCellStyle = ExcelUtil.buildHeadCellStyle();
             HorizontalCellStyleStrategy horizontalCellStyleStrategy = new HorizontalCellStyleStrategy(writeCellStyle,
-                    new ArrayList<WriteCellStyle>());
+                    new ArrayList<>());
             WriteWorkbook writeWorkbook = new WriteWorkbook();
             writeWorkbook.setAutoCloseStream(false);
             writeWorkbook.setExcelType(ExcelTypeEnum.XLSX);
@@ -370,6 +389,90 @@ public class AccessRecordService {
                 pageData = queryUserAccessRecordByRoomId(userAccessQueryDTO).getPageData();
             }
             excelWriter.finish();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<UserAccessRecordCountDataExcelModel> userAccessCountDataQuery(UserAccessCountDataQueryDTO userAccessCountDataQueryDTO) {
+        String roomId = userAccessCountDataQueryDTO.getRoomId();
+        Long startTime = userAccessCountDataQueryDTO.getStartTime();
+        Long endTime = userAccessCountDataQueryDTO.getEndTime();
+        Long[] standardTime = CommonUtils.getStandardStartTimeAndEndTime(startTime, endTime);
+        // 获取startTime的凌晨00：00
+        long webAppDateStart = standardTime[0];
+        // 获取这endTime 23:59:59的毫秒值
+        long webAppDateEnd = standardTime[1];
+        // 检查时间跨度是否超过14天
+        if (webAppDateEnd - webAppDateStart <= 0) {
+            throw new AlertException(1000, "结束时间不能小于等于开始时间");
+        }
+        long days = (webAppDateEnd - webAppDateStart) / 1000 / 60 / 60 / 24;
+        if (days > 30) {
+            throw new AlertException(1000, "数据导出时间跨度不允许超过30天");
+        }
+        // 统计用户一段时间内的情况
+        // 先查出有多少人在这段时间内有扫码记录，然后分别统计
+        SelectStatementProvider countEntryTimesStatement;
+        SelectStatementProvider countOutTimesStatement;
+        List<UserAccessRecordCountDataExcelModel> userAccessRecordExcelModels = accessRecordMapper.selectUserIdAndNameByRoomId(roomId);
+        for (UserAccessRecordCountDataExcelModel excelModel : userAccessRecordExcelModels) {
+            // 查询每个用户具体的数量
+            // 统计扫码进入的次数,进入时间不为空
+            countEntryTimesStatement = select(count())
+                    .from(AccessRecordDynamicSqlSupport.accessRecord)
+                    .where(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
+                            .and(webAppDateEnd))
+                    .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
+                    .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(excelModel.getUserId()))
+                    .build().render(RenderingStrategies.MYBATIS3);
+            // 统计扫码出去的次数，出去的时间不为空，闭环扫码的次数就是出去的时间不为空的次数
+            countOutTimesStatement = select(count())
+                    .from(AccessRecordDynamicSqlSupport.accessRecord)
+                    .where(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
+                            .and(webAppDateEnd))
+                    .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
+                    .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(excelModel.getUserId()))
+                    .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
+                    .build().render(RenderingStrategies.MYBATIS3);
+            // 处理数据
+            excelModel.setScanEntryTimes(accessRecordMapper.count(countEntryTimesStatement));
+            long outTimes = accessRecordMapper.count(countOutTimesStatement);
+            excelModel.setScanOutTimes(outTimes);
+            excelModel.setCloseLoopScanTimes(outTimes);
+        }
+        return userAccessRecordExcelModels;
+    }
+
+    public void exportUserAccessCountData(UserAccessCountDataQueryDTO userAccessCountDataQueryDTO, HttpServletResponse response) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日");
+            String startDateStr = sdf.format(new Date(userAccessCountDataQueryDTO.getStartTime()));
+            String endDateStr = sdf.format(new Date(userAccessCountDataQueryDTO.getEndTime()));
+            String fileName = URLEncoder.encode(startDateStr + "_" + endDateStr + "_房间足迹人员统计数据", "utf-8");
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("utf-8");
+            response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
+            response.addHeader("Pragma", "No-cache");
+            response.addHeader("Cache-Control", "No-cache");
+            response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
+            response.setCharacterEncoding("utf8");
+            WriteCellStyle writeCellStyle = ExcelUtil.buildHeadCellStyle();
+            HorizontalCellStyleStrategy horizontalCellStyleStrategy = new HorizontalCellStyleStrategy(writeCellStyle,
+                    new ArrayList<>());
+            WriteWorkbook writeWorkbook = new WriteWorkbook();
+            writeWorkbook.setAutoCloseStream(false);
+            writeWorkbook.setExcelType(ExcelTypeEnum.XLSX);
+            writeWorkbook.setOutputStream(response.getOutputStream());
+            writeWorkbook.setAutoTrim(true);
+            writeWorkbook.setUseDefaultStyle(true);
+            writeWorkbook.setClazz(UserAccessRecordCountDataExcelModel.class);
+            writeWorkbook.setCustomWriteHandlerList(Collections.singletonList(horizontalCellStyleStrategy));
+            WriteSheet writeSheet = new WriteSheet();
+            writeSheet.setSheetName("进出统计数据");
+            writeSheet.setSheetNo(0);
+            ExcelWriter excelWriter = new ExcelWriter(writeWorkbook);
+            excelWriter.write(userAccessCountDataQuery(userAccessCountDataQueryDTO), writeSheet).finish();
         } catch (Exception e) {
             e.printStackTrace();
         }
