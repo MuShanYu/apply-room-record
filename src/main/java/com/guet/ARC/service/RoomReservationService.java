@@ -26,6 +26,7 @@ import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -105,18 +106,36 @@ public class RoomReservationService {
     }
 
     public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
+        String roomId = roomApplyDetailListQueryDTO.getRoomId();
+        Long startTime = roomApplyDetailListQueryDTO.getStartTime();
+        Long endTime = roomApplyDetailListQueryDTO.getEndTime();
+        Long[] standardTime = CommonUtils.getStandardStartTimeAndEndTime(startTime, endTime);
+        // 获取startTime的凌晨00：00
+        long webAppDateStart = standardTime[0];
+        // 获取这endTime 23:59:59的毫秒值
+        long webAppDateEnd = standardTime[1];
+        // 检查时间跨度是否超过14天
+        if (webAppDateEnd - webAppDateStart <= 0) {
+            throw new AlertException(1000, "结束时间不能小于等于开始时间");
+        }
+        long days = (webAppDateEnd - webAppDateStart) / 1000 / 60 / 60 / 24;
+        if (days > 30) {
+            throw new AlertException(1000, "查询数据的时间跨度不允许超过30天");
+        }
         // 查询相应房间的所有预约记录
         SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .where(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomApplyDetailListQueryDTO.getRoomId()))
-                .and(RoomReservationDynamicSqlSupport.createTime, isBetweenWhenPresent(roomApplyDetailListQueryDTO.getStartTime()).and(roomApplyDetailListQueryDTO.getEndTime()))
+                .where(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomId))
+                .and(RoomReservationDynamicSqlSupport.createTime, isBetweenWhenPresent(webAppDateStart)
+                        .and(webAppDateEnd))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
 
         SelectStatementProvider statementProviderCount = select(count())
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .where(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomApplyDetailListQueryDTO.getRoomId()))
-                .and(RoomReservationDynamicSqlSupport.createTime, isBetweenWhenPresent(roomApplyDetailListQueryDTO.getStartTime()).and(roomApplyDetailListQueryDTO.getEndTime()))
+                .where(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomId))
+                .and(RoomReservationDynamicSqlSupport.createTime, isBetweenWhenPresent(webAppDateStart)
+                        .and(webAppDateEnd))
                 .build().render(RenderingStrategies.MYBATIS3);
 
         PageHelper.startPage(roomApplyDetailListQueryDTO.getPage(), roomApplyDetailListQueryDTO.getSize());
@@ -130,7 +149,7 @@ public class RoomReservationService {
             Optional<User> optionalUser = userMapper.selectByPrimaryKey(roomReservation.getUserId());
             if (optionalUser.isPresent()) {
                 User user = optionalUser.get();
-                roomReservationUserVo.setNickname(user.getNickname());
+                roomReservationUserVo.setName(user.getName());
             }
             roomReservationUserVos.add(roomReservationUserVo);
         }
@@ -142,15 +161,15 @@ public class RoomReservationService {
     }
 
     public PageInfo<RoomReservationVo> queryMyApply(MyApplyQueryDTO myApplyQueryDTO) {
-        if (myApplyQueryDTO.getCategory().equals("")) {
+        if (!StringUtils.hasLength(myApplyQueryDTO.getCategory())) {
             myApplyQueryDTO.setCategory(null);
         }
 
-        if (myApplyQueryDTO.getSchool().equals("")) {
+        if (!StringUtils.hasLength(myApplyQueryDTO.getSchool())) {
             myApplyQueryDTO.setSchool(null);
         }
 
-        if (myApplyQueryDTO.getTeachBuilding().equals("")) {
+        if (!StringUtils.hasLength(myApplyQueryDTO.getTeachBuilding())) {
             myApplyQueryDTO.setTeachBuilding(null);
         }
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
@@ -195,15 +214,15 @@ public class RoomReservationService {
     }
 
     public PageInfo<RoomReservationVo> queryUserReserveRecord(UserRoomReservationDetailQueryDTO queryDTO) {
-        if (queryDTO.getCategory().equals("")) {
+        if (!StringUtils.hasLength(queryDTO.getCategory())) {
             queryDTO.setCategory(null);
         }
 
-        if (queryDTO.getSchool().equals("")) {
+        if (!StringUtils.hasLength(queryDTO.getSchool())) {
             queryDTO.setSchool(null);
         }
 
-        if (queryDTO.getTeachBuilding().equals("")) {
+        if (!StringUtils.hasLength(queryDTO.getTeachBuilding())) {
             queryDTO.setTeachBuilding(null);
         }
         SelectStatementProvider statementProviderCount = select(count())
@@ -240,15 +259,15 @@ public class RoomReservationService {
 
     // 获取待审核列表
     public PageInfo<RoomReservationAdminVo> queryRoomReserveToBeReviewed(RoomReserveReviewedDTO queryDTO) {
-        if (queryDTO.getCategory().equals("")) {
+        if (!StringUtils.hasLength(queryDTO.getCategory())) {
             queryDTO.setCategory(null);
         }
 
-        if (queryDTO.getSchool().equals("")) {
+        if (!StringUtils.hasLength(queryDTO.getSchool())) {
             queryDTO.setSchool(null);
         }
 
-        if (queryDTO.getTeachBuilding().equals("")) {
+        if (!StringUtils.hasLength(queryDTO.getTeachBuilding())) {
             queryDTO.setTeachBuilding(null);
         }
         String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");

@@ -2,11 +2,13 @@ package com.guet.ARC.domain.excel.model;
 
 import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.annotation.write.style.ColumnWidth;
 import lombok.Data;
 import lombok.ToString;
 
 @Data
 @ToString
+@ColumnWidth(15)
 public class ExcelRoomRecordWriteModel {
 
     @ExcelIgnore

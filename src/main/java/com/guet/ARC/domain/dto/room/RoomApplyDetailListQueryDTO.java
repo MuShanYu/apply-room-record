@@ -4,11 +4,9 @@ import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
-/**
- * @author liduo
- * @version 1.0
- */
 @Data
 public class RoomApplyDetailListQueryDTO {
     @Min(1)
@@ -17,9 +15,12 @@ public class RoomApplyDetailListQueryDTO {
     @Range(min = 1, max = 100)
     private Integer size;
 
+    @NotEmpty
     private String roomId;
 
+    @NotNull
     private Long startTime;
 
+    @NotNull
     private Long endTime;
 }

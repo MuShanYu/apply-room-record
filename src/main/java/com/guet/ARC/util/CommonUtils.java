@@ -3,6 +3,7 @@ package com.guet.ARC.util;
 import com.alibaba.fastjson.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Calendar;
 import java.util.UUID;
 
 public class CommonUtils {
@@ -91,5 +92,34 @@ public class CommonUtils {
             return name.replaceFirst(name.substring(1, name.length() - 1), "*");
         }
         return name;
+    }
+
+    // 获取起始日期的00:00，获取结束日期的11:59:59
+
+    /**
+     *
+     * @param startTime 起始日期
+     * @param endTime 结束日期
+     * @return 返回标准起始日期和结束日期00:00:00 ~ 23:59:59，第一个值为起始第二个值为结束
+     */
+    public static Long[] getStandardStartTimeAndEndTime(Long startTime, Long endTime) {
+        // 获取endTime的午夜12点
+        Calendar endTimeCalendar = Calendar.getInstance();
+        endTimeCalendar.setTimeInMillis(endTime);
+        // 设置时间
+        endTimeCalendar.set(Calendar.HOUR_OF_DAY, 23);
+        endTimeCalendar.set(Calendar.MINUTE, 59);
+        endTimeCalendar.set(Calendar.SECOND, 59);
+        // 获取这endTime午夜12点的毫秒值
+        long webAppDateEnd = endTimeCalendar.getTimeInMillis();
+        // 获取startTime的凌晨00：00
+        Calendar startTimeCalendar = Calendar.getInstance();
+        startTimeCalendar.setTimeInMillis(startTime);
+        startTimeCalendar.set(Calendar.HOUR_OF_DAY, 0);
+        startTimeCalendar.set(Calendar.MINUTE, 0);
+        startTimeCalendar.set(Calendar.SECOND, 0);
+        // startTime的00:00:00
+        long webAppDateStart = startTimeCalendar.getTimeInMillis();
+        return new Long[]{webAppDateStart, webAppDateEnd};
     }
 }

@@ -11,9 +11,11 @@ import com.guet.ARC.service.DataStatisticsService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +23,7 @@ import java.util.Map;
 @Api(tags = "数据统计模块")
 @RestController
 @ResponseBodyResult
+@Validated
 public class DataStatisticsController {
     @Autowired
     private DataStatisticsService dataStatisticsService;
@@ -48,14 +51,14 @@ public class DataStatisticsController {
     @PostMapping("/admin/post/roomReservationTimes/count")
     @ApiOperation(value = "获取房间预约情况")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public Map<String, Object> countRoomReservationTimes(@RequestBody RoomReservationCountDTO roomReservationCountDTO) {
+    public Map<String, Object> countRoomReservationTimes(@RequestBody @Valid RoomReservationCountDTO roomReservationCountDTO) {
         return dataStatisticsService.countRoomReservationTimes(roomReservationCountDTO);
     }
 
     @PostMapping("/admin/post/access/record/count")
     @ApiOperation(value = "获取人员流动统计情况")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    public Map<String, Object> countAccessRecordApi(@RequestBody RoomRecordCountDTO roomRecordCountDTO) {
+    public Map<String, Object> countAccessRecordApi(@RequestBody @Valid RoomRecordCountDTO roomRecordCountDTO) {
         return dataStatisticsService.countAccessRecord(roomRecordCountDTO);
     }
 
@@ -70,7 +73,7 @@ public class DataStatisticsController {
     @ApiOperation(value = "按照指定时间段指定条件导出房间出入信息")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public void exportUserAccessRecordByRoomIdApi(HttpServletResponse response,
-                                                  @RequestBody RoomRecordCountDTO roomRecordCountDTO) {
+                                                  @RequestBody @Valid RoomRecordCountDTO roomRecordCountDTO) {
         dataStatisticsService.exportCountRoomRecordCountData(response, roomRecordCountDTO);
     }
 }

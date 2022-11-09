@@ -1,6 +1,7 @@
 package com.guet.ARC.mapper;
 
 import com.guet.ARC.domain.AccessRecord;
+import com.guet.ARC.domain.excel.model.UserAccessRecordCountDataExcelModel;
 import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordRoomVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordVo;
@@ -124,6 +125,12 @@ public interface AccessRecordMapper {
             @Result(column="nickname", property="nickname", jdbcType=JdbcType.VARCHAR),
     })
     List<UserAccessRecordRoomVo> selectUserAccessRoomVo(SelectStatementProvider selectStatement);
+
+    // 查询有这个房间进出记录的用户id
+    @Select("select distinct a.id as userId, a.stu_num as stuNum, a.name from tbl_access_record as b " +
+            "left join tbl_user as a on b.user_id = a.id " +
+            "where b.room_id = #{roomId} and b.state = 1")
+    List<UserAccessRecordCountDataExcelModel> selectUserIdAndNameByRoomId(@Param("roomId") String roomId);
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.257+08:00", comments="Source Table: tbl_access_record")
     @UpdateProvider(type=SqlProviderAdapter.class, method="update")

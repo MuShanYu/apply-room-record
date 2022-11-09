@@ -8,11 +8,7 @@ import javax.validation.constraints.NotNull;
 
 @Data
 @ToString
-public class UserAccessQueryDTO {
-    private Integer page;
-
-    private Integer size;
-
+public class UserAccessCountDataQueryDTO {
     @NotNull
     private Long startTime;
 
