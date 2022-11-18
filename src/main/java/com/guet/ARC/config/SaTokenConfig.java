@@ -26,6 +26,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
         loginExcludePathPatterns.add("/user/publicKey");
         loginExcludePathPatterns.add("/user/register");
         loginExcludePathPatterns.add("/user/refreshToken");
+        loginExcludePathPatterns.add("/user/logout");
         loginExcludePathPatterns.add("/admin/login");
         loginExcludePathPatterns.add("/user/update/pwd");
         loginExcludePathPatterns.add("/user/get/verifyCode");

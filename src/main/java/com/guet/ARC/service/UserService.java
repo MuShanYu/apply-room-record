@@ -238,18 +238,6 @@ public class UserService {
         return map;
     }
 
-    public Map<String, String> refreshToken(String userId) {
-        // toekn已经过期，token被顶下线，被剔下线
-        // 清除旧的登录状态
-        StpUtil.logout(userId);
-        // 更新登录状态
-        StpUtil.login(userId);
-        StpUtil.getSessionByLoginId(userId).set("userId", userId);
-        Map<String, String> map = new HashMap<>();
-        map.put("token", StpUtil.getTokenValueByLoginId(userId));
-        return map;
-    }
-
     public Map<String, Object> adminLogin(UserLoginDTO userLoginDTO) {
         String tel = userLoginDTO.getTel();
         String encodePwd = userLoginDTO.getPwd();

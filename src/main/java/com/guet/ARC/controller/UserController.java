@@ -54,12 +54,6 @@ public class UserController {
         StpUtil.logout();
     }
 
-    @GetMapping("/user/refreshToken")
-    @ApiOperation(value = "刷新token")
-    public Map<String, String> refreshTokenApi(@RequestParam("userId") String userId) {
-        return userService.refreshToken(userId);
-    }
-
     @PostMapping("/user/update/userInfo")
     @ApiOperation(value = "修改用户信息")
     public void updateUserInfoApi(@Valid @RequestBody UserUpdateDTO userUpdateDTO) {
