@@ -317,10 +317,6 @@ public class AccessRecordService {
         if (webAppDateEnd - webAppDateStart <= 0) {
             throw new AlertException(1000, "结束时间不能小于等于开始时间");
         }
-        long days = (webAppDateEnd - webAppDateStart) / 1000 / 60 / 60 / 24;
-        if (days > 30) {
-            throw new AlertException(1000, "数据导出时间跨度不允许超过30天");
-        }
         SelectStatementProvider countStatement = select(count())
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -406,10 +402,6 @@ public class AccessRecordService {
         // 检查时间跨度是否超过14天
         if (webAppDateEnd - webAppDateStart <= 0) {
             throw new AlertException(1000, "结束时间不能小于等于开始时间");
-        }
-        long days = (webAppDateEnd - webAppDateStart) / 1000 / 60 / 60 / 24;
-        if (days > 30) {
-            throw new AlertException(1000, "数据导出时间跨度不允许超过30天");
         }
         // 统计用户一段时间内的情况
         // 先查出有多少人在这段时间内有扫码记录，然后分别统计

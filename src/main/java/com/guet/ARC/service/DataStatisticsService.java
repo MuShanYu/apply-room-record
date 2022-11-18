@@ -393,6 +393,7 @@ public class DataStatisticsService {
                 .and(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
                         .and(webAppDateEnd))
                 .and(RoomDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
+                .groupBy(RoomDynamicSqlSupport.id)
                 .build().render(RenderingStrategies.MYBATIS3);
         List<ExcelRoomRecordWriteModel> roomRecordWriteModels = roomMapper.selectRoomRecordExcelModels(statement);
         SelectStatementProvider countEntryTimesStatement;
