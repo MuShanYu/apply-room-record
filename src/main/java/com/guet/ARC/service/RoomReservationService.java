@@ -340,6 +340,14 @@ public class RoomReservationService {
         }
     }
 
+    // 删除预约记录
+    public void delRoomReservationRecord(String id) {
+        int rows = roomReservationMapper.deleteByPrimaryKey(id);
+        if (rows == 0) {
+            throw new AlertException(ResultCode.DELETE_ERROR);
+        }
+    }
+
     private void handleTimeOutReservationAdmin(RoomReservationAdminVo roomReservationVo) {
         roomReservationVo.setState(CommonConstant.ROOM_RESERVE_IS_TIME_OUT);
         roomReservationVo.setUpdateTime(System.currentTimeMillis());
