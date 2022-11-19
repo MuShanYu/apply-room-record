@@ -129,8 +129,12 @@ public interface AccessRecordMapper {
     // 查询有这个房间进出记录的用户id
     @Select("select distinct a.id as userId, a.stu_num as stuNum, a.name from tbl_access_record as b " +
             "left join tbl_user as a on b.user_id = a.id " +
-            "where b.room_id = #{roomId} and b.state = 1")
-    List<UserAccessRecordCountDataExcelModel> selectUserIdAndNameByRoomId(@Param("roomId") String roomId);
+            "where b.entry_time between #{startTime} and #{endTime} " +
+            "and b.room_id = #{roomId} " +
+            "and b.state = 1")
+    List<UserAccessRecordCountDataExcelModel> selectUserIdAndNameByRoomId(@Param("roomId") String roomId,
+                                                                          @Param("startTime") Long startTime,
+                                                                          @Param("endTime") Long endTime);
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.257+08:00", comments="Source Table: tbl_access_record")
     @UpdateProvider(type=SqlProviderAdapter.class, method="update")

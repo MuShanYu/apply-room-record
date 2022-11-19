@@ -21,4 +21,6 @@ public class RoomListQueryDTO {
     private String category;
 
     private String roomName;
+
+    private String chargeUserId;
 }

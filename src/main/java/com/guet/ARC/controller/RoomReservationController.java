@@ -80,4 +80,11 @@ public class RoomReservationController {
                                        @NotNull @RequestParam("passed") boolean passed) {
         roomReservationService.passOrRejectReserve(reserveId, passed);
     }
+
+    @GetMapping("/roomReservation/del/record")
+    @ApiOperation("删除房间预约记录")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public void delRoomReservationRecordApi(@NotEmpty @RequestParam("id") String id) {
+        roomReservationService.delRoomReservationRecord(id);
+    }
 }

@@ -203,17 +203,22 @@ public class RoomService {
         if (!StringUtils.hasLength(roomListQueryDTO.getTeachBuilding())) {
             roomListQueryDTO.setTeachBuilding(null);
         }
+        if (!StringUtils.hasLength(roomListQueryDTO.getChargeUserId())) {
+            roomListQueryDTO.setChargeUserId(null);
+        }
         String roomName = roomListQueryDTO.getRoomName();
         if (!StringUtils.hasLength(roomName)) {
             roomName = null;
         } else {
             roomName = "%" + roomName + "%";
         }
+        // 添加可以查看我管理的房间列表
         SelectStatementProvider statementProvider = select(RoomMapper.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomListQueryDTO.getCategory()))
+                .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomListQueryDTO.getChargeUserId()))
                 .and(RoomDynamicSqlSupport.roomName, isLikeWhenPresent(roomName))
                 .orderBy(RoomDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
@@ -222,6 +227,7 @@ public class RoomService {
                 .where(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomListQueryDTO.getCategory()))
+                .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomListQueryDTO.getChargeUserId()))
                 .and(RoomDynamicSqlSupport.roomName, isLikeWhenPresent(roomName))
                 .build().render(RenderingStrategies.MYBATIS3);
         PageHelper.startPage(roomListQueryDTO.getPage(), roomListQueryDTO.getSize());

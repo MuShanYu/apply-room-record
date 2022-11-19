@@ -407,7 +407,8 @@ public class AccessRecordService {
         // 先查出有多少人在这段时间内有扫码记录，然后分别统计
         SelectStatementProvider countEntryTimesStatement;
         SelectStatementProvider countOutTimesStatement;
-        List<UserAccessRecordCountDataExcelModel> userAccessRecordExcelModels = accessRecordMapper.selectUserIdAndNameByRoomId(roomId);
+        // TODO:加上时间范围限制，否则会查询到所有用户
+        List<UserAccessRecordCountDataExcelModel> userAccessRecordExcelModels = accessRecordMapper.selectUserIdAndNameByRoomId(roomId, webAppDateStart, webAppDateEnd);
         for (UserAccessRecordCountDataExcelModel excelModel : userAccessRecordExcelModels) {
             // 查询每个用户具体的数量
             // 统计扫码进入的次数,进入时间不为空
