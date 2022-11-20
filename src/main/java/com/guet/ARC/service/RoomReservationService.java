@@ -275,8 +275,7 @@ public class RoomReservationService {
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
-                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
-                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
+                .where(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
                 .build().render(RenderingStrategies.MYBATIS3);
@@ -285,7 +284,6 @@ public class RoomReservationService {
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
-//                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
                 .where(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
