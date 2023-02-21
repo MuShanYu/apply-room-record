@@ -278,6 +278,7 @@ public class RoomReservationService {
                 .where(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
+                .and(RoomReservationDynamicSqlSupport.state, isEqualTo(queryDTO.getState()))
                 .build().render(RenderingStrategies.MYBATIS3);
 
         SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
@@ -288,11 +289,13 @@ public class RoomReservationService {
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
                 .and(RoomDynamicSqlSupport.chargePersonId, isEqualTo(currentUserId))
+                .and(RoomReservationDynamicSqlSupport.state, isEqualTo(queryDTO.getState()))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
 
         PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
-        List<RoomReservationAdminVo> roomReservationAdminVos = roomReservationMapper.selectRoomReservationsAdminVo(statementProvider);
+        List<RoomReservationAdminVo> roomReservationAdminVos =
+                roomReservationMapper.selectRoomReservationsAdminVo(statementProvider);
         long now = System.currentTimeMillis();
         for (RoomReservationAdminVo roomReservationAdminVo : roomReservationAdminVos) {
             Optional<User> optionalUser = userMapper.selectByPrimaryKey(roomReservationAdminVo.getUserId());
@@ -300,7 +303,9 @@ public class RoomReservationService {
                 User user = optionalUser.get();
                 roomReservationAdminVo.setName(user.getNickname());
             }
-            if (now > roomReservationAdminVo.getReserveEndTime()) {
+            // fix:问题：只要现在的时间大于结束时间就会被认为超时未处理，应该要加上是否已经被处理，未被处理的才要判断是否超时
+            if (now > roomReservationAdminVo.getReserveEndTime()
+                    && roomReservationAdminVo.getState().equals(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED)) {
                 handleTimeOutReservationAdmin(roomReservationAdminVo);
             }
         }
