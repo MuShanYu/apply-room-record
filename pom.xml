@@ -45,11 +45,11 @@
             <version>3.1.1</version>
         </dependency>
         <!-- mybatis-generator -->
-        <dependency>
-            <groupId>org.mybatis.generator</groupId>
-            <artifactId>mybatis-generator-core</artifactId>
-            <version>1.4.1</version>
-        </dependency>
+            <dependency>
+                <groupId>org.mybatis.generator</groupId>
+                <artifactId>mybatis-generator-core</artifactId>
+                <version>1.4.1</version>
+            </dependency>
         <!-- https://mvnrepository.com/artifact/org.mybatis.dynamic-sql/mybatis-dynamic-sql -->
         <dependency>
             <groupId>org.mybatis.dynamic-sql</groupId>

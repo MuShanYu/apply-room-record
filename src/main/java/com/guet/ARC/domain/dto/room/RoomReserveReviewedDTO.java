@@ -5,6 +5,7 @@ import lombok.ToString;
 import org.hibernate.validator.constraints.Range;
 
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 @Data
 @ToString
@@ -20,4 +21,7 @@ public class RoomReserveReviewedDTO {
     private String teachBuilding;
 
     private String category;
+
+    @NotNull(message = "状态不能为空")
+    private Short state;
 }
