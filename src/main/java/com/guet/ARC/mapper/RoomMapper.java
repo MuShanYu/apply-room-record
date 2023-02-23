@@ -82,6 +82,9 @@ public interface RoomMapper {
     })
     List<ExcelRoomRecordWriteModel> selectRoomRecordExcelModels(SelectStatementProvider selectStatement);
 
+    @Select("select room_name from tbl_room where id = #{roomId}")
+    String queryRoomNameById(@Param("roomId") String roomId);
+
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-10-24T13:45:23.516+08:00", comments="Source Table: tbl_room")
     @UpdateProvider(type=SqlProviderAdapter.class, method="update")
     int update(UpdateStatementProvider updateStatement);

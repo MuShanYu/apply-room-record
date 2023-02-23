@@ -30,6 +30,7 @@ import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
@@ -49,6 +50,7 @@ public class AccessRecordService {
     private RedisCacheUtil<AccessRecord> redisCacheUtil;
 
 
+    @Transactional(rollbackFor = RuntimeException.class)
     public void addAccessRecord(String roomId, short type) {
         // type为1代表进入，type为2代表出
         long now = System.currentTimeMillis();

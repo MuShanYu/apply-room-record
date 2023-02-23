@@ -16,10 +16,7 @@ import com.guet.ARC.domain.dto.room.UserRoomReservationDetailQueryDTO;
 import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
-import com.guet.ARC.mapper.RoomDynamicSqlSupport;
-import com.guet.ARC.mapper.RoomReservationDynamicSqlSupport;
-import com.guet.ARC.mapper.RoomReservationMapper;
-import com.guet.ARC.mapper.UserMapper;
+import com.guet.ARC.mapper.*;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -28,7 +25,9 @@ import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +38,12 @@ public class RoomReservationService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private RoomMapper roomMapper;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     RoomReservationMapper roomReservationMapper;
@@ -98,9 +103,26 @@ public class RoomReservationService {
         roomReservation.setUpdateTime(time);
         roomReservation.setUserId(userId);
         roomReservation.setRoomId(applyRoomDTO.getRoomId());
-
         if (roomReservationMapper.insert(roomReservation) == 0) {
             throw new AlertException(ResultCode.INSERT_ERROR);
+        }
+        // 邮件通知审核人
+        // 获取审核人邮件
+        String chargePersonMail = userMapper.queryChargeUserMailByRoomId(applyRoomDTO.getRoomId());
+        if (StringUtils.hasLength(chargePersonMail)) {
+            // 如果有邮箱就发送通知
+            // 获取用户的姓名
+            String roomName = roomMapper.queryRoomNameById(applyRoomDTO.getRoomId());
+            userMapper.selectByPrimaryKey(userId).ifPresent(user -> {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                String reserveTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis()));
+                String startTimeStr = sdf.format(new Date(applyRoomDTO.getStartTime()));
+                String endTimeStr = sdf.format(new Date(applyRoomDTO.getEndTime()));
+                String content = "您收到来自" + user.getName() +
+                        reserveTimeStr+ "的" + roomName + "房间预约申请，预约时间" + startTimeStr + "至" + endTimeStr + "，请您及时处理。"+
+                        "<a style='color: #409EFF;' href='https://www.mushanyu.xyz:8600/#/room/approve'>点击进入系统</a>";
+                emailService.sendHtmlMail(chargePersonMail,user.getName() + "房间预约申请待审核通知", content);
+            });
         }
         return roomReservation;
     }
@@ -278,6 +300,7 @@ public class RoomReservationService {
                 .where(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
+                .and(RoomDynamicSqlSupport.chargePersonId, isEqualTo(currentUserId))
                 .and(RoomReservationDynamicSqlSupport.state, isEqualTo(queryDTO.getState()))
                 .build().render(RenderingStrategies.MYBATIS3);
 
@@ -328,10 +351,31 @@ public class RoomReservationService {
             if (System.currentTimeMillis() >= roomReservation.getReserveEndTime()) {
                 throw new AlertException(1000, "已超过预约结束时间,无法操作");
             }
+            // 发送通知邮件信息
+            String toPersonMail = userMapper.queryUserMailById(roomReservation.getUserId());
+            String roomName = roomMapper.queryRoomNameById(roomReservation.getRoomId());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            String startTimeStr = sdf.format(new Date(roomReservation.getReserveStartTime()));
+            String endTimeStr = sdf.format(new Date(roomReservation.getReserveEndTime()));
+            String createTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(roomReservation.getCreateTime()));
             if (pass) {
                 roomReservation.setState(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED);
+                // 发送通过邮件提醒
+                if (StringUtils.hasLength(toPersonMail)) {
+                    // 如果有邮箱就发送通知
+                    String content = "您" + createTimeStr +
+                            "发起的"+ roomName +"预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，已由审核员审核通过。";
+                    emailService.sendSimpleMail(toPersonMail,roomName + "预约申请审核结果通知", content);
+                }
             } else {
                 roomReservation.setState(CommonConstant.ROOM_RESERVE_TO_BE_REJECTED);
+                // 发送通过邮件提醒
+                if (StringUtils.hasLength(toPersonMail)) {
+                    // 如果有邮箱就发送通知
+                    String content = "您" + createTimeStr +
+                            "发起的"+ roomName +"预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，审核不通过。";
+                    emailService.sendSimpleMail(toPersonMail,roomName + "预约申请审核结果通知", content);
+                }
             }
             roomReservation.setVerifyUserName(user.getName());
             int update = roomReservationMapper.updateByPrimaryKeySelective(roomReservation);

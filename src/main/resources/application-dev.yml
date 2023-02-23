@@ -26,7 +26,23 @@ spring:
       max-file-size: 12MB
       max-request-size: 12MB
 
-springfox:
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: your username
+    password: your password
+    default-encoding: UTF-8
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            enable: true
+
   documentation:
     swagger-ui:
       enabled: true
