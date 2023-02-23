@@ -349,6 +349,7 @@ public class UserService {
         return map;
     }
 
+    @Transactional(rollbackFor = RuntimeException.class)
     public void updatePwd(UserUpdatePwdDTO userUpdatePwdDTO) {
         // 获取解密后的密码
         String key = userUpdatePwdDTO.getKey();
@@ -388,7 +389,24 @@ public class UserService {
 
     }
 
+    @Transactional(rollbackFor = RuntimeException.class)
     public void updatePersonalInfo(UserUpdateDTO userUpdateDTO) {
+        String errorMsg = "";
+        boolean errorFlag = false;
+        String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        // 我提交的手机号是不是已经被其他人注册了
+        if (StringUtils.hasLength(userMapper.isTelExisted(userUpdateDTO.getTel(), userIdContext))) {
+            errorMsg += userUpdateDTO.getTel() + "手机号已被注册,";
+            errorFlag = true;
+        }
+        // 我提交的邮箱是不是已经被其他人注册了
+        if (StringUtils.hasLength(userMapper.isMailExisted(userUpdateDTO.getMail(), userIdContext))) {
+            errorMsg += userUpdateDTO.getMail() + "邮箱已被注册";
+            errorFlag = true;
+        }
+        if (errorFlag) {
+            throw new AlertException(1000, errorMsg);
+        }
         // 获取用户24小时可更新个人信息次数
         Integer leftUpdateTimes = (Integer) redisCacheUtil.getCacheObject(userUpdateDTO.getId() + "updateInfo");
         if (leftUpdateTimes != null) {
@@ -403,6 +421,8 @@ public class UserService {
         user.setName(userUpdateDTO.getName());
         user.setInstitute(userUpdateDTO.getInstitute());
         user.setNickname(userUpdateDTO.getStuNum() + user.getName());
+        user.setMail(userUpdateDTO.getMail());
+        user.setTel(userUpdateDTO.getTel());
         int update = userMapper.updateByPrimaryKeySelective(user);
         if (update == 0) {
             throw new AlertException(ResultCode.SYSTEM_ERROR);
@@ -462,6 +482,7 @@ public class UserService {
         }
     }
 
+    @Transactional(rollbackFor = RuntimeException.class)
     public User userBeCurrentRoomCharger(String tel, String name) {
         SelectStatementProvider statement = select(UserMapper.selectList)
                 .from(UserDynamicSqlSupport.user)
@@ -525,6 +546,11 @@ public class UserService {
     }
 
     public void updateUserTel(UserUpdateTelDTO userUpdateTelDTO) {
+        // 我提交的手机号是不是已经被其他人注册了
+        String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        if (StringUtils.hasLength(userMapper.isTelExisted(userUpdateTelDTO.getTel(), userIdContext))) {
+            throw new AlertException(1000, userUpdateTelDTO.getTel() + "手机号已被注册");
+        }
         UpdateStatementProvider update = update(UserDynamicSqlSupport.user)
                 .set(UserDynamicSqlSupport.tel).equalTo(userUpdateTelDTO.getTel())
                 .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
@@ -556,4 +582,5 @@ public class UserService {
             throw new AlertException(ResultCode.UPDATE_ERROR);
         }
     }
+
 }
