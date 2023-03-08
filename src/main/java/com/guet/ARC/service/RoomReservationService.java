@@ -341,7 +341,6 @@ public class RoomReservationService {
 
     // 通过或者驳回预约
     public void passOrRejectReserve(String reserveId, boolean pass, String rejectReason) {
-        System.out.println(rejectReason);
         if (!StringUtils.hasLength(rejectReason)) {
             rejectReason = "";
         }
