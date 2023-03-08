@@ -77,7 +77,7 @@ public class RoomReservationService {
         }
         // 检测是否已经预约
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        // 是待审核状态且在这段预约时间内代表我已经预约过了, 预约起始时间不能在准备预约的时间范围内，结束时间蹦年在准备结束预约的时间范围内
+        // 是待审核状态且在这段预约时间内代表我已经预约过了, 预约起始时间不能在准备预约的时间范围内，结束时间不能在准备结束预约的时间范围内
         SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
@@ -85,12 +85,16 @@ public class RoomReservationService {
                 .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(applyRoomDTO.getStartTime())
                                 .and(applyRoomDTO.getEndTime()),
                         or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(applyRoomDTO.getStartTime())
-                                .and(applyRoomDTO.getEndTime())))
+                                .and(applyRoomDTO.getEndTime())),
+                        or(RoomReservationDynamicSqlSupport.reserveStartTime,
+                                isGreaterThanOrEqualToWhenPresent(applyRoomDTO.getStartTime()),
+                                and(RoomReservationDynamicSqlSupport.reserveEndTime,
+                                        isLessThanOrEqualToWhenPresent(applyRoomDTO.getEndTime()))))
                 .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(applyRoomDTO.getRoomId()))
                 .build().render(RenderingStrategies.MYBATIS3);
         List<RoomReservation> roomReservations = roomReservationMapper.selectMany(statementProvider);
         if (roomReservations.size() != 0) {
-            throw new AlertException(1000, "您已经预约过该房间，请勿重复操作");
+            throw new AlertException(1000, "您已经预约过该房间，请勿重复操作，在我的预约中查看");
         }
         long time = System.currentTimeMillis();
         RoomReservation roomReservation = new RoomReservation();
@@ -204,10 +208,8 @@ public class RoomReservationService {
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(myApplyQueryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(myApplyQueryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
-                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
-                                .and(myApplyQueryDTO.getEndTime()),
-                        or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
-                                .and(myApplyQueryDTO.getEndTime())))
+                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isGreaterThanOrEqualToWhenPresent(myApplyQueryDTO.getStartTime()))
+                .and(RoomReservationDynamicSqlSupport.reserveEndTime, isLessThanOrEqualToWhenPresent(myApplyQueryDTO.getEndTime()))
                 .build().render(RenderingStrategies.MYBATIS3);
 
         SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
@@ -219,10 +221,8 @@ public class RoomReservationService {
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(myApplyQueryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(myApplyQueryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
-                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
-                                .and(myApplyQueryDTO.getEndTime()),
-                        or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(myApplyQueryDTO.getStartTime())
-                                .and(myApplyQueryDTO.getEndTime())))
+                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isGreaterThanOrEqualToWhenPresent(myApplyQueryDTO.getStartTime()))
+                .and(RoomReservationDynamicSqlSupport.reserveEndTime, isLessThanOrEqualToWhenPresent(myApplyQueryDTO.getEndTime()))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
 
@@ -340,7 +340,11 @@ public class RoomReservationService {
     }
 
     // 通过或者驳回预约
-    public void passOrRejectReserve(String reserveId, boolean pass) {
+    public void passOrRejectReserve(String reserveId, boolean pass, String rejectReason) {
+        System.out.println(rejectReason);
+        if (!StringUtils.hasLength(rejectReason)) {
+            rejectReason = "";
+        }
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         Optional<RoomReservation> roomReservationOptional = roomReservationMapper.selectByPrimaryKey(reserveId);
         Optional<User> userOptional = userMapper.selectByPrimaryKey(userId);
@@ -373,7 +377,7 @@ public class RoomReservationService {
                 if (StringUtils.hasLength(toPersonMail)) {
                     // 如果有邮箱就发送通知
                     String content = "您" + createTimeStr +
-                            "发起的"+ roomName +"预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，审核不通过。";
+                            "发起的"+ roomName +"预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，审核不通过。原因为：" + rejectReason + "。";
                     emailService.sendSimpleMail(toPersonMail,roomName + "预约申请审核结果通知", content);
                 }
             }

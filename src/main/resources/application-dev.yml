@@ -66,4 +66,4 @@ sa-token:
 
 #logging:
 #  level:
-#    com.guet.ARC.mapper.RoomMapper: debug
+#    com.guet.ARC.mapper: debug

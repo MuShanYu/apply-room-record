@@ -165,21 +165,36 @@ public class RoomService {
         if (!StringUtils.hasLength(roomQueryDTO.getTeachBuilding())) {
             roomQueryDTO.setTeachBuilding(null);
         }
-        // 查询出这段时间内已经预约的房间列表，然后再从总的中去除
+        // 查询出这段时间内已经预约的房间列表，已经预约是已经操作过，不需要进行状态筛选，然后再从总的中去除
         // 先查询可以预约的空闲房间，再从中按照房间的类别等条件筛选
+        // 有多少房间在这个时间段已经预约了
         SelectStatementProvider statementProvider = select(roomMapper.selectList)
                 .from(RoomDynamicSqlSupport.room)
-                .where(RoomDynamicSqlSupport.id, isNotIn(
+                .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .and(RoomDynamicSqlSupport.id, isNotIn(
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                                .where(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
-                                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isBetweenWhenPresent(roomQueryDTO.getStartTime())
-                                                .and(roomQueryDTO.getEndTime()),
-                                        or(RoomReservationDynamicSqlSupport.reserveEndTime, isBetweenWhenPresent(roomQueryDTO.getStartTime())
-                                                .and(roomQueryDTO.getEndTime()))
-                                )
+                                .where(RoomReservationDynamicSqlSupport.reserveStartTime,
+                                        isLessThanOrEqualTo(roomQueryDTO.getStartTime()))
+                                .and(RoomReservationDynamicSqlSupport.reserveEndTime,
+                                        isGreaterThanOrEqualTo(roomQueryDTO.getStartTime()))
                 ))
-                .and(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .and(RoomDynamicSqlSupport.id, isNotIn(
+                        select(RoomReservationDynamicSqlSupport.roomId)
+                                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                                .where(RoomReservationDynamicSqlSupport.reserveStartTime,
+                                        isLessThanOrEqualTo(roomQueryDTO.getEndTime()))
+                                .and(RoomReservationDynamicSqlSupport.reserveEndTime,
+                                        isGreaterThanOrEqualTo(roomQueryDTO.getEndTime()))
+                ))
+                .and(RoomDynamicSqlSupport.id, isNotIn(
+                        select(RoomReservationDynamicSqlSupport.roomId)
+                                .from(RoomReservationDynamicSqlSupport.roomReservation)
+                                .where(RoomReservationDynamicSqlSupport.reserveStartTime,
+                                        isGreaterThanOrEqualTo(roomQueryDTO.getStartTime()))
+                                .and(RoomReservationDynamicSqlSupport.reserveEndTime,
+                                        isLessThanOrEqualTo(roomQueryDTO.getEndTime()))
+                ))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomQueryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomQueryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomQueryDTO.getTeachBuilding()))
