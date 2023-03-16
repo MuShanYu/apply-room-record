@@ -7,6 +7,7 @@ import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.WriteWorkbook;
 import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
@@ -156,14 +157,6 @@ public class AccessRecordService {
     // 查询用户进出信息列表
     public PageInfo<UserAccessRecordVo> queryUserAccessRecordList(Integer page, Integer size) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider countStatement = select(count())
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
-                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        long count = accessRecordMapper.count(countStatement);
         SelectStatementProvider statementProvider = select(AccessRecordMapper.selectVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -172,24 +165,17 @@ public class AccessRecordService {
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
-        PageHelper.startPage(page, size);
-        PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
+        Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
         List<UserAccessRecordVo> userAccessRecordVos = accessRecordMapper.selectVo(statementProvider);
+        PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
         pageInfo.setPageData(userAccessRecordVos);
-        pageInfo.setTotalSize(count);
+        pageInfo.setTotalSize(queryPageData.getTotal());
         pageInfo.setPage(page);
         return pageInfo;
     }
 
     // 管理员查询用户进出信息列表
     public PageInfo<UserAccessRecordVo> queryUserAccessRecordListAdmin(Integer page, Integer size, String userId) {
-        SelectStatementProvider countStatement = select(count())
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
-                .build().render(RenderingStrategies.MYBATIS3);
-        long count = accessRecordMapper.count(countStatement);
         SelectStatementProvider statementProvider = select(AccessRecordMapper.selectVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -197,11 +183,11 @@ public class AccessRecordService {
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
                 .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
-        PageHelper.startPage(page, size);
-        PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
+        Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
         List<UserAccessRecordVo> userAccessRecordVos = accessRecordMapper.selectVo(statementProvider);
+        PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
         pageInfo.setPageData(userAccessRecordVos);
-        pageInfo.setTotalSize(count);
+        pageInfo.setTotalSize(queryPageData.getTotal());
         pageInfo.setPage(page);
         return pageInfo;
     }
@@ -209,14 +195,6 @@ public class AccessRecordService {
     // 查询用户进出房间的次数
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCount(Integer page, Integer size) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider countStatement = select(countDistinct(AccessRecordDynamicSqlSupport.roomId))
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
-                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        long count = accessRecordMapper.count(countStatement);
         SelectStatementProvider statementProvider = selectDistinct(AccessRecordMapper.selectCountVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -224,7 +202,7 @@ public class AccessRecordService {
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        PageHelper.startPage(page, size);
+        Page<UserAccessRecordCountVo> queryPageData = PageHelper.startPage(page, size);
         List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordMapper.selectCountVo(statementProvider);
         SelectStatementProvider countEntryTimes = null;
         SelectStatementProvider countOutTimes = null;
@@ -254,19 +232,11 @@ public class AccessRecordService {
         PageInfo<UserAccessRecordCountVo> pageInfo = new PageInfo<>();
         pageInfo.setPage(page);
         pageInfo.setPageData(userAccessRecordCountVos);
-        pageInfo.setTotalSize(count);
+        pageInfo.setTotalSize(queryPageData.getTotal());
         return pageInfo;
     }
 
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCountAdmin(Integer page, Integer size, String userId) {
-        SelectStatementProvider countStatement = select(countDistinct(AccessRecordDynamicSqlSupport.roomId))
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
-                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        long count = accessRecordMapper.count(countStatement);
         SelectStatementProvider statementProvider = selectDistinct(AccessRecordMapper.selectCountVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -274,7 +244,7 @@ public class AccessRecordService {
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        PageHelper.startPage(page, size);
+        Page<UserAccessRecordCountVo> queryPageData = PageHelper.startPage(page, size);
         List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordMapper.selectCountVo(statementProvider);
         SelectStatementProvider countEntryTimes = null;
         SelectStatementProvider countOutTimes = null;
@@ -302,7 +272,7 @@ public class AccessRecordService {
         PageInfo<UserAccessRecordCountVo> pageInfo = new PageInfo<>();
         pageInfo.setPage(page);
         pageInfo.setPageData(userAccessRecordCountVos);
-        pageInfo.setTotalSize(count);
+        pageInfo.setTotalSize(queryPageData.getTotal());
         return pageInfo;
     }
 
@@ -319,16 +289,6 @@ public class AccessRecordService {
         if (webAppDateEnd - webAppDateStart <= 0) {
             throw new AlertException(1000, "结束时间不能小于等于开始时间");
         }
-        SelectStatementProvider countStatement = select(count())
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.roomId, isEqualTo(userAccessQueryDTO.getRoomId()))
-                .and(AccessRecordDynamicSqlSupport.createTime, isBetweenWhenPresent(webAppDateStart)
-                        .and(webAppDateEnd))
-                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        long count = accessRecordMapper.count(countStatement);
         SelectStatementProvider statementProvider = select(AccessRecordMapper.selectAccessRoomVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -341,11 +301,11 @@ public class AccessRecordService {
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
-        PageHelper.startPage(userAccessQueryDTO.getPage(), userAccessQueryDTO.getSize());
-        PageInfo<UserAccessRecordRoomVo> pageInfo = new PageInfo<>();
+        Page<UserAccessRecordRoomVo> queryPageData = PageHelper.startPage(userAccessQueryDTO.getPage(), userAccessQueryDTO.getSize());
         List<UserAccessRecordRoomVo> userAccessRecordVos = accessRecordMapper.selectUserAccessRoomVo(statementProvider);
+        PageInfo<UserAccessRecordRoomVo> pageInfo = new PageInfo<>();
         pageInfo.setPageData(userAccessRecordVos);
-        pageInfo.setTotalSize(count);
+        pageInfo.setTotalSize(queryPageData.getTotal());
         pageInfo.setPage(userAccessQueryDTO.getPage());
         return pageInfo;
     }

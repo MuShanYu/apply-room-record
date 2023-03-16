@@ -1,6 +1,7 @@
 package com.guet.ARC.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
@@ -156,15 +157,7 @@ public class RoomReservationService {
                         .and(webAppDateEnd))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
-
-        SelectStatementProvider statementProviderCount = select(count())
-                .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .where(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomId))
-                .and(RoomReservationDynamicSqlSupport.createTime, isBetweenWhenPresent(webAppDateStart)
-                        .and(webAppDateEnd))
-                .build().render(RenderingStrategies.MYBATIS3);
-
-        PageHelper.startPage(roomApplyDetailListQueryDTO.getPage(), roomApplyDetailListQueryDTO.getSize());
+        Page<RoomReservation> queryPageData = PageHelper.startPage(roomApplyDetailListQueryDTO.getPage(), roomApplyDetailListQueryDTO.getSize());
         List<RoomReservation> roomReservationList = roomReservationMapper.selectMany(statementProvider);
         List<RoomReservationUserVo> roomReservationUserVos = new ArrayList<>();
         BeanCopier beanCopier = BeanCopier.create(RoomReservation.class, RoomReservationUserVo.class, false);
@@ -181,7 +174,7 @@ public class RoomReservationService {
         }
         PageInfo<RoomReservationUserVo> pageInfo = new PageInfo<>();
         pageInfo.setPage(roomApplyDetailListQueryDTO.getPage());
-        pageInfo.setTotalSize(roomReservationMapper.count(statementProviderCount));
+        pageInfo.setTotalSize(queryPageData.getTotal());
         pageInfo.setPageData(roomReservationUserVos);
         return pageInfo;
     }
@@ -199,19 +192,6 @@ public class RoomReservationService {
             myApplyQueryDTO.setTeachBuilding(null);
         }
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider statementProviderCount = select(count())
-                .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
-                .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
-                .and(RoomReservationDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
-                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(myApplyQueryDTO.getSchool()))
-                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(myApplyQueryDTO.getCategory()))
-                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
-                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isGreaterThanOrEqualToWhenPresent(myApplyQueryDTO.getStartTime()))
-                .and(RoomReservationDynamicSqlSupport.reserveEndTime, isLessThanOrEqualToWhenPresent(myApplyQueryDTO.getEndTime()))
-                .build().render(RenderingStrategies.MYBATIS3);
-
         SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -225,12 +205,11 @@ public class RoomReservationService {
                 .and(RoomReservationDynamicSqlSupport.reserveEndTime, isLessThanOrEqualToWhenPresent(myApplyQueryDTO.getEndTime()))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
-
-        PageHelper.startPage(myApplyQueryDTO.getPage(), myApplyQueryDTO.getSize());
+        Page<RoomReservationVo> queryPageData = PageHelper.startPage(myApplyQueryDTO.getPage(), myApplyQueryDTO.getSize());
         List<RoomReservationVo> roomReservationVos = roomReservationMapper.selectRoomReservationsVo(statementProvider);
         PageInfo<RoomReservationVo> roomReservationPageInfo = new PageInfo<>();
         roomReservationPageInfo.setPage(myApplyQueryDTO.getPage());
-        roomReservationPageInfo.setTotalSize(roomReservationMapper.count(statementProviderCount));
+        roomReservationPageInfo.setTotalSize(queryPageData.getTotal());
         roomReservationPageInfo.setPageData(roomReservationVos);
         return roomReservationPageInfo;
     }
@@ -247,17 +226,6 @@ public class RoomReservationService {
         if (!StringUtils.hasLength(queryDTO.getTeachBuilding())) {
             queryDTO.setTeachBuilding(null);
         }
-        SelectStatementProvider statementProviderCount = select(count())
-                .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
-                .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(queryDTO.getUserId()))
-                .and(RoomReservationDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
-                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
-                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
-                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
-                .build().render(RenderingStrategies.MYBATIS3);
-
         SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -269,12 +237,11 @@ public class RoomReservationService {
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
-
-        PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
+        Page<RoomReservationVo> queryPageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
         List<RoomReservationVo> roomReservationVos = roomReservationMapper.selectRoomReservationsVo(statementProvider);
         PageInfo<RoomReservationVo> roomReservationPageInfo = new PageInfo<>();
         roomReservationPageInfo.setPage(queryDTO.getPage());
-        roomReservationPageInfo.setTotalSize(roomReservationMapper.count(statementProviderCount));
+        roomReservationPageInfo.setTotalSize(queryPageData.getTotal());
         roomReservationPageInfo.setPageData(roomReservationVos);
         return roomReservationPageInfo;
     }
@@ -293,17 +260,6 @@ public class RoomReservationService {
             queryDTO.setTeachBuilding(null);
         }
         String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider statementProviderCount = select(count())
-                .from(RoomReservationDynamicSqlSupport.roomReservation)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
-                .where(RoomDynamicSqlSupport.school, isEqualToWhenPresent(queryDTO.getSchool()))
-                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
-                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
-                .and(RoomDynamicSqlSupport.chargePersonId, isEqualTo(currentUserId))
-                .and(RoomReservationDynamicSqlSupport.state, isEqualTo(queryDTO.getState()))
-                .build().render(RenderingStrategies.MYBATIS3);
-
         SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -315,8 +271,7 @@ public class RoomReservationService {
                 .and(RoomReservationDynamicSqlSupport.state, isEqualTo(queryDTO.getState()))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
-
-        PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
+        Page<RoomReservationAdminVo> queryPageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
         List<RoomReservationAdminVo> roomReservationAdminVos =
                 roomReservationMapper.selectRoomReservationsAdminVo(statementProvider);
         long now = System.currentTimeMillis();
@@ -334,7 +289,7 @@ public class RoomReservationService {
         }
         PageInfo<RoomReservationAdminVo> roomReservationPageInfo = new PageInfo<>();
         roomReservationPageInfo.setPage(queryDTO.getPage());
-        roomReservationPageInfo.setTotalSize(roomReservationMapper.count(statementProviderCount));
+        roomReservationPageInfo.setTotalSize(queryPageData.getTotal());
         roomReservationPageInfo.setPageData(roomReservationAdminVos);
         return roomReservationPageInfo;
     }
