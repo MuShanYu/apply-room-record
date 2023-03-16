@@ -2,6 +2,7 @@ package com.guet.ARC.service;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
@@ -79,19 +80,15 @@ public class SysConfigService {
 
     // 获取系统配置列表
     public PageInfo<SysConfig> querySysConfigList(Integer page, Integer size) {
-        SelectStatementProvider countStatement = select(count())
-                .from(SysConfigDynamicSqlSupport.sysConfig)
-                .build().render(RenderingStrategies.MYBATIS3);
-        long count = sysConfigMapper.count(countStatement);
         SelectStatementProvider selectStatementProvider = select(SysConfigMapper.selectList)
                 .from(SysConfigDynamicSqlSupport.sysConfig)
                 .orderBy(SysConfigDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         PageInfo<SysConfig> pageInfo = new PageInfo<>();
-        PageHelper.startPage(page, size);
+        Page<SysConfig> queryPageData = PageHelper.startPage(page, size);
         pageInfo.setPageData(sysConfigMapper.selectMany(selectStatementProvider));
         pageInfo.setPage(page);
-        pageInfo.setTotalSize(count);
+        pageInfo.setTotalSize(queryPageData.getTotal());
         return pageInfo;
     }
 

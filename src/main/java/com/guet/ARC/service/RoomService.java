@@ -1,6 +1,7 @@
 package com.guet.ARC.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
@@ -199,12 +200,12 @@ public class RoomService {
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomQueryDTO.getSchool()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomQueryDTO.getTeachBuilding()))
                 .build().render(RenderingStrategies.MYBATIS3);
-        PageHelper.startPage(roomQueryDTO.getPage(), roomQueryDTO.getSize());
+        Page<Room> queryPageData = PageHelper.startPage(roomQueryDTO.getPage(), roomQueryDTO.getSize());
         List<Room> rooms = roomMapper.selectMany(statementProvider);
         PageInfo<Room> pageInfo = new PageInfo<>();
         pageInfo.setPage(roomQueryDTO.getPage());
         pageInfo.setPageData(rooms);
-        pageInfo.setTotalSize(Long.parseLong(rooms.size() + ""));
+        pageInfo.setTotalSize(queryPageData.getTotal());
         return pageInfo;
     }
 
@@ -237,19 +238,11 @@ public class RoomService {
                 .and(RoomDynamicSqlSupport.roomName, isLikeWhenPresent(roomName))
                 .orderBy(RoomDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
-        SelectStatementProvider statementProviderCount = select(count())
-                .from(RoomDynamicSqlSupport.room)
-                .where(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
-                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
-                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomListQueryDTO.getCategory()))
-                .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomListQueryDTO.getChargeUserId()))
-                .and(RoomDynamicSqlSupport.roomName, isLikeWhenPresent(roomName))
-                .build().render(RenderingStrategies.MYBATIS3);
-        PageHelper.startPage(roomListQueryDTO.getPage(), roomListQueryDTO.getSize());
+        Page<Room> queryPageData = PageHelper.startPage(roomListQueryDTO.getPage(), roomListQueryDTO.getSize());
         List<Room> rooms = roomMapper.selectMany(statementProvider);
         PageInfo<Room> pageInfo = new PageInfo<>();
         pageInfo.setPage(roomListQueryDTO.getPage());
-        pageInfo.setTotalSize(roomMapper.count(statementProviderCount));
+        pageInfo.setTotalSize(queryPageData.getTotal());
         pageInfo.setPageData(rooms);
         return pageInfo;
     }

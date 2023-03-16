@@ -2,6 +2,7 @@ package com.guet.ARC.service;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
@@ -287,17 +288,12 @@ public class UserService {
         String institute = userListQueryDTO.getInstitute();
         name = StringUtils.hasLength(name) ? name + "%" : null;
         institute = StringUtils.hasLength(institute) ? institute + "%" : null;
-        SelectStatementProvider count = select(count())
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.name, isLikeWhenPresent(name))
-                .and(UserDynamicSqlSupport.institute, isLikeWhenPresent(institute))
-                .build().render(RenderingStrategies.MYBATIS3);
-        PageHelper.startPage(page, size);
         SelectStatementProvider queryStatement = select(UserMapper.selectList)
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.name, isLikeWhenPresent(name))
                 .and(UserDynamicSqlSupport.institute, isLikeWhenPresent(institute))
                 .build().render(RenderingStrategies.MYBATIS3);
+        Page<User> queryDataPage = PageHelper.startPage(page, size);
         List<User> users = userMapper.selectMany(queryStatement);
         List<UserRoleVo> userRoleVos = new ArrayList<>();
         BeanCopier userCopier = BeanCopier.create(User.class, UserRoleVo.class, false);
@@ -312,7 +308,7 @@ public class UserService {
         PageInfo<UserRoleVo> pageInfo = new PageInfo<>();
         pageInfo.setPage(page);
         pageInfo.setPageData(userRoleVos);
-        pageInfo.setTotalSize(userMapper.count(count));
+        pageInfo.setTotalSize(queryDataPage.getTotal());
         return pageInfo;
     }
 
