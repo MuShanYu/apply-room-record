@@ -44,6 +44,7 @@ public class RSAUtils {
             keyMap.put("private", privateKeyString);  //1表示私钥
         } catch (Exception e) {
             System.out.println("生成公钥私钥异常：" + e.getMessage());
+            e.printStackTrace();
             return null;
         }
 

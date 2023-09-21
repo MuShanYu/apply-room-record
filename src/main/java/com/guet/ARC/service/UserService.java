@@ -292,6 +292,7 @@ public class UserService {
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.name, isLikeWhenPresent(name))
                 .and(UserDynamicSqlSupport.institute, isLikeWhenPresent(institute))
+                .orderBy(UserDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<User> queryDataPage = PageHelper.startPage(page, size);
         List<User> users = userMapper.selectMany(queryStatement);
