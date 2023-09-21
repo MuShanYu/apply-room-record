@@ -32,6 +32,7 @@ public class AttendanceService {
     private AccessRecordMapper accessRecordMapper;
 
     public PageInfo<AttendanceCountListVo> queryAttendanceCountList(AttendanceListQueryDTO queryDTO) {
+        String name = queryDTO.getName() == null || queryDTO.getName().equals("") ? null : queryDTO.getName() + "%";
         BigDecimal oneHourSeconds = new BigDecimal("3600");
         // 查询符合条件的所有人， 按照userId分组
         SelectStatementProvider queryStatement = select(
@@ -49,6 +50,7 @@ public class AttendanceService {
                 .where(AccessRecordDynamicSqlSupport.roomId, isEqualTo(queryDTO.getRoomId()))
                 .and(AccessRecordDynamicSqlSupport.entryTime, isGreaterThanOrEqualTo(queryDTO.getStartTime()))
                 .and(AccessRecordDynamicSqlSupport.outTime, isLessThanOrEqualTo(queryDTO.getEndTime()))
+                .and(UserDynamicSqlSupport.name, isLikeWhenPresent(name))
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);

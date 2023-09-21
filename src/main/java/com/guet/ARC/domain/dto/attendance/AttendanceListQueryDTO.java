@@ -25,4 +25,6 @@ public class AttendanceListQueryDTO {
 
     @NotEmpty
     private String roomId;
+
+    private String name;
 }
