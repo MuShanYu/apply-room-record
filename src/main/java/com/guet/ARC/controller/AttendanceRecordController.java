@@ -6,8 +6,10 @@ import cn.dev33.satoken.annotation.SaMode;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.domain.dto.attendance.AttendanceDetailListDTO;
 import com.guet.ARC.domain.dto.attendance.AttendanceListQueryDTO;
 import com.guet.ARC.domain.vo.attendance.AttendanceCountListVo;
+import com.guet.ARC.domain.vo.attendance.AttendanceDetailListVo;
 import com.guet.ARC.service.AttendanceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -29,9 +31,16 @@ public class AttendanceRecordController {
     private AttendanceService attendanceService;
 
     @PostMapping("/attendance/query/list")
-    @ApiOperation(value = "根据房间ID查询用户签到统计列表")
+    @ApiOperation(value = "查询签到统计列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public PageInfo<AttendanceCountListVo> queryAttendanceCountList(@Valid @RequestBody AttendanceListQueryDTO queryDTO) {
         return attendanceService.queryAttendanceCountList(queryDTO);
+    }
+
+    @PostMapping("/attendance/query/detail/list")
+    @ApiOperation(value = "查询签到详情列表")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public PageInfo<AttendanceDetailListVo> queryAttendanceCountDetailList(@Valid @RequestBody AttendanceDetailListDTO queryDTO) {
+        return attendanceService.queryAttendanceDetailList(queryDTO);
     }
 }

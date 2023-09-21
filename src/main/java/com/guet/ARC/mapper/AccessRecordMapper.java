@@ -3,6 +3,7 @@ package com.guet.ARC.mapper;
 import com.guet.ARC.domain.AccessRecord;
 import com.guet.ARC.domain.excel.model.UserAccessRecordCountDataExcelModel;
 import com.guet.ARC.domain.vo.attendance.AttendanceCountListVo;
+import com.guet.ARC.domain.vo.attendance.AttendanceDetailListVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordRoomVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordVo;
@@ -48,9 +49,6 @@ public interface AccessRecordMapper {
             RoomDynamicSqlSupport.teachBuilding, RoomDynamicSqlSupport.category, RoomDynamicSqlSupport.roomName);
 
     BasicColumn[] selectAttendanceCountDetailList = BasicColumn.columnList(id, entryTime, outTime, state,
-            UserDynamicSqlSupport.name, UserDynamicSqlSupport.institute, UserDynamicSqlSupport.stuNum);
-
-    BasicColumn[] selectAttendanceCountList = BasicColumn.columnList(id, state, userId, roomId,
             UserDynamicSqlSupport.name, UserDynamicSqlSupport.institute, UserDynamicSqlSupport.stuNum);
 
     @Generated(value = "org.mybatis.generator.api.MyBatisGenerator", date = "2022-08-09T20:41:25.257+08:00", comments = "Source Table: tbl_access_record")
@@ -163,7 +161,7 @@ public interface AccessRecordMapper {
             @Result(column="name", property="name", jdbcType=JdbcType.VARCHAR),
             @Result(column="institute", property="institute", jdbcType=JdbcType.VARCHAR)
     })
-    List<AttendanceCountListVo> selectAttendanceCountDetailList(SelectStatementProvider selectStatement);
+    List<AttendanceDetailListVo> selectAttendanceCountDetailList(SelectStatementProvider selectStatement);
 
     @Generated(value = "org.mybatis.generator.api.MyBatisGenerator", date = "2022-08-09T20:41:25.257+08:00", comments = "Source Table: tbl_access_record")
     @UpdateProvider(type = SqlProviderAdapter.class, method = "update")

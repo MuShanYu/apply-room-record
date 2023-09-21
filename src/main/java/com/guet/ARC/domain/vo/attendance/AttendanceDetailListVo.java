@@ -3,6 +3,8 @@ package com.guet.ARC.domain.vo.attendance;
 import lombok.Data;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+
 @Data
 @ToString
 public class AttendanceDetailListVo {
@@ -21,5 +23,7 @@ public class AttendanceDetailListVo {
 
     private String name;
 
-    private Integer validAttendanceTime;
+    private Integer validAttendanceMills;
+
+    private BigDecimal validAttendanceHours;
 }
