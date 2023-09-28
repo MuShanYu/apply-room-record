@@ -10,7 +10,5 @@ public class UserUpdatePwdDTO {
 
     private String code;
 
-    private String key;
-
     private String pwd;
 }

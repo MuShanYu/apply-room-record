@@ -18,9 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
@@ -33,17 +31,13 @@ public class AttendanceService {
 
     public PageInfo<AttendanceCountListVo> queryAttendanceCountList(AttendanceListQueryDTO queryDTO) {
         String name = queryDTO.getName() == null || queryDTO.getName().equals("") ? null : queryDTO.getName() + "%";
-        BigDecimal oneHourSeconds = new BigDecimal("3600");
         // 查询符合条件的所有人， 按照userId分组
-        SelectStatementProvider queryStatement = select(
+        SelectStatementProvider queryStatement = selectDistinct(
                 AccessRecordDynamicSqlSupport.userId,
                 AccessRecordDynamicSqlSupport.roomId,
                 UserDynamicSqlSupport.institute,
                 UserDynamicSqlSupport.name,
-                UserDynamicSqlSupport.stuNum,
-                subtract(
-                        AccessRecordDynamicSqlSupport.outTime, AccessRecordDynamicSqlSupport.entryTime
-                ).as("validAttendanceMills"))
+                UserDynamicSqlSupport.stuNum)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(UserDynamicSqlSupport.user)
                 .on(UserDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.userId))
@@ -56,36 +50,11 @@ public class AttendanceService {
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<AttendanceCountListVo> pageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
         List<AttendanceCountListVo> attendanceCountListVos = accessRecordMapper.selectAttendanceCountList(queryStatement);
-        // 按照userId进行分组
-        Map<String, List<AttendanceCountListVo>> userIdMap = attendanceCountListVos.stream()
-                .peek(attendanceCountListVo -> {
-                    Integer validAttendanceTime = attendanceCountListVo.getValidAttendanceMills();
-                    if (validAttendanceTime == null) {
-                        attendanceCountListVo.setValidAttendanceMills(0);
-                        attendanceCountListVo.setValidAttendanceHours(new BigDecimal("0"));
-                    } else {
-                        // 计算时间,单位H
-                        BigDecimal timeInHour = new BigDecimal((validAttendanceTime / 1000) + "");
-                        // 保留一位小数舍弃后面的位数
-                        timeInHour = timeInHour.divide(oneHourSeconds, 1, RoundingMode.UP);
-                        attendanceCountListVo.setValidAttendanceHours(timeInHour);
-                    }
-                })
-                .collect(Collectors.groupingBy(AttendanceCountListVo::getUserId));
-        // 对有效签到时间求和
-        List<AttendanceCountListVo> result = new ArrayList<>();
-        userIdMap.keySet().forEach(key -> {
-            List<AttendanceCountListVo> attendanceCountList = userIdMap.get(key);
-            Integer attendanceTimeInMills = attendanceCountList.stream().map(AttendanceCountListVo::getValidAttendanceMills).reduce(0, Integer::sum);
-            BigDecimal attendanceTimeInHours = attendanceCountList.stream().map(AttendanceCountListVo::getValidAttendanceHours).reduce(new BigDecimal("0"), BigDecimal::add);
-            AttendanceCountListVo attendanceCountListVo = userIdMap.get(key).get(0);
-            attendanceCountListVo.setValidAttendanceMills(attendanceTimeInMills);
-            attendanceCountListVo.setValidAttendanceHours(attendanceTimeInHours);
-            result.add(attendanceCountListVo);
-        });
+        attendanceCountListVos = attendanceCountListVos.stream()
+                .peek(item -> item.setValidAttendanceHours(getUserAttendanceTimeInHour(queryDTO, item.getUserId()))).collect(Collectors.toList());
         PageInfo<AttendanceCountListVo> pageInfo = new PageInfo<>();
-        pageInfo.setPageData(result);
-        pageInfo.setTotalSize(Long.parseLong(userIdMap.size() + ""));
+        pageInfo.setPageData(attendanceCountListVos);
+        pageInfo.setTotalSize(pageData.getTotal());
         pageInfo.setPage(queryDTO.getPage());
         return pageInfo;
     }
@@ -122,8 +91,8 @@ public class AttendanceService {
                 .peek(attendanceDetailListVo -> {
                     Integer validAttendanceTime = attendanceDetailListVo.getValidAttendanceMills();
                     if (validAttendanceTime == null) {
-                        attendanceDetailListVo.setValidAttendanceMills(0);
                         attendanceDetailListVo.setValidAttendanceHours(new BigDecimal("0"));
+                        attendanceDetailListVo.setValidAttendanceMills(0);
                     } else {
                         // 计算时间,单位H
                         BigDecimal timeInHour = new BigDecimal((validAttendanceTime / 1000) + "");
@@ -133,9 +102,47 @@ public class AttendanceService {
                     }
                 }).collect(Collectors.toList());
         PageInfo<AttendanceDetailListVo> pageInfo = new PageInfo<>();
-        pageInfo.setPageData(attendanceCountListVos);
-        pageInfo.setTotalSize(page.getTotal());
         pageInfo.setPage(queryDTO.getPage());
+        pageInfo.setTotalSize(page.getTotal());
+        pageInfo.setPageData(attendanceCountListVos);
         return pageInfo;
     }
+
+    // 查出来后对分页结果进行统计，是错误的，应该对某个用户进行单独统计
+    private BigDecimal getUserAttendanceTimeInHour(AttendanceListQueryDTO queryDTO, String userId) {
+        BigDecimal oneHourSeconds = new BigDecimal("3600");
+        SelectStatementProvider statementProvider = select(
+                AccessRecordDynamicSqlSupport.userId,
+                subtract(
+                        AccessRecordDynamicSqlSupport.outTime, AccessRecordDynamicSqlSupport.entryTime
+                ).as("validAttendanceMills"))
+                .from(AccessRecordDynamicSqlSupport.accessRecord)
+                .leftJoin(UserDynamicSqlSupport.user)
+                .on(UserDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.userId))
+                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                .and(AccessRecordDynamicSqlSupport.roomId, isEqualTo(queryDTO.getRoomId()))
+                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .and(AccessRecordDynamicSqlSupport.entryTime, isGreaterThanOrEqualTo(queryDTO.getStartTime()))
+                .and(AccessRecordDynamicSqlSupport.outTime, isLessThanOrEqualTo(queryDTO.getEndTime()))
+                .build().render(RenderingStrategies.MYBATIS3);
+        List<AttendanceCountListVo> attendanceCountListVos = accessRecordMapper.selectAttendanceCountList(statementProvider);
+        return attendanceCountListVos.stream()
+                .peek(attendanceCountListVo -> {
+                    Integer validAttendanceTime = attendanceCountListVo.getValidAttendanceMills();
+                    if (validAttendanceTime == null) {
+                        attendanceCountListVo.setValidAttendanceMills(0);
+                        attendanceCountListVo.setValidAttendanceHours(new BigDecimal("0"));
+                    } else {
+                        // 计算时间,单位H
+                        BigDecimal timeInHour = new BigDecimal((validAttendanceTime / 1000) + "");
+                        // 保留一位小数舍弃后面的位数
+                        timeInHour = timeInHour.divide(oneHourSeconds, 1, RoundingMode.UP);
+                        attendanceCountListVo.setValidAttendanceHours(timeInHour);
+                    }
+                })
+                .map(AttendanceCountListVo::getValidAttendanceHours)
+                .reduce(new BigDecimal("0"), BigDecimal::add);
+    }
+
 }
