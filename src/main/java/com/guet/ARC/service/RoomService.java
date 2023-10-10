@@ -182,7 +182,9 @@ public class RoomService {
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.reserveStartTime,
-                                        isBetween(roomQueryDTO.getStartTime()).and(roomQueryDTO.getEndTime()))
+                                        isGreaterThanOrEqualTo(roomQueryDTO.getStartTime()))
+                                .and(RoomReservationDynamicSqlSupport.reserveEndTime,
+                                        isLessThanOrEqualTo(roomQueryDTO.getEndTime()))
                                 .and(RoomReservationDynamicSqlSupport.state,
                                         isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)
                                 )
@@ -200,7 +202,7 @@ public class RoomService {
                         // 查询这段时间内是否有待审批和已审批的记录
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                                .where(RoomReservationDynamicSqlSupport.reserveStartTime,
+                                .where(RoomReservationDynamicSqlSupport.reserveEndTime,
                                         isGreaterThanOrEqualTo(roomQueryDTO.getStartTime()))
                                 .and(RoomReservationDynamicSqlSupport.reserveEndTime,
                                         isLessThanOrEqualTo(roomQueryDTO.getEndTime()))
