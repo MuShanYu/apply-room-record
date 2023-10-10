@@ -330,7 +330,6 @@ public class DataStatisticsService {
             String endDateStr = sdf.format(new Date(roomRecordCountDTO.getEndTime()));
             String fileName = URLEncoder.encode(startDateStr + "_" + endDateStr + "_房间进出统计记录", "utf-8");
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setCharacterEncoding("utf-8");
             response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
             response.addHeader("Pragma", "No-cache");
             response.addHeader("Cache-Control", "No-cache");

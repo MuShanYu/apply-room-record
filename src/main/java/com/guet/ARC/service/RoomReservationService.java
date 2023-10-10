@@ -309,6 +309,10 @@ public class RoomReservationService {
             if (System.currentTimeMillis() >= roomReservation.getReserveEndTime()) {
                 throw new AlertException(1000, "已超过预约结束时间,无法操作");
             }
+            // 是否在相同时间内已经预约过了，也就是这段时间内是否有其他待审核预约、已审核预约
+            if (checkSameTimeReservationWithStatus(reserveId)) {
+                throw new AlertException(1000, "用户在相同时间再次进行预约，无法从驳回进行通过操作");
+            }
             // 发送通知邮件信息
             String toPersonMail = userMapper.queryUserMailById(roomReservation.getUserId());
             String roomName = roomMapper.queryRoomNameById(roomReservation.getRoomId());
@@ -350,6 +354,38 @@ public class RoomReservationService {
         int rows = roomReservationMapper.deleteByPrimaryKey(id);
         if (rows == 0) {
             throw new AlertException(ResultCode.DELETE_ERROR);
+        }
+    }
+
+    /**
+     * 主要是用于处理已驳回是在进行通过的情况
+     * @param reserveId
+     * @return
+     */
+    private boolean checkSameTimeReservationWithStatus(String reserveId) {
+        boolean returnFlag = true;
+        // 这段时间内这个房间是否有其他待审核预约、已审核预约记录，这两个状态表示房间已经被占有
+        Optional<RoomReservation> roomReservationOptional = roomReservationMapper.selectByPrimaryKey(reserveId);
+        if (roomReservationOptional.isPresent()) {
+            RoomReservation roomReservation = roomReservationOptional.get();
+            // 预约起始和截止时间
+            Long reserveStartTime = roomReservation.getReserveStartTime();
+            Long reserveEndTime = roomReservation.getReserveEndTime();
+            String roomId = roomReservation.getRoomId();
+            SelectStatementProvider countRoomReservations = select(count())
+                    .from(RoomReservationDynamicSqlSupport.roomReservation)
+                    .where(RoomReservationDynamicSqlSupport.reserveStartTime, isEqualToWhenPresent(reserveStartTime))
+                    .and(RoomReservationDynamicSqlSupport.reserveEndTime, isEqualToWhenPresent(reserveEndTime))
+                    .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomId))
+                    // 排除本身是否还有其他两个状态的记录
+                    .and(RoomReservationDynamicSqlSupport.id, isNotIn(reserveId))
+                    .and(RoomReservationDynamicSqlSupport.state, isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED))
+                    .build().render(RenderingStrategies.MYBATIS3);
+            long count = roomReservationMapper.count(countRoomReservations);
+            // 表示有冲突，驳回后用户在这段时间尝试了重新预约
+            return count > 0;
+        } else {
+            throw new AlertException(ResultCode.ILLEGAL_OPERATION);
         }
     }
 

@@ -3,14 +3,9 @@ package com.guet.ARC.domain.dto.room;
 import lombok.Data;
 import lombok.ToString;
 
-import javax.validation.constraints.NotEmpty;
-
 @Data
 @ToString
 public class RoomAddUpdateDTO {
-
-    @NotEmpty
-    private String id;
 
     private String school;
 

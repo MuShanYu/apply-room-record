@@ -30,12 +30,6 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/user/publicKey")
-    @ApiOperation(value = "获取登录公钥")
-    public Map<String, String> publicKeyApi(@RequestParam("currentTimeMills") Long currentTimeMills) {
-        return userService.getPublicKey(currentTimeMills);
-    }
-
     @PostMapping("/user/register")
     @ApiOperation(value = "用户注册")
     public Map<String, Object> registerApi(@RequestBody UserRegisterDTO userRegisterDTO) {

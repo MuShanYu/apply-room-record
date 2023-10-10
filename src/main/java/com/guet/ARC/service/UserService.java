@@ -51,18 +51,19 @@ public class UserService {
     private UserRoleMapper userRoleMapper;
 
     public Map<String, String> getPublicKey(Long currentTimeMillis) {
-        Map<String, String> keyPair = null;
+        /*Map<String, String> keyPair = null;
         try {
             keyPair = RSAUtils.genKeyPair();
             String privateKey = keyPair.get("private");
             String publicKey = keyPair.get("public");
             redisCacheUtil.setCacheObject(String.valueOf(currentTimeMillis), privateKey, 30, TimeUnit.SECONDS);
-            Map<String, String> map = new HashMap<>();
-            map.put("public", publicKey);
-            return map;
+
         } catch (Exception e) {
             throw new RuntimeException("私钥，密钥生成失败");
-        }
+        }*/
+        Map<String, String> map = new HashMap<>();
+        map.put("public", "public key");
+        return map;
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
@@ -208,15 +209,12 @@ public class UserService {
         return errorData;
     }
 
+    // 使用https连接，无需进行密码加密
     public Map<String, Object> login(UserLoginDTO userLoginDTO) {
-        String tel = userLoginDTO.getTel();
-        String encodePwd = userLoginDTO.getPwd();
-        String key = userLoginDTO.getKey();
-        String privateKey = redisCacheUtil.getCacheObject(key);
-        String pwd = SaSecureUtil.md5(RSAUtils.decrypt(encodePwd, privateKey));
+        String pwd = SaSecureUtil.md5(userLoginDTO.getPwd());
         SelectStatementProvider queryStatement = select(UserMapper.selectList)
                 .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
+                .where(UserDynamicSqlSupport.tel, isEqualTo(userLoginDTO.getTel()))
                 .and(UserDynamicSqlSupport.pwd, isEqualTo(pwd))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
@@ -235,19 +233,17 @@ public class UserService {
             // 返回结果
             map.put("user", user);
             map.put("token", token);
+        } else {
+            throw new AlertException(1000, "账号或者密码错误");
         }
         return map;
     }
 
     public Map<String, Object> adminLogin(UserLoginDTO userLoginDTO) {
-        String tel = userLoginDTO.getTel();
-        String encodePwd = userLoginDTO.getPwd();
-        String key = userLoginDTO.getKey();
-        String privateKey = redisCacheUtil.getCacheObject(key);
-        String pwd = SaSecureUtil.md5(RSAUtils.decrypt(encodePwd, privateKey));
+        String pwd = SaSecureUtil.md5(userLoginDTO.getPwd());
         SelectStatementProvider queryStatement = select(UserMapper.selectList)
                 .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
+                .where(UserDynamicSqlSupport.tel, isEqualTo(userLoginDTO.getTel()))
                 .and(UserDynamicSqlSupport.pwd, isEqualTo(pwd))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
@@ -276,6 +272,8 @@ public class UserService {
                 StpUtil.logout();
                 throw new AlertException(1000, "您不是管理员，没有权限登录后台管理");
             }
+        }else {
+            throw new AlertException(1000, "账号或者密码错误");
         }
         return map;
     }
@@ -292,6 +290,7 @@ public class UserService {
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.name, isLikeWhenPresent(name))
                 .and(UserDynamicSqlSupport.institute, isLikeWhenPresent(institute))
+                .orderBy(UserDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<User> queryDataPage = PageHelper.startPage(page, size);
         List<User> users = userMapper.selectMany(queryStatement);
@@ -347,13 +346,7 @@ public class UserService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     public void updatePwd(UserUpdatePwdDTO userUpdatePwdDTO) {
-        // 获取解密后的密码
-        String key = userUpdatePwdDTO.getKey();
-        String privateKey = redisCacheUtil.getCacheObject(key);
-        if (!StringUtils.hasLength(privateKey)) {
-            throw new AlertException(1000, "非法修改密码操作");
-        }
-        String pwd = RSAUtils.decrypt(userUpdatePwdDTO.getPwd(), privateKey);
+        String pwd = userUpdatePwdDTO.getPwd();
         // 验证验证码
         String code = redisCacheUtil.getCacheObject(userUpdatePwdDTO.getTel());
         if (!StringUtils.hasLength(code)) {

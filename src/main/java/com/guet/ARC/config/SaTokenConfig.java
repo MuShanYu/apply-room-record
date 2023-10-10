@@ -30,9 +30,18 @@ public class SaTokenConfig implements WebMvcConfigurer {
         loginExcludePathPatterns.add("/admin/login");
         loginExcludePathPatterns.add("/user/update/pwd");
         loginExcludePathPatterns.add("/user/get/verifyCode");
-        loginExcludePathPatterns.add("/v3/**");
         loginExcludePathPatterns.add("/user/get/classify/room");
         loginExcludePathPatterns.add("/config/get/by/**");
+        // swagger
+        loginExcludePathPatterns.add("/v3/**");
+        loginExcludePathPatterns.add("/swagger-ui/**");
+        loginExcludePathPatterns.add("/swagger-resources/**");
+        // 其他
+        loginExcludePathPatterns.add("/favicon.ico");
+        loginExcludePathPatterns.add("/doc.html");
+        loginExcludePathPatterns.add("/error");
+
+
 
         // 注解权限拦截!!!!!
         registry.addInterceptor(new SaAnnotationInterceptor()).addPathPatterns("/**");
