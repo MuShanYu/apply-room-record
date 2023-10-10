@@ -10,5 +10,4 @@ public class UserLoginDTO {
 
     private String pwd;
 
-    private String key;
 }

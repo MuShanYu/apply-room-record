@@ -154,6 +154,7 @@ public class RoomService {
      * @return
      */
     public PageInfo<Room> queryRoom(RoomQueryDTO roomQueryDTO) {
+        System.out.println(roomQueryDTO);
         if (roomQueryDTO == null) {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
         }
@@ -172,29 +173,40 @@ public class RoomService {
         SelectStatementProvider statementProvider = select(roomMapper.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                //  搜索区间内的，预约状态是自己未预约的。
+                //  相同时间段内只允许有一条预约成功的记录，不可以重复。
+                // 预约状态为取消、驳回可再其次预约
+                // 预约状态为待审批，则这段时间内不可再次预约
+                // 预约状态为已审批，则这段时间内也不可以再次预约
                 .and(RoomDynamicSqlSupport.id, isNotIn(
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.reserveStartTime,
-                                        isLessThanOrEqualTo(roomQueryDTO.getStartTime()))
-                                .and(RoomReservationDynamicSqlSupport.reserveEndTime,
-                                        isGreaterThanOrEqualTo(roomQueryDTO.getStartTime()))
+                                        isBetween(roomQueryDTO.getStartTime()).and(roomQueryDTO.getEndTime()))
+                                .and(RoomReservationDynamicSqlSupport.state,
+                                        isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)
+                                )
                 ))
                 .and(RoomDynamicSqlSupport.id, isNotIn(
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                                .where(RoomReservationDynamicSqlSupport.reserveStartTime,
-                                        isLessThanOrEqualTo(roomQueryDTO.getEndTime()))
-                                .and(RoomReservationDynamicSqlSupport.reserveEndTime,
-                                        isGreaterThanOrEqualTo(roomQueryDTO.getEndTime()))
+                                .where(RoomReservationDynamicSqlSupport.reserveEndTime,
+                                        isBetween(roomQueryDTO.getStartTime()).and(roomQueryDTO.getEndTime()))
+                                .and(RoomReservationDynamicSqlSupport.state,
+                                        isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)
+                                )
                 ))
                 .and(RoomDynamicSqlSupport.id, isNotIn(
+                        // 查询这段时间内是否有待审批和已审批的记录
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.reserveStartTime,
                                         isGreaterThanOrEqualTo(roomQueryDTO.getStartTime()))
                                 .and(RoomReservationDynamicSqlSupport.reserveEndTime,
                                         isLessThanOrEqualTo(roomQueryDTO.getEndTime()))
+                                .and(RoomReservationDynamicSqlSupport.state,
+                                        isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)
+                                )
                 ))
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomQueryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomQueryDTO.getSchool()))
