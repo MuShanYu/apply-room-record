@@ -190,8 +190,8 @@ public class RoomService {
                 .and(RoomDynamicSqlSupport.id, isNotIn(
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
-                                .where(RoomReservationDynamicSqlSupport.reserveEndTime,
-                                        isBetween(roomQueryDTO.getStartTime()).and(roomQueryDTO.getEndTime()))
+                                .where(RoomReservationDynamicSqlSupport.reserveStartTime, isLessThanOrEqualTo(roomQueryDTO.getStartTime()))
+                                .and(RoomReservationDynamicSqlSupport.reserveEndTime, isGreaterThanOrEqualTo(roomQueryDTO.getEndTime()))
                                 .and(RoomReservationDynamicSqlSupport.state,
                                         isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)
                                 )
