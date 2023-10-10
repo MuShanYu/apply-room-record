@@ -154,7 +154,7 @@ public class RoomService {
      * @return
      */
     public PageInfo<Room> queryRoom(RoomQueryDTO roomQueryDTO) {
-        System.out.println(roomQueryDTO);
+//        System.out.println(roomQueryDTO);
         if (roomQueryDTO == null) {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
         }
