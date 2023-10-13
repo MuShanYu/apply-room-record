@@ -149,7 +149,7 @@
             <!-- 生产环境 -->
             <id>prod</id>
             <properties>
-                <profileActive>pro</profileActive>
+                <profileActive>prod</profileActive>
             </properties>
         </profile>
     </profiles>
