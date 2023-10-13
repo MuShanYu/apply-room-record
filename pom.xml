@@ -133,7 +133,29 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <!-- 开发环境 -->
+            <id>dev</id>
+            <properties>
+                <profileActive>dev</profileActive>
+            </properties>
+            <!-- 默认环境 -->
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <!-- 生产环境 -->
+            <id>prod</id>
+            <properties>
+                <profileActive>pro</profileActive>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
+        <finalName>${project.artifactId}-${profileActive}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.mybatis.generator</groupId>
@@ -177,5 +199,6 @@
             </plugin>
         </plugins>
     </build>
+
 
 </project>
