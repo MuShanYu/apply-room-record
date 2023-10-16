@@ -1,5 +1,5 @@
 server:
-  port: 8500
+  port: 8600
 spring:
   mvc:
     pathmatch:
