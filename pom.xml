@@ -152,6 +152,13 @@
                 <profileActive>prod</profileActive>
             </properties>
         </profile>
+        <profile>
+            <!-- 测试环境 -->
+            <id>test</id>
+            <properties>
+                <profileActive>test</profileActive>
+            </properties>
+        </profile>
     </profiles>
 
     <build>
