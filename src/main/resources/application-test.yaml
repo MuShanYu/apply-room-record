@@ -1,0 +1,78 @@
+server:
+  port: 8500
+
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
+    username: root
+    password: root
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    timeout: 10000
+    lettuce:
+      pool:
+        max-active: 250
+        min-idle: 5
+        max-wait: 5000ms
+        max-idle: 20
+
+  servlet:
+    multipart:
+      max-file-size: 12MB
+      max-request-size: 12MB
+
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 1980634531@qq.com
+    password: cyxqyxsmnbzgccge
+    default-encoding: UTF-8
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            enable: true
+
+  documentation:
+    swagger-ui:
+      enabled: true
+  flyway:
+    # 禁止清理数据库表
+    clean-disabled: true
+    # 如果数据库不是空表，需要设置成 true
+    baseline-on-migrate: true
+    # 与 baseline-on-migrate: true 搭配使用
+    baseline-version: 0
+    locations:
+      - classpath:flyway/mysql
+
+# Sa-Token 配置
+sa-token:
+  # token名称 (同时也是cookie名称)
+  token-name: token
+  # token有效期，单位s 默认30天, -1代表永不过期
+  timeout: 3600 # 30天 2592000
+  # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
+  activity-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
+  is-share: true
+  # token风格
+  token-style: tik
+  # 是否输出操作日志
+  is-log: true
+
+#logging:
+#  level:
+#    com.guet.ARC.mapper.UserMapper: debug
