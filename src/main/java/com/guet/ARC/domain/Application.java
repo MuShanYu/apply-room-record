@@ -1,11 +1,10 @@
 package com.guet.ARC.domain;
 
+import com.guet.ARC.domain.enums.ApplicationType;
 import lombok.Data;
 import lombok.ToString;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "tbl_application" )
@@ -21,7 +20,8 @@ public class Application {
     private String reason;
 
     // 数据库为_连接命名，实体类使用驼峰明明，jpa默认遇到大写字母转为_连接，与数据库对应。
-    private Short applicationType;
+    @Enumerated(EnumType.ORDINAL)
+    private ApplicationType applicationType;
 
     private String matterRecordId;
 

@@ -1,12 +1,12 @@
 package com.guet.ARC.domain;
 
 
+import com.guet.ARC.domain.enums.MessageType;
+import com.guet.ARC.domain.enums.ReadState;
 import lombok.Data;
 import lombok.ToString;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "tbl_message")
@@ -17,9 +17,11 @@ public class Message {
     @Id
     private String id;
 
-    private Short messageType;
+    @Enumerated(EnumType.ORDINAL)
+    private MessageType messageType;
 
-    private Short readState;
+    @Enumerated(EnumType.ORDINAL)
+    private ReadState readState;
 
     private String content;
 
