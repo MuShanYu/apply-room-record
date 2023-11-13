@@ -1,6 +1,6 @@
-package com.guet.ARC.mapper;
+package com.guet.ARC.dao.mybatis;
 
-import static com.guet.ARC.mapper.SysConfigDynamicSqlSupport.*;
+import static com.guet.ARC.dao.mybatis.support.SysConfigDynamicSqlSupport.*;
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
 import com.guet.ARC.domain.SysConfig;
@@ -33,7 +33,7 @@ import org.mybatis.dynamic.sql.util.SqlProviderAdapter;
 import org.mybatis.dynamic.sql.util.mybatis3.MyBatis3Utils;
 
 @Mapper
-public interface SysConfigMapper {
+public interface SysConfigQueryRepository {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-23T17:21:59.555+08:00", comments="Source Table: tbl_sys_config")
     BasicColumn[] selectList = BasicColumn.columnList(id, configKey, configDesc, state, createTime, updateTime, configValue);
 

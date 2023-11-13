@@ -8,9 +8,9 @@ import com.guet.ARC.domain.dto.attendance.AttendanceDetailListDTO;
 import com.guet.ARC.domain.dto.attendance.AttendanceListQueryDTO;
 import com.guet.ARC.domain.vo.attendance.AttendanceCountListVo;
 import com.guet.ARC.domain.vo.attendance.AttendanceDetailListVo;
-import com.guet.ARC.mapper.AccessRecordDynamicSqlSupport;
-import com.guet.ARC.mapper.AccessRecordMapper;
-import com.guet.ARC.mapper.UserDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.support.AccessRecordDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.AccessRecordQueryRepository;
+import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ import static org.mybatis.dynamic.sql.SqlBuilder.*;
 public class AttendanceService {
 
     @Autowired
-    private AccessRecordMapper accessRecordMapper;
+    private AccessRecordQueryRepository accessRecordQueryRepository;
 
     public PageInfo<AttendanceCountListVo> queryAttendanceCountList(AttendanceListQueryDTO queryDTO) {
         String name = queryDTO.getName() == null || queryDTO.getName().equals("") ? null : queryDTO.getName() + "%";
@@ -49,7 +49,7 @@ public class AttendanceService {
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<AttendanceCountListVo> pageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
-        List<AttendanceCountListVo> attendanceCountListVos = accessRecordMapper.selectAttendanceCountList(queryStatement);
+        List<AttendanceCountListVo> attendanceCountListVos = accessRecordQueryRepository.selectAttendanceCountList(queryStatement);
         attendanceCountListVos = attendanceCountListVos.stream()
                 .peek(item -> item.setValidAttendanceHours(getUserAttendanceTimeInHour(queryDTO, item.getUserId()))).collect(Collectors.toList());
         PageInfo<AttendanceCountListVo> pageInfo = new PageInfo<>();
@@ -85,7 +85,7 @@ public class AttendanceService {
                 .orderBy(AccessRecordDynamicSqlSupport.entryTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<AttendanceDetailListVo> page = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
-        List<AttendanceDetailListVo> attendanceCountListVos = accessRecordMapper.selectAttendanceCountDetailList(statement);
+        List<AttendanceDetailListVo> attendanceCountListVos = accessRecordQueryRepository.selectAttendanceCountDetailList(statement);
         // 处理有效签到时长
         attendanceCountListVos = attendanceCountListVos.stream()
                 .peek(attendanceDetailListVo -> {
@@ -126,7 +126,7 @@ public class AttendanceService {
                 .and(AccessRecordDynamicSqlSupport.entryTime, isGreaterThanOrEqualTo(queryDTO.getStartTime()))
                 .and(AccessRecordDynamicSqlSupport.outTime, isLessThanOrEqualTo(queryDTO.getEndTime()))
                 .build().render(RenderingStrategies.MYBATIS3);
-        List<AttendanceCountListVo> attendanceCountListVos = accessRecordMapper.selectAttendanceCountList(statementProvider);
+        List<AttendanceCountListVo> attendanceCountListVos = accessRecordQueryRepository.selectAttendanceCountList(statementProvider);
         return attendanceCountListVos.stream()
                 .peek(attendanceCountListVo -> {
                     Integer validAttendanceTime = attendanceCountListVo.getValidAttendanceMills();
@@ -144,5 +144,8 @@ public class AttendanceService {
                 .map(AttendanceCountListVo::getValidAttendanceHours)
                 .reduce(new BigDecimal("0"), BigDecimal::add);
     }
+
+
+
 
 }

@@ -20,10 +20,10 @@ import com.guet.ARC.domain.excel.model.UserAccessRecordCountDataExcelModel;
 import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordRoomVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordVo;
-import com.guet.ARC.mapper.AccessRecordDynamicSqlSupport;
-import com.guet.ARC.mapper.AccessRecordMapper;
-import com.guet.ARC.mapper.RoomDynamicSqlSupport;
-import com.guet.ARC.mapper.UserDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.support.AccessRecordDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.AccessRecordQueryRepository;
+import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.ExcelUtil;
 import com.guet.ARC.util.RedisCacheUtil;
@@ -45,7 +45,7 @@ import static org.mybatis.dynamic.sql.SqlBuilder.*;
 public class AccessRecordService {
 
     @Autowired
-    private AccessRecordMapper accessRecordMapper;
+    private AccessRecordQueryRepository accessRecordQueryRepository;
 
     @Autowired
     private RedisCacheUtil<AccessRecord> redisCacheUtil;
@@ -106,7 +106,7 @@ public class AccessRecordService {
                     accessRecordCache.setOutTime(now);
                     accessRecordCache.setUpdateTime(System.currentTimeMillis());
                     redisCacheUtil.deleteObject(key);
-                    int update = accessRecordMapper.updateByPrimaryKeySelective(accessRecordCache);
+                    int update = accessRecordQueryRepository.updateByPrimaryKeySelective(accessRecordCache);
                     if (update == 0) {
                         throw new AlertException(ResultCode.SYSTEM_ERROR);
                     }
@@ -127,7 +127,7 @@ public class AccessRecordService {
         accessRecord.setRoomId(roomId);
         accessRecord.setUserId(userId);
         accessRecord.setState(CommonConstant.STATE_ACTIVE);
-        int insert = accessRecordMapper.insertSelective(accessRecord);
+        int insert = accessRecordQueryRepository.insertSelective(accessRecord);
         if (insert == 0) {
             throw new AlertException(ResultCode.SYSTEM_ERROR);
         }
@@ -136,7 +136,7 @@ public class AccessRecordService {
 
     // 删除进出记录
     public void delAccessRecord(String accessRecordId) {
-        Optional<AccessRecord> accessRecordOptional = accessRecordMapper.selectByPrimaryKey(accessRecordId);
+        Optional<AccessRecord> accessRecordOptional = accessRecordQueryRepository.selectByPrimaryKey(accessRecordId);
         if (accessRecordOptional.isPresent()) {
             AccessRecord accessRecord = accessRecordOptional.get();
             if (accessRecord.getState().equals(CommonConstant.STATE_ACTIVE)) {
@@ -145,7 +145,7 @@ public class AccessRecordService {
                 accessRecord.setState(CommonConstant.STATE_ACTIVE);
             }
             accessRecord.setUpdateTime(System.currentTimeMillis());
-            int update = accessRecordMapper.updateByPrimaryKeySelective(accessRecord);
+            int update = accessRecordQueryRepository.updateByPrimaryKeySelective(accessRecord);
             if (update == 0) {
                 throw new AlertException(ResultCode.SYSTEM_ERROR);
             }
@@ -157,7 +157,7 @@ public class AccessRecordService {
     // 查询用户进出信息列表
     public PageInfo<UserAccessRecordVo> queryUserAccessRecordList(Integer page, Integer size) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectVoList)
+        SelectStatementProvider statementProvider = select(AccessRecordQueryRepository.selectVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
@@ -166,7 +166,7 @@ public class AccessRecordService {
                 .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordVo> userAccessRecordVos = accessRecordMapper.selectVo(statementProvider);
+        List<UserAccessRecordVo> userAccessRecordVos = accessRecordQueryRepository.selectVo(statementProvider);
         PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
         pageInfo.setPageData(userAccessRecordVos);
         pageInfo.setTotalSize(queryPageData.getTotal());
@@ -176,7 +176,7 @@ public class AccessRecordService {
 
     // 管理员查询用户进出信息列表
     public PageInfo<UserAccessRecordVo> queryUserAccessRecordListAdmin(Integer page, Integer size, String userId) {
-        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectVoList)
+        SelectStatementProvider statementProvider = select(AccessRecordQueryRepository.selectVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
@@ -184,7 +184,7 @@ public class AccessRecordService {
                 .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordVo> userAccessRecordVos = accessRecordMapper.selectVo(statementProvider);
+        List<UserAccessRecordVo> userAccessRecordVos = accessRecordQueryRepository.selectVo(statementProvider);
         PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
         pageInfo.setPageData(userAccessRecordVos);
         pageInfo.setTotalSize(queryPageData.getTotal());
@@ -195,7 +195,7 @@ public class AccessRecordService {
     // 查询用户进出房间的次数
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCount(Integer page, Integer size) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider statementProvider = selectDistinct(AccessRecordMapper.selectCountVoList)
+        SelectStatementProvider statementProvider = selectDistinct(AccessRecordQueryRepository.selectCountVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
@@ -203,7 +203,7 @@ public class AccessRecordService {
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<UserAccessRecordCountVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordMapper.selectCountVo(statementProvider);
+        List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordQueryRepository.selectCountVo(statementProvider);
         SelectStatementProvider countEntryTimes = null;
         SelectStatementProvider countOutTimes = null;
         for (UserAccessRecordCountVo userAccessRecordCountVo : userAccessRecordCountVos) {
@@ -226,8 +226,8 @@ public class AccessRecordService {
                     .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
-            userAccessRecordCountVo.setEntryTimes(accessRecordMapper.count(countEntryTimes));
-            userAccessRecordCountVo.setOutTimes(accessRecordMapper.count(countOutTimes));
+            userAccessRecordCountVo.setEntryTimes(accessRecordQueryRepository.count(countEntryTimes));
+            userAccessRecordCountVo.setOutTimes(accessRecordQueryRepository.count(countOutTimes));
         }
         PageInfo<UserAccessRecordCountVo> pageInfo = new PageInfo<>();
         pageInfo.setPage(page);
@@ -237,7 +237,7 @@ public class AccessRecordService {
     }
 
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCountAdmin(Integer page, Integer size, String userId) {
-        SelectStatementProvider statementProvider = selectDistinct(AccessRecordMapper.selectCountVoList)
+        SelectStatementProvider statementProvider = selectDistinct(AccessRecordQueryRepository.selectCountVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
@@ -245,7 +245,7 @@ public class AccessRecordService {
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<UserAccessRecordCountVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordMapper.selectCountVo(statementProvider);
+        List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordQueryRepository.selectCountVo(statementProvider);
         SelectStatementProvider countEntryTimes = null;
         SelectStatementProvider countOutTimes = null;
         for (UserAccessRecordCountVo userAccessRecordCountVo : userAccessRecordCountVos) {
@@ -266,8 +266,8 @@ public class AccessRecordService {
                     .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
-            userAccessRecordCountVo.setEntryTimes(accessRecordMapper.count(countEntryTimes));
-            userAccessRecordCountVo.setOutTimes(accessRecordMapper.count(countOutTimes));
+            userAccessRecordCountVo.setEntryTimes(accessRecordQueryRepository.count(countEntryTimes));
+            userAccessRecordCountVo.setOutTimes(accessRecordQueryRepository.count(countOutTimes));
         }
         PageInfo<UserAccessRecordCountVo> pageInfo = new PageInfo<>();
         pageInfo.setPage(page);
@@ -289,7 +289,7 @@ public class AccessRecordService {
         if (webAppDateEnd - webAppDateStart <= 0) {
             throw new AlertException(1000, "结束时间不能小于等于开始时间");
         }
-        SelectStatementProvider statementProvider = select(AccessRecordMapper.selectAccessRoomVoList)
+        SelectStatementProvider statementProvider = select(AccessRecordQueryRepository.selectAccessRoomVoList)
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
@@ -302,7 +302,7 @@ public class AccessRecordService {
                 .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<UserAccessRecordRoomVo> queryPageData = PageHelper.startPage(userAccessQueryDTO.getPage(), userAccessQueryDTO.getSize());
-        List<UserAccessRecordRoomVo> userAccessRecordVos = accessRecordMapper.selectUserAccessRoomVo(statementProvider);
+        List<UserAccessRecordRoomVo> userAccessRecordVos = accessRecordQueryRepository.selectUserAccessRoomVo(statementProvider);
         PageInfo<UserAccessRecordRoomVo> pageInfo = new PageInfo<>();
         pageInfo.setPageData(userAccessRecordVos);
         pageInfo.setTotalSize(queryPageData.getTotal());
@@ -370,7 +370,7 @@ public class AccessRecordService {
         SelectStatementProvider countEntryTimesStatement;
         SelectStatementProvider countOutTimesStatement;
         // TODO:加上时间范围限制，否则会查询到所有用户
-        List<UserAccessRecordCountDataExcelModel> userAccessRecordExcelModels = accessRecordMapper.selectUserIdAndNameByRoomId(roomId, webAppDateStart, webAppDateEnd);
+        List<UserAccessRecordCountDataExcelModel> userAccessRecordExcelModels = accessRecordQueryRepository.selectUserIdAndNameByRoomId(roomId, webAppDateStart, webAppDateEnd);
         for (UserAccessRecordCountDataExcelModel excelModel : userAccessRecordExcelModels) {
             // 查询每个用户具体的数量
             // 统计扫码进入的次数,进入时间不为空
@@ -391,8 +391,8 @@ public class AccessRecordService {
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
                     .build().render(RenderingStrategies.MYBATIS3);
             // 处理数据
-            excelModel.setScanEntryTimes(accessRecordMapper.count(countEntryTimesStatement));
-            long outTimes = accessRecordMapper.count(countOutTimesStatement);
+            excelModel.setScanEntryTimes(accessRecordQueryRepository.count(countEntryTimesStatement));
+            long outTimes = accessRecordQueryRepository.count(countOutTimesStatement);
             excelModel.setScanOutTimes(outTimes);
             excelModel.setCloseLoopScanTimes(outTimes);
         }

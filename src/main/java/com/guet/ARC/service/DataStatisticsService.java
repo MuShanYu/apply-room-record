@@ -8,11 +8,15 @@ import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.dao.mybatis.*;
+import com.guet.ARC.dao.mybatis.support.AccessRecordDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.support.RoomReservationDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.dto.data.RoomRecordCountDTO;
 import com.guet.ARC.domain.dto.data.RoomReservationCountDTO;
 import com.guet.ARC.domain.excel.model.ExcelRoomRecordWriteModel;
-import com.guet.ARC.mapper.*;
 import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.ExcelUtil;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
@@ -33,16 +37,16 @@ import static org.mybatis.dynamic.sql.SqlBuilder.*;
 public class DataStatisticsService {
     // 统计教学楼，类别，校区
     @Autowired
-    private RoomMapper roomMapper;
+    private RoomQueryRepository roomQueryRepository;
 
     @Autowired
-    private UserMapper userMapper;
+    private UserQueryRepository userQueryRepository;
 
     @Autowired
-    private RoomReservationMapper roomReservationMapper;
+    private RoomReservationQueryRepository roomReservationQueryRepository;
 
     @Autowired
-    private AccessRecordMapper accessRecordMapper;
+    private AccessRecordQueryRepository accessRecordQueryRepository;
 
     public Map<String, Object> queryClassifyInfo() {
         SelectStatementProvider teachBuildingState = selectDistinct(RoomDynamicSqlSupport.teachBuilding)
@@ -60,9 +64,9 @@ public class DataStatisticsService {
         List<String> teachBuildings = new ArrayList<>();
         List<String> schools = new ArrayList<>();
         List<String> categories = new ArrayList<>();
-        roomMapper.selectMany(teachBuildingState).forEach(v -> teachBuildings.add(v.getTeachBuilding()));
-        roomMapper.selectMany(schoolState).forEach(v -> schools.add(v.getSchool()));
-        roomMapper.selectMany(categoryState).forEach(v -> categories.add(v.getCategory()));
+        roomQueryRepository.selectMany(teachBuildingState).forEach(v -> teachBuildings.add(v.getTeachBuilding()));
+        roomQueryRepository.selectMany(schoolState).forEach(v -> schools.add(v.getSchool()));
+        roomQueryRepository.selectMany(categoryState).forEach(v -> categories.add(v.getCategory()));
         Map<String, Object> map = new HashMap<>();
         map.put("teachBuildings", teachBuildings);
         map.put("schools", schools);
@@ -78,7 +82,7 @@ public class DataStatisticsService {
                 .build().render(RenderingStrategies.MYBATIS3);
         List<String> institutes = new ArrayList<>();
         Map<String, Object> map = new HashMap<>();
-        userMapper.selectMany(statementProvider).forEach(v -> institutes.add(v.getInstitute()));
+        userQueryRepository.selectMany(statementProvider).forEach(v -> institutes.add(v.getInstitute()));
         map.put("institutes", institutes);
         return map;
     }
@@ -143,22 +147,22 @@ public class DataStatisticsService {
                         .build().render(RenderingStrategies.MYBATIS3);
                 if (state.equals(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)) {
                     // 通过审批的次数
-                    long count = roomReservationMapper.count(countStatement);
+                    long count = roomReservationQueryRepository.count(countStatement);
                     reviewedTimesCount += count;
                     reviewedTimes.add(count);
                 } else if (state.equals(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED)) {
                     // 待审批的总次数
-                    long count = roomReservationMapper.count(countStatement);
+                    long count = roomReservationQueryRepository.count(countStatement);
                     reviewTimesCount += count;
                     reviewTimes.add(count);
                 } else if (state.equals(CommonConstant.ROOM_RESERVE_CANCELED)) {
                     // 取消预约的总次数
-                    long count = roomReservationMapper.count(countStatement);
+                    long count = roomReservationQueryRepository.count(countStatement);
                     canceledTimes.add(count);
                     cancelTimesCount += count;
                 } else if (state.equals(CommonConstant.ROOM_RESERVE_TO_BE_REJECTED)) {
                     // 驳回的总次数
-                    long count = roomReservationMapper.count(countStatement);
+                    long count = roomReservationQueryRepository.count(countStatement);
                     rejectTimesCount += count;
                     rejectTimes.add(count);
                 }
@@ -196,7 +200,7 @@ public class DataStatisticsService {
                 .where(RoomDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
                 .and(RoomDynamicSqlSupport.roomName, isLikeWhenPresent(roomName))
                 .build().render(RenderingStrategies.MYBATIS3);
-        return roomMapper.selectMany(statementProvider);
+        return roomQueryRepository.selectMany(statementProvider);
     }
 
 
@@ -278,9 +282,9 @@ public class DataStatisticsService {
                             .groupBy(AccessRecordDynamicSqlSupport.userId), "a")
                     .build().render(RenderingStrategies.MYBATIS3);
             // 处理数据
-            long entry = accessRecordMapper.count(countEntryTimesStatement);
-            long out = accessRecordMapper.count(countOutTimesStatement);
-            long peopleInAndOutTimes = accessRecordMapper.count(countPeopleInAndOut);
+            long entry = accessRecordQueryRepository.count(countEntryTimesStatement);
+            long out = accessRecordQueryRepository.count(countOutTimesStatement);
+            long peopleInAndOutTimes = accessRecordQueryRepository.count(countPeopleInAndOut);
             totalTimes.add(peopleInAndOutTimes);
             entryTimes.add(entry);
             outTimes.add(out);
@@ -314,10 +318,10 @@ public class DataStatisticsService {
                 .from(AccessRecordDynamicSqlSupport.accessRecord)
                 .build().render(RenderingStrategies.MYBATIS3);
         Map<String, Object> map = new HashMap<>();
-        map.put("userCount", userMapper.count(countUser));
-        map.put("roomCount", roomMapper.count(countRoom));
-        map.put("roomReserveReviewed", roomReservationMapper.count(countRoomReserve));
-        map.put("accessRecordCount", accessRecordMapper.count(countAccessRecord));
+        map.put("userCount", userQueryRepository.count(countUser));
+        map.put("roomCount", roomQueryRepository.count(countRoom));
+        map.put("roomReserveReviewed", roomReservationQueryRepository.count(countRoomReserve));
+        map.put("accessRecordCount", accessRecordQueryRepository.count(countAccessRecord));
         Map<String, Map<String, Object>> res = new HashMap<>();
         res.put("countData", map);
         return res;
@@ -383,7 +387,7 @@ public class DataStatisticsService {
             throw new AlertException(1000, "数据导出时间跨度不允许超过30天");
         }
         // 先查出相应的房间列表，是指在这段时间内有记录的房间，不是所有房间
-        SelectStatementProvider statement = select(RoomMapper.selectRoomRecordExcelModelColumns)
+        SelectStatementProvider statement = select(RoomQueryRepository.selectRoomRecordExcelModelColumns)
                 .from(RoomDynamicSqlSupport.room)
                 .leftJoin(AccessRecordDynamicSqlSupport.accessRecord)
                 .on(AccessRecordDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
@@ -394,7 +398,7 @@ public class DataStatisticsService {
                 .and(RoomDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
                 .groupBy(RoomDynamicSqlSupport.id)
                 .build().render(RenderingStrategies.MYBATIS3);
-        List<ExcelRoomRecordWriteModel> roomRecordWriteModels = roomMapper.selectRoomRecordExcelModels(statement);
+        List<ExcelRoomRecordWriteModel> roomRecordWriteModels = roomQueryRepository.selectRoomRecordExcelModels(statement);
         SelectStatementProvider countEntryTimesStatement;
         SelectStatementProvider countOutTimesStatement;
         SelectStatementProvider countPeopleInAndOut;
@@ -433,9 +437,9 @@ public class DataStatisticsService {
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
                     .build().render(RenderingStrategies.MYBATIS3);
             // 设置当前对象
-            long peopleInAndOut = accessRecordMapper.count(countPeopleInAndOut);
-            long entry = accessRecordMapper.count(countEntryTimesStatement);
-            long out = accessRecordMapper.count(countOutTimesStatement);
+            long peopleInAndOut = accessRecordQueryRepository.count(countPeopleInAndOut);
+            long entry = accessRecordQueryRepository.count(countEntryTimesStatement);
+            long out = accessRecordQueryRepository.count(countOutTimesStatement);
             roomRecordWriteModel.setTotalNumPeopleInAndOut(peopleInAndOut);
             roomRecordWriteModel.setEntryTimes(entry);
             roomRecordWriteModel.setOutTimes(out);

@@ -1,5 +1,6 @@
-package com.guet.ARC.mapper;
+package com.guet.ARC.dao.mybatis;
 
+import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
 import com.guet.ARC.domain.RoomReservation;
 import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
@@ -25,11 +26,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static com.guet.ARC.mapper.RoomReservationDynamicSqlSupport.*;
+import static com.guet.ARC.dao.mybatis.support.RoomReservationDynamicSqlSupport.*;
 import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
 
 @Mapper
-public interface RoomReservationMapper {
+public interface RoomReservationQueryRepository {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.255+08:00", comments="Source Table: tbl_room_reservation")
     BasicColumn[] selectList = BasicColumn.columnList(id, roomUsage, reserveStartTime, reserveEndTime, verifyUserName, state, updateTime, createTime, userId, roomId);
 

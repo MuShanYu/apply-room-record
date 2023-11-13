@@ -1,6 +1,6 @@
-package com.guet.ARC.mapper;
+package com.guet.ARC.dao.mybatis;
 
-import static com.guet.ARC.mapper.RoleDynamicSqlSupport.*;
+import static com.guet.ARC.dao.mybatis.support.RoleDynamicSqlSupport.*;
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
 import com.guet.ARC.domain.Role;
@@ -33,7 +33,7 @@ import org.mybatis.dynamic.sql.util.SqlProviderAdapter;
 import org.mybatis.dynamic.sql.util.mybatis3.MyBatis3Utils;
 
 @Mapper
-public interface RoleMapper {
+public interface RoleQueryRepository {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.263+08:00", comments="Source Table: tbl_role")
     BasicColumn[] selectList = BasicColumn.columnList(id, roleName, roleDes, state, createTime, updateTime);
 

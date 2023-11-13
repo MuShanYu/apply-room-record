@@ -1,4 +1,4 @@
-package com.guet.ARC.mapper;
+package com.guet.ARC.dao.mybatis;
 
 import com.guet.ARC.domain.User;
 import org.apache.ibatis.annotations.*;
@@ -23,11 +23,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static com.guet.ARC.mapper.UserDynamicSqlSupport.*;
+import static com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport.*;
 import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
 
 @Mapper
-public interface UserMapper {
+public interface UserQueryRepository {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-02-23T14:20:41.59+08:00", comments="Source Table: tbl_user")
     BasicColumn[] selectList = BasicColumn.columnList(id, nickname, pwd, stuNum, name, tel, institute, state, updateTime, createTime, mail);
 

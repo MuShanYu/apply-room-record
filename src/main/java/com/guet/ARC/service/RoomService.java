@@ -13,9 +13,9 @@ import com.guet.ARC.domain.dto.room.RoomAddUpdateDTO;
 import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
-import com.guet.ARC.mapper.RoomDynamicSqlSupport;
-import com.guet.ARC.mapper.RoomMapper;
-import com.guet.ARC.mapper.RoomReservationDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.RoomQueryRepository;
+import com.guet.ARC.dao.mybatis.support.RoomReservationDynamicSqlSupport;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -33,7 +33,7 @@ import static org.mybatis.dynamic.sql.SqlBuilder.*;
 @Service
 public class RoomService {
     @Autowired
-    private RoomMapper roomMapper;
+    private RoomQueryRepository roomQueryRepository;
 
     @Autowired
     private UserService userService;
@@ -45,7 +45,7 @@ public class RoomService {
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.roomName, isEqualTo(roomName))
                 .build().render(RenderingStrategies.MYBATIS3);
-        if (roomMapper.count(statement) > 0) {
+        if (roomQueryRepository.count(statement) > 0) {
             throw new AlertException(1000, roomAddUpdateDTO.getRoomName() + "房间已经创建");
         }
         BeanCopier copier = BeanCopier.create(RoomAddUpdateDTO.class, Room.class, false);
@@ -61,14 +61,14 @@ public class RoomService {
         // 新的房间不可被预约
         room.setState(CommonConstant.ROOM_CAN_NOT_BE_RESERVED);
         room.setChargePersonId(user.getId());
-        if (roomMapper.insertSelective(room) == 0) {
+        if (roomQueryRepository.insertSelective(room) == 0) {
             throw new AlertException(ResultCode.INSERT_ERROR);
         }
         return room;
     }
 
     public void disableRoom(String id) {
-        Optional<Room> optionalRoom = roomMapper.selectByPrimaryKey(id);
+        Optional<Room> optionalRoom = roomQueryRepository.selectByPrimaryKey(id);
         if (optionalRoom.isPresent()) {
             Room room = optionalRoom.get();
             String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
@@ -88,7 +88,7 @@ public class RoomService {
                     .set(RoomDynamicSqlSupport.state).equalTo(room.getState())
                     .where(RoomDynamicSqlSupport.id, isEqualTo(room.getId()))
                     .build().render(RenderingStrategies.MYBATIS3);
-            roomMapper.update(update);
+            roomQueryRepository.update(update);
         } else {
             throw new AlertException(1000, "要禁用的房间不存在");
         }
@@ -109,7 +109,7 @@ public class RoomService {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
         }
         room.setUpdateTime(System.currentTimeMillis());
-        if (roomMapper.updateByPrimaryKeySelective(room) == 0) {
+        if (roomQueryRepository.updateByPrimaryKeySelective(room) == 0) {
             throw new AlertException(ResultCode.UPDATE_ERROR);
         }
         return room;
@@ -131,7 +131,7 @@ public class RoomService {
                 .set(RoomDynamicSqlSupport.chargePersonId).equalTo(user.getId())
                 .where(RoomDynamicSqlSupport.id, isEqualTo(roomChargerDTO.getId()))
                 .build().render(RenderingStrategies.MYBATIS3);
-        int update = roomMapper.update(updateStatementProvider);
+        int update = roomQueryRepository.update(updateStatementProvider);
         if (update == 0) {
             throw new AlertException(ResultCode.UPDATE_ERROR);
         }
@@ -139,12 +139,12 @@ public class RoomService {
 
     // 状态正常的房间
     public Room queryRoomById(String id) {
-        SelectStatementProvider statementProvider = select(RoomMapper.selectList)
+        SelectStatementProvider statementProvider = select(RoomQueryRepository.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.id, isEqualTo(id))
                 .and(RoomDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        return roomMapper.selectOne(statementProvider).orElse(null);
+        return roomQueryRepository.selectOne(statementProvider).orElse(null);
     }
 
     /**
@@ -170,7 +170,7 @@ public class RoomService {
         // 查询出这段时间内已经预约的房间列表，已经预约是已经操作过，不需要进行状态筛选，然后再从总的中去除
         // 先查询可以预约的空闲房间，再从中按照房间的类别等条件筛选
         // 有多少房间在这个时间段已经预约了
-        SelectStatementProvider statementProvider = select(roomMapper.selectList)
+        SelectStatementProvider statementProvider = select(roomQueryRepository.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 //  搜索区间内的，预约状态是自己未预约的。
@@ -227,7 +227,7 @@ public class RoomService {
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomQueryDTO.getTeachBuilding()))
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<Room> queryPageData = PageHelper.startPage(roomQueryDTO.getPage(), roomQueryDTO.getSize());
-        List<Room> rooms = roomMapper.selectMany(statementProvider);
+        List<Room> rooms = roomQueryRepository.selectMany(statementProvider);
         PageInfo<Room> pageInfo = new PageInfo<>();
         pageInfo.setPage(roomQueryDTO.getPage());
         pageInfo.setPageData(rooms);
@@ -255,7 +255,7 @@ public class RoomService {
             roomName = "%" + roomName + "%";
         }
         // 添加可以查看我管理的房间列表
-        SelectStatementProvider statementProvider = select(RoomMapper.selectList)
+        SelectStatementProvider statementProvider = select(RoomQueryRepository.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
                 .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
@@ -265,7 +265,7 @@ public class RoomService {
                 .orderBy(RoomDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<Room> queryPageData = PageHelper.startPage(roomListQueryDTO.getPage(), roomListQueryDTO.getSize());
-        List<Room> rooms = roomMapper.selectMany(statementProvider);
+        List<Room> rooms = roomQueryRepository.selectMany(statementProvider);
         PageInfo<Room> pageInfo = new PageInfo<>();
         pageInfo.setPage(roomListQueryDTO.getPage());
         pageInfo.setTotalSize(queryPageData.getTotal());
@@ -281,7 +281,7 @@ public class RoomService {
                 .from(RoomDynamicSqlSupport.room)
                 .where(RoomDynamicSqlSupport.roomName, isEqualTo(roomName))
                 .build().render(RenderingStrategies.MYBATIS3);
-        if (roomMapper.count(statement) > 0) {
+        if (roomQueryRepository.count(statement) > 0) {
             throw new AlertException(999, roomAddUpdateDTO.getRoomName() + "房间已经创建");
         }
         BeanCopier copier = BeanCopier.create(RoomAddUpdateDTO.class, Room.class, false);
@@ -299,7 +299,7 @@ public class RoomService {
             room.setUpdateTime(now);
             room.setState(CommonConstant.STATE_ACTIVE);
             room.setChargePersonId(user.getId());
-            if (roomMapper.insertSelective(room) == 0) {
+            if (roomQueryRepository.insertSelective(room) == 0) {
                 throw new AlertException(ResultCode.INSERT_ERROR);
             }
         }
@@ -307,7 +307,7 @@ public class RoomService {
     }
 
     public void disableReserveRoom(String roomId) {
-        Optional<Room> optionalRoom = roomMapper.selectByPrimaryKey(roomId);
+        Optional<Room> optionalRoom = roomQueryRepository.selectByPrimaryKey(roomId);
         if (optionalRoom.isPresent()) {
             Room room = optionalRoom.get();
             String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
@@ -327,7 +327,7 @@ public class RoomService {
                     .set(RoomDynamicSqlSupport.state).equalTo(room.getState())
                     .where(RoomDynamicSqlSupport.id, isEqualTo(roomId))
                     .build().render(RenderingStrategies.MYBATIS3);
-            roomMapper.update(update);
+            roomQueryRepository.update(update);
         } else {
             throw new AlertException(1000, "要禁用预约的房间不存在");
         }
