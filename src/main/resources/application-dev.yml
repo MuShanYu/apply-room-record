@@ -46,15 +46,8 @@ spring:
   documentation:
     swagger-ui:
       enabled: true
-  flyway:
-    # 禁止清理数据库表
-    clean-disabled: true
-    # 如果数据库不是空表，需要设置成 true
-    baseline-on-migrate: true
-    # 与 baseline-on-migrate: true 搭配使用
-    baseline-version: 0
-    locations:
-      - classpath:flyway/mysql
+  jpa:
+    show-sql: true
 
 # Sa-Token 配置
 sa-token:

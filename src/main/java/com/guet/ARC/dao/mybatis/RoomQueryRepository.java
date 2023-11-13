@@ -1,4 +1,4 @@
-package com.guet.ARC.mapper;
+package com.guet.ARC.dao.mybatis;
 
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.excel.model.ExcelRoomRecordWriteModel;
@@ -24,11 +24,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static com.guet.ARC.mapper.RoomDynamicSqlSupport.*;
+import static com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport.*;
 import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
 
 @Mapper
-public interface RoomMapper {
+public interface RoomQueryRepository {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-10-24T13:45:23.52+08:00", comments="Source Table: tbl_room")
     BasicColumn[] selectList = BasicColumn.columnList(id, school, teachBuilding, category, roomName, equipmentInfo, capacity, state, updateTime, createTime, chargePerson, chargePersonId);
 

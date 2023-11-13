@@ -5,10 +5,10 @@ import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.domain.Role;
 import com.guet.ARC.domain.UserRole;
-import com.guet.ARC.mapper.RoleDynamicSqlSupport;
-import com.guet.ARC.mapper.RoleMapper;
-import com.guet.ARC.mapper.UserRoleDynamicSqlSupport;
-import com.guet.ARC.mapper.UserRoleMapper;
+import com.guet.ARC.dao.mybatis.support.RoleDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.RoleQueryRepository;
+import com.guet.ARC.dao.mybatis.support.UserRoleDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.UserRoleQueryRepository;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -23,10 +23,10 @@ import static org.mybatis.dynamic.sql.SqlBuilder.*;
 @Service
 public class UserRoleService {
     @Autowired
-    private RoleMapper roleMapper;
+    private RoleQueryRepository roleQueryRepository;
 
     @Autowired
-    private UserRoleMapper userRoleMapper;
+    private UserRoleQueryRepository userRoleQueryRepository;
 
 
     public void setRole(String userId, String roleId) {
@@ -38,7 +38,7 @@ public class UserRoleService {
         long now = System.currentTimeMillis();
         userRole.setUpdateTime(now);
         userRole.setCreateTime(now);
-        userRoleMapper.insertSelective(userRole);
+        userRoleQueryRepository.insertSelective(userRole);
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
@@ -61,17 +61,17 @@ public class UserRoleService {
         for (Role role : roles) {
             // 旧权限不在新权限里面，说明我的这个权限需要被删除
             if (!newRoleIdMap.containsKey(role.getId())) {
-                SelectStatementProvider statementProvider = select(UserRoleMapper.selectList)
+                SelectStatementProvider statementProvider = select(UserRoleQueryRepository.selectList)
                         .from(UserRoleDynamicSqlSupport.userRole)
                         .where(UserRoleDynamicSqlSupport.userId, isEqualTo(userId))
                         .and(UserRoleDynamicSqlSupport.roleId, isEqualTo(role.getId()))
                         .and(UserRoleDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                         .build().render(RenderingStrategies.MYBATIS3);
-                Optional<UserRole> optionalUserRole = userRoleMapper.selectOne(statementProvider);
+                Optional<UserRole> optionalUserRole = userRoleQueryRepository.selectOne(statementProvider);
                 if (optionalUserRole.isPresent()) {
                     // 删除
                     UserRole userRole = optionalUserRole.get();
-                    userRoleMapper.deleteByPrimaryKey(userRole.getId());
+                    userRoleQueryRepository.deleteByPrimaryKey(userRole.getId());
                 }
             }
         }
@@ -80,7 +80,7 @@ public class UserRoleService {
             // 如果新权限不在旧权限里面，说明该新权限需要被添加
             if (!myRoleMap.containsKey(roleId)) {
                 long now = System.currentTimeMillis();
-                userRoleMapper.insertSelective(
+                userRoleQueryRepository.insertSelective(
                         UserRole.builder()
                                 .state(CommonConstant.STATE_ACTIVE)
                                 .roleId(roleId)
@@ -99,14 +99,14 @@ public class UserRoleService {
      * @return 权限列表
      */
     public List<Role> queryRoleByUserId(String userId) {
-        SelectStatementProvider statementProvider = select(RoleMapper.selectList)
+        SelectStatementProvider statementProvider = select(RoleQueryRepository.selectList)
                 .from(RoleDynamicSqlSupport.role)
                 .leftJoin(UserRoleDynamicSqlSupport.userRole)
                 .on(RoleDynamicSqlSupport.id, equalTo(UserRoleDynamicSqlSupport.roleId))
                 .where(UserRoleDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(UserRoleDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        List<Role> roles = roleMapper.selectMany(statementProvider);
+        List<Role> roles = roleQueryRepository.selectMany(statementProvider);
         if (roles.isEmpty()) {
             return Collections.emptyList();
         }

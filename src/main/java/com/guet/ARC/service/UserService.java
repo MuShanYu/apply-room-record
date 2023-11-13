@@ -13,12 +13,11 @@ import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.UserRole;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
-import com.guet.ARC.mapper.UserDynamicSqlSupport;
-import com.guet.ARC.mapper.UserMapper;
-import com.guet.ARC.mapper.UserRoleDynamicSqlSupport;
-import com.guet.ARC.mapper.UserRoleMapper;
+import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.UserQueryRepository;
+import com.guet.ARC.dao.mybatis.support.UserRoleDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.UserRoleQueryRepository;
 import com.guet.ARC.util.CommonUtils;
-import com.guet.ARC.util.RSAUtils;
 import com.guet.ARC.util.RedisCacheUtil;
 import org.mybatis.dynamic.sql.insert.render.BatchInsert;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
@@ -39,7 +38,7 @@ import static org.mybatis.dynamic.sql.SqlBuilder.*;
 public class UserService {
 
     @Autowired
-    private UserMapper userMapper;
+    private UserQueryRepository userQueryRepository;
 
     @Autowired
     private RedisCacheUtil<String> redisCacheUtil;
@@ -48,23 +47,7 @@ public class UserService {
     private UserRoleService userRoleService;
 
     @Autowired
-    private UserRoleMapper userRoleMapper;
-
-    public Map<String, String> getPublicKey(Long currentTimeMillis) {
-        /*Map<String, String> keyPair = null;
-        try {
-            keyPair = RSAUtils.genKeyPair();
-            String privateKey = keyPair.get("private");
-            String publicKey = keyPair.get("public");
-            redisCacheUtil.setCacheObject(String.valueOf(currentTimeMillis), privateKey, 30, TimeUnit.SECONDS);
-
-        } catch (Exception e) {
-            throw new RuntimeException("私钥，密钥生成失败");
-        }*/
-        Map<String, String> map = new HashMap<>();
-        map.put("public", "public key");
-        return map;
-    }
+    private UserRoleQueryRepository userRoleQueryRepository;
 
     @Transactional(rollbackFor = RuntimeException.class)
     public Map<String, Object> register(UserRegisterDTO userRegisterDTO) {
@@ -79,10 +62,10 @@ public class UserService {
                 .where(UserDynamicSqlSupport.tel, isEqualTo(userRegisterDTO.getTel()))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        if (userMapper.count(statement) > 0) {
+        if (userQueryRepository.count(statement) > 0) {
             throw new AlertException(1000, "学号" + userRegisterDTO.getStuNum() + "已被注册");
         }
-        if (userMapper.count(telStatement) > 0) {
+        if (userQueryRepository.count(telStatement) > 0) {
             throw new AlertException(1000, "手机号" + userRegisterDTO.getTel() + "已被注册");
         }
         User user = new User();
@@ -103,7 +86,7 @@ public class UserService {
         user.setNickname(name);
         user.setPwd(pwd);
         user.setId(userId);
-        userMapper.insertSelective(user);
+        userQueryRepository.insertSelective(user);
         userRoleService.setRole(userId, CommonConstant.ROLE_USER_ID);
         // 返回信息
         Map<String, Object> map = new HashMap<>();
@@ -152,7 +135,7 @@ public class UserService {
             userRole.setState(CommonConstant.STATE_ACTIVE);
             userRole.setUpdateTime(now);
             userRole.setCreateTime(now);
-            if (stuNum.equals("") || institute.equals("") || tel.equals("") || name.equals("")) {
+            if (stuNum.isEmpty() || institute.isEmpty() || tel.isEmpty() || name.isEmpty()) {
                 errorData.add(user);
                 continue;
             }
@@ -167,8 +150,8 @@ public class UserService {
                     .where(UserDynamicSqlSupport.tel, isEqualTo(userRegisterDTO.getTel()))
                     .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
-            long userStuNumCount = userMapper.count(statement);
-            long userTelCount = userMapper.count(telStatement);
+            long userStuNumCount = userQueryRepository.count(statement);
+            long userTelCount = userQueryRepository.count(telStatement);
             if (userStuNumCount > 0 || userTelCount > 0) {
                 errorData.add(user);
                 if (userStuNumCount > 0) {
@@ -204,21 +187,21 @@ public class UserService {
                 .map(UserRoleDynamicSqlSupport.updateTime).toProperty("updateTime")
                 .map(UserRoleDynamicSqlSupport.createTime).toProperty("createTime")
                 .build().render(RenderingStrategies.MYBATIS3);
-        userBatchInsert.insertStatements().forEach(userMapper::insert);
-        userRoleBatchInsert.insertStatements().forEach(userRoleMapper::insert);
+        userBatchInsert.insertStatements().forEach(userQueryRepository::insert);
+        userRoleBatchInsert.insertStatements().forEach(userRoleQueryRepository::insert);
         return errorData;
     }
 
     // 使用https连接，无需进行密码加密
     public Map<String, Object> login(UserLoginDTO userLoginDTO) {
         String pwd = SaSecureUtil.md5(userLoginDTO.getPwd());
-        SelectStatementProvider queryStatement = select(UserMapper.selectList)
+        SelectStatementProvider queryStatement = select(UserQueryRepository.selectList)
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.tel, isEqualTo(userLoginDTO.getTel()))
                 .and(UserDynamicSqlSupport.pwd, isEqualTo(pwd))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        Optional<User> userOptional = userMapper.selectOne(queryStatement);
+        Optional<User> userOptional = userQueryRepository.selectOne(queryStatement);
         User user = null;
         Map<String, Object> map = null;
         if (userOptional.isPresent()) {
@@ -241,13 +224,13 @@ public class UserService {
 
     public Map<String, Object> adminLogin(UserLoginDTO userLoginDTO) {
         String pwd = SaSecureUtil.md5(userLoginDTO.getPwd());
-        SelectStatementProvider queryStatement = select(UserMapper.selectList)
+        SelectStatementProvider queryStatement = select(UserQueryRepository.selectList)
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.tel, isEqualTo(userLoginDTO.getTel()))
                 .and(UserDynamicSqlSupport.pwd, isEqualTo(pwd))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        Optional<User> userOptional = userMapper.selectOne(queryStatement);
+        Optional<User> userOptional = userQueryRepository.selectOne(queryStatement);
         User user = null;
         Map<String, Object> map = null;
         if (userOptional.isPresent()) {
@@ -286,14 +269,14 @@ public class UserService {
         String institute = userListQueryDTO.getInstitute();
         name = StringUtils.hasLength(name) ? name + "%" : null;
         institute = StringUtils.hasLength(institute) ? institute + "%" : null;
-        SelectStatementProvider queryStatement = select(UserMapper.selectList)
+        SelectStatementProvider queryStatement = select(UserQueryRepository.selectList)
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.name, isLikeWhenPresent(name))
                 .and(UserDynamicSqlSupport.institute, isLikeWhenPresent(institute))
                 .orderBy(UserDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<User> queryDataPage = PageHelper.startPage(page, size);
-        List<User> users = userMapper.selectMany(queryStatement);
+        List<User> users = userQueryRepository.selectMany(queryStatement);
         List<UserRoleVo> userRoleVos = new ArrayList<>();
         BeanCopier userCopier = BeanCopier.create(User.class, UserRoleVo.class, false);
         for (User user : users) {
@@ -327,12 +310,12 @@ public class UserService {
             throw new AlertException(1000, "验证码已经生成,重复获取,请" + expire + "s后重新获取");
         }
         // 验证是否有该用户，检验手机号
-        SelectStatementProvider statementProvider = select(UserMapper.selectList)
+        SelectStatementProvider statementProvider = select(UserQueryRepository.selectList)
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        List<User> users = userMapper.selectMany(statementProvider);
+        List<User> users = userQueryRepository.selectMany(statementProvider);
         if (users.size() != 1) {
             throw new AlertException(ResultCode.USER_NOT_EXIST);
         }
@@ -357,12 +340,12 @@ public class UserService {
         }
         // 验证手机号
         // 验证是否有该用户，检验手机号
-        SelectStatementProvider statementProvider = select(UserMapper.selectList)
+        SelectStatementProvider statementProvider = select(UserQueryRepository.selectList)
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.tel, isEqualTo(userUpdatePwdDTO.getTel()))
                 .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
-        List<User> users = userMapper.selectMany(statementProvider);
+        List<User> users = userQueryRepository.selectMany(statementProvider);
         if (users.size() != 1) {
             throw new AlertException(ResultCode.USER_NOT_EXIST);
         }
@@ -371,7 +354,7 @@ public class UserService {
         // 修改密码
         User user = users.get(0);
         user.setPwd(SaSecureUtil.md5(pwd));
-        int update = userMapper.updateByPrimaryKeySelective(user);
+        int update = userQueryRepository.updateByPrimaryKeySelective(user);
         if (update == 0) {
             throw new AlertException(ResultCode.SYSTEM_ERROR);
         }
@@ -384,12 +367,12 @@ public class UserService {
         boolean errorFlag = false;
         String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         // 我提交的手机号是不是已经被其他人注册了
-        if (StringUtils.hasLength(userMapper.isTelExisted(userUpdateDTO.getTel(), userIdContext))) {
+        if (StringUtils.hasLength(userQueryRepository.isTelExisted(userUpdateDTO.getTel(), userIdContext))) {
             errorMsg += userUpdateDTO.getTel() + "手机号已被注册,";
             errorFlag = true;
         }
         // 我提交的邮箱是不是已经被其他人注册了
-        if (StringUtils.hasLength(userMapper.isMailExisted(userUpdateDTO.getMail(), userIdContext))) {
+        if (StringUtils.hasLength(userQueryRepository.isMailExisted(userUpdateDTO.getMail(), userIdContext))) {
             errorMsg += userUpdateDTO.getMail() + "邮箱已被注册";
             errorFlag = true;
         }
@@ -412,7 +395,7 @@ public class UserService {
         user.setNickname(userUpdateDTO.getStuNum() + user.getName());
         user.setMail(userUpdateDTO.getMail());
         user.setTel(userUpdateDTO.getTel());
-        int update = userMapper.updateByPrimaryKeySelective(user);
+        int update = userQueryRepository.updateByPrimaryKeySelective(user);
         if (update == 0) {
             throw new AlertException(ResultCode.SYSTEM_ERROR);
         }
@@ -430,11 +413,11 @@ public class UserService {
     }
 
     public User userCanBeCurrentRoomCharger(String tel, String name) {
-        SelectStatementProvider statement = select(UserMapper.selectList)
+        SelectStatementProvider statement = select(UserQueryRepository.selectList)
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
                 .build().render(RenderingStrategies.MYBATIS3);
-        Optional<User> userOptional = userMapper.selectOne(statement);
+        Optional<User> userOptional = userQueryRepository.selectOne(statement);
         User user = null;
         if (userOptional.isPresent()) {
             user = userOptional.get();
@@ -457,11 +440,11 @@ public class UserService {
             }
         } else {
             // 相同姓名用户是否已经存在
-            SelectStatementProvider statementProvider = select(UserMapper.selectList)
+            SelectStatementProvider statementProvider = select(UserQueryRepository.selectList)
                     .from(UserDynamicSqlSupport.user)
                     .where(UserDynamicSqlSupport.name, isEqualTo(name))
                     .build().render(RenderingStrategies.MYBATIS3);
-            Optional<User> oldUserOptional = userMapper.selectOne(statementProvider);
+            Optional<User> oldUserOptional = userQueryRepository.selectOne(statementProvider);
             if (oldUserOptional.isPresent()) {
                 // 已经存在重名用户，所以手机号可能有问题
                 throw new AlertException(1000, name + "已经注册" + ",请检查ta的手机号"+ tel +"是否正确");
@@ -473,11 +456,11 @@ public class UserService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     public User userBeCurrentRoomCharger(String tel, String name) {
-        SelectStatementProvider statement = select(UserMapper.selectList)
+        SelectStatementProvider statement = select(UserQueryRepository.selectList)
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
                 .build().render(RenderingStrategies.MYBATIS3);
-        Optional<User> userOptional = userMapper.selectOne(statement);
+        Optional<User> userOptional = userQueryRepository.selectOne(statement);
         User user = null;
         if (userOptional.isPresent()) {
             user = userOptional.get();
@@ -499,11 +482,11 @@ public class UserService {
             }
         } else {
             // 相同姓名用户是否已经存在
-            SelectStatementProvider statementProvider = select(UserMapper.selectList)
+            SelectStatementProvider statementProvider = select(UserQueryRepository.selectList)
                     .from(UserDynamicSqlSupport.user)
                     .where(UserDynamicSqlSupport.name, isEqualTo(name))
                     .build().render(RenderingStrategies.MYBATIS3);
-            Optional<User> oldUserOptional = userMapper.selectOne(statementProvider);
+            Optional<User> oldUserOptional = userQueryRepository.selectOne(statementProvider);
             if (oldUserOptional.isPresent()) {
                 // 已经存在重名用户，所以手机号可能有问题
                 User oldUser = oldUserOptional.get();
@@ -524,7 +507,7 @@ public class UserService {
                 newUser.setInstitute("计算机与信息安全学院");
                 newUser.setPwd(pwd);
                 newUser.setId(CommonUtils.generateUUID());
-                userMapper.insertSelective(newUser);
+                userQueryRepository.insertSelective(newUser);
                 // 设置权限
                 userRoleService.setRole(newUser.getId(), CommonConstant.ROLE_USER_ID);
                 userRoleService.setRole(newUser.getId(), CommonConstant.ROLE_ADMIN_ID);
@@ -537,7 +520,7 @@ public class UserService {
     public void updateUserTel(UserUpdateTelDTO userUpdateTelDTO) {
         // 我提交的手机号是不是已经被其他人注册了
         String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        if (StringUtils.hasLength(userMapper.isTelExisted(userUpdateTelDTO.getTel(), userIdContext))) {
+        if (StringUtils.hasLength(userQueryRepository.isTelExisted(userUpdateTelDTO.getTel(), userIdContext))) {
             throw new AlertException(1000, userUpdateTelDTO.getTel() + "手机号已被注册");
         }
         UpdateStatementProvider update = update(UserDynamicSqlSupport.user)
@@ -545,7 +528,7 @@ public class UserService {
                 .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
                 .where(UserDynamicSqlSupport.id, isEqualTo(userUpdateTelDTO.getUserId()))
                 .build().render(RenderingStrategies.MYBATIS3);
-        if (userMapper.update(update) == 0) {
+        if (userQueryRepository.update(update) == 0) {
             throw new AlertException(ResultCode.UPDATE_ERROR);
         }
     }
@@ -556,7 +539,7 @@ public class UserService {
                 .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
                 .where(UserDynamicSqlSupport.id, isEqualTo(userUpdateNameDTO.getUserId()))
                 .build().render(RenderingStrategies.MYBATIS3);
-        if (userMapper.update(update) == 0) {
+        if (userQueryRepository.update(update) == 0) {
             throw new AlertException(ResultCode.UPDATE_ERROR);
         }
     }
@@ -567,7 +550,7 @@ public class UserService {
                 .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
                 .where(UserDynamicSqlSupport.id, isEqualTo(userUpdateNicknameDTO.getUserId()))
                 .build().render(RenderingStrategies.MYBATIS3);
-        if (userMapper.update(update) == 0) {
+        if (userQueryRepository.update(update) == 0) {
             throw new AlertException(ResultCode.UPDATE_ERROR);
         }
     }

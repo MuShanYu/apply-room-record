@@ -7,6 +7,9 @@ import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.dao.mybatis.*;
+import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.support.RoomReservationDynamicSqlSupport;
 import com.guet.ARC.domain.RoomReservation;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.apply.MyApplyQueryDTO;
@@ -17,7 +20,6 @@ import com.guet.ARC.domain.dto.room.UserRoomReservationDetailQueryDTO;
 import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
-import com.guet.ARC.mapper.*;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -38,27 +40,27 @@ import static org.mybatis.dynamic.sql.SqlBuilder.*;
 public class RoomReservationService {
 
     @Autowired
-    private UserMapper userMapper;
+    private UserQueryRepository userQueryRepository;
 
     @Autowired
-    private RoomMapper roomMapper;
+    private RoomQueryRepository roomQueryRepository;
 
     @Autowired
     private EmailService emailService;
 
     @Autowired
-    RoomReservationMapper roomReservationMapper;
+    RoomReservationQueryRepository roomReservationQueryRepository;
 
     public void cancelApply(String roomReservationId) {
         if (roomReservationId == null || roomReservationId.trim().equals("")) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
         }
-        Optional<RoomReservation> optionalRoomReservation = roomReservationMapper.selectByPrimaryKey(roomReservationId);
+        Optional<RoomReservation> optionalRoomReservation = roomReservationQueryRepository.selectByPrimaryKey(roomReservationId);
         if (optionalRoomReservation.isPresent()) {
             RoomReservation roomReservation = optionalRoomReservation.get();
             roomReservation.setState(CommonConstant.ROOM_RESERVE_CANCELED);
             roomReservation.setUpdateTime(System.currentTimeMillis());
-            if (roomReservationMapper.updateByPrimaryKeySelective(roomReservation) == 0) {
+            if (roomReservationQueryRepository.updateByPrimaryKeySelective(roomReservation) == 0) {
                 throw new AlertException(ResultCode.UPDATE_ERROR);
             }
         }
@@ -79,7 +81,7 @@ public class RoomReservationService {
         // 检测是否已经预约
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         // 是待审核状态且在这段预约时间内代表我已经预约过了, 预约起始时间不能在准备预约的时间范围内，结束时间不能在准备结束预约的时间范围内
-        SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
+        SelectStatementProvider statementProvider = select(RoomReservationQueryRepository.selectList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(RoomReservationDynamicSqlSupport.state, isEqualTo(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED))
@@ -93,7 +95,7 @@ public class RoomReservationService {
                                         isLessThanOrEqualToWhenPresent(applyRoomDTO.getEndTime()))))
                 .and(RoomReservationDynamicSqlSupport.roomId, isEqualTo(applyRoomDTO.getRoomId()))
                 .build().render(RenderingStrategies.MYBATIS3);
-        List<RoomReservation> roomReservations = roomReservationMapper.selectMany(statementProvider);
+        List<RoomReservation> roomReservations = roomReservationQueryRepository.selectMany(statementProvider);
         if (roomReservations.size() != 0) {
             throw new AlertException(1000, "您已经预约过该房间，请勿重复操作，在我的预约中查看");
         }
@@ -108,17 +110,17 @@ public class RoomReservationService {
         roomReservation.setUpdateTime(time);
         roomReservation.setUserId(userId);
         roomReservation.setRoomId(applyRoomDTO.getRoomId());
-        if (roomReservationMapper.insert(roomReservation) == 0) {
+        if (roomReservationQueryRepository.insert(roomReservation) == 0) {
             throw new AlertException(ResultCode.INSERT_ERROR);
         }
         // 邮件通知审核人
         // 获取审核人邮件
-        String chargePersonMail = userMapper.queryChargeUserMailByRoomId(applyRoomDTO.getRoomId());
+        String chargePersonMail = userQueryRepository.queryChargeUserMailByRoomId(applyRoomDTO.getRoomId());
         if (StringUtils.hasLength(chargePersonMail)) {
             // 如果有邮箱就发送通知
             // 获取用户的姓名
-            String roomName = roomMapper.queryRoomNameById(applyRoomDTO.getRoomId());
-            userMapper.selectByPrimaryKey(userId).ifPresent(user -> {
+            String roomName = roomQueryRepository.queryRoomNameById(applyRoomDTO.getRoomId());
+            userQueryRepository.selectByPrimaryKey(userId).ifPresent(user -> {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
                 String reserveTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis()));
                 String startTimeStr = sdf.format(new Date(applyRoomDTO.getStartTime()));
@@ -150,7 +152,7 @@ public class RoomReservationService {
             throw new AlertException(1000, "查询数据的时间跨度不允许超过30天");
         }
         // 查询相应房间的所有预约记录
-        SelectStatementProvider statementProvider = select(RoomReservationMapper.selectList)
+        SelectStatementProvider statementProvider = select(RoomReservationQueryRepository.selectList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .where(RoomReservationDynamicSqlSupport.roomId, isEqualTo(roomId))
                 .and(RoomReservationDynamicSqlSupport.createTime, isBetweenWhenPresent(webAppDateStart)
@@ -158,14 +160,14 @@ public class RoomReservationService {
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<RoomReservation> queryPageData = PageHelper.startPage(roomApplyDetailListQueryDTO.getPage(), roomApplyDetailListQueryDTO.getSize());
-        List<RoomReservation> roomReservationList = roomReservationMapper.selectMany(statementProvider);
+        List<RoomReservation> roomReservationList = roomReservationQueryRepository.selectMany(statementProvider);
         List<RoomReservationUserVo> roomReservationUserVos = new ArrayList<>();
         BeanCopier beanCopier = BeanCopier.create(RoomReservation.class, RoomReservationUserVo.class, false);
         // 添加每条预约记录的预约人姓名
         for (RoomReservation roomReservation : roomReservationList) {
             RoomReservationUserVo roomReservationUserVo = new RoomReservationUserVo();
             beanCopier.copy(roomReservation, roomReservationUserVo, null);
-            Optional<User> optionalUser = userMapper.selectByPrimaryKey(roomReservation.getUserId());
+            Optional<User> optionalUser = userQueryRepository.selectByPrimaryKey(roomReservation.getUserId());
             if (optionalUser.isPresent()) {
                 User user = optionalUser.get();
                 roomReservationUserVo.setName(user.getName());
@@ -192,7 +194,7 @@ public class RoomReservationService {
             myApplyQueryDTO.setTeachBuilding(null);
         }
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
+        SelectStatementProvider statementProvider = select(RoomReservationQueryRepository.roomReservationList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
@@ -206,7 +208,7 @@ public class RoomReservationService {
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<RoomReservationVo> queryPageData = PageHelper.startPage(myApplyQueryDTO.getPage(), myApplyQueryDTO.getSize());
-        List<RoomReservationVo> roomReservationVos = roomReservationMapper.selectRoomReservationsVo(statementProvider);
+        List<RoomReservationVo> roomReservationVos = roomReservationQueryRepository.selectRoomReservationsVo(statementProvider);
         PageInfo<RoomReservationVo> roomReservationPageInfo = new PageInfo<>();
         roomReservationPageInfo.setPage(myApplyQueryDTO.getPage());
         roomReservationPageInfo.setTotalSize(queryPageData.getTotal());
@@ -226,7 +228,7 @@ public class RoomReservationService {
         if (!StringUtils.hasLength(queryDTO.getTeachBuilding())) {
             queryDTO.setTeachBuilding(null);
         }
-        SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
+        SelectStatementProvider statementProvider = select(RoomReservationQueryRepository.roomReservationList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
@@ -238,7 +240,7 @@ public class RoomReservationService {
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<RoomReservationVo> queryPageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
-        List<RoomReservationVo> roomReservationVos = roomReservationMapper.selectRoomReservationsVo(statementProvider);
+        List<RoomReservationVo> roomReservationVos = roomReservationQueryRepository.selectRoomReservationsVo(statementProvider);
         PageInfo<RoomReservationVo> roomReservationPageInfo = new PageInfo<>();
         roomReservationPageInfo.setPage(queryDTO.getPage());
         roomReservationPageInfo.setTotalSize(queryPageData.getTotal());
@@ -260,7 +262,7 @@ public class RoomReservationService {
             queryDTO.setTeachBuilding(null);
         }
         String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider statementProvider = select(RoomReservationMapper.roomReservationList)
+        SelectStatementProvider statementProvider = select(RoomReservationQueryRepository.roomReservationList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
@@ -273,10 +275,10 @@ public class RoomReservationService {
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<RoomReservationAdminVo> queryPageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
         List<RoomReservationAdminVo> roomReservationAdminVos =
-                roomReservationMapper.selectRoomReservationsAdminVo(statementProvider);
+                roomReservationQueryRepository.selectRoomReservationsAdminVo(statementProvider);
         long now = System.currentTimeMillis();
         for (RoomReservationAdminVo roomReservationAdminVo : roomReservationAdminVos) {
-            Optional<User> optionalUser = userMapper.selectByPrimaryKey(roomReservationAdminVo.getUserId());
+            Optional<User> optionalUser = userQueryRepository.selectByPrimaryKey(roomReservationAdminVo.getUserId());
             if (optionalUser.isPresent()) {
                 User user = optionalUser.get();
                 roomReservationAdminVo.setName(user.getNickname());
@@ -300,8 +302,8 @@ public class RoomReservationService {
             rejectReason = "";
         }
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        Optional<RoomReservation> roomReservationOptional = roomReservationMapper.selectByPrimaryKey(reserveId);
-        Optional<User> userOptional = userMapper.selectByPrimaryKey(userId);
+        Optional<RoomReservation> roomReservationOptional = roomReservationQueryRepository.selectByPrimaryKey(reserveId);
+        Optional<User> userOptional = userQueryRepository.selectByPrimaryKey(userId);
         if (roomReservationOptional.isPresent() && userOptional.isPresent()) {
             RoomReservation roomReservation = roomReservationOptional.get();
             User user = userOptional.get();
@@ -314,8 +316,8 @@ public class RoomReservationService {
                 throw new AlertException(1000, "用户在相同时间再次进行预约，无法从驳回进行通过操作");
             }
             // 发送通知邮件信息
-            String toPersonMail = userMapper.queryUserMailById(roomReservation.getUserId());
-            String roomName = roomMapper.queryRoomNameById(roomReservation.getRoomId());
+            String toPersonMail = userQueryRepository.queryUserMailById(roomReservation.getUserId());
+            String roomName = roomQueryRepository.queryRoomNameById(roomReservation.getRoomId());
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             String startTimeStr = sdf.format(new Date(roomReservation.getReserveStartTime()));
             String endTimeStr = sdf.format(new Date(roomReservation.getReserveEndTime()));
@@ -340,7 +342,7 @@ public class RoomReservationService {
                 }
             }
             roomReservation.setVerifyUserName(user.getName());
-            int update = roomReservationMapper.updateByPrimaryKeySelective(roomReservation);
+            int update = roomReservationQueryRepository.updateByPrimaryKeySelective(roomReservation);
             if (update == 0) {
                 throw new AlertException(ResultCode.SYSTEM_ERROR);
             }
@@ -351,7 +353,7 @@ public class RoomReservationService {
 
     // 删除预约记录
     public void delRoomReservationRecord(String id) {
-        int rows = roomReservationMapper.deleteByPrimaryKey(id);
+        int rows = roomReservationQueryRepository.deleteByPrimaryKey(id);
         if (rows == 0) {
             throw new AlertException(ResultCode.DELETE_ERROR);
         }
@@ -365,7 +367,7 @@ public class RoomReservationService {
     private boolean checkSameTimeReservationWithStatus(String reserveId) {
         boolean returnFlag = true;
         // 这段时间内这个房间是否有其他待审核预约、已审核预约记录，这两个状态表示房间已经被占有
-        Optional<RoomReservation> roomReservationOptional = roomReservationMapper.selectByPrimaryKey(reserveId);
+        Optional<RoomReservation> roomReservationOptional = roomReservationQueryRepository.selectByPrimaryKey(reserveId);
         if (roomReservationOptional.isPresent()) {
             RoomReservation roomReservation = roomReservationOptional.get();
             // 预约起始和截止时间
@@ -381,7 +383,7 @@ public class RoomReservationService {
                     .and(RoomReservationDynamicSqlSupport.id, isNotIn(reserveId))
                     .and(RoomReservationDynamicSqlSupport.state, isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED))
                     .build().render(RenderingStrategies.MYBATIS3);
-            long count = roomReservationMapper.count(countRoomReservations);
+            long count = roomReservationQueryRepository.count(countRoomReservations);
             // 表示有冲突，驳回后用户在这段时间尝试了重新预约
             return count > 0;
         } else {
@@ -395,7 +397,7 @@ public class RoomReservationService {
         BeanCopier copier = BeanCopier.create(RoomReservationAdminVo.class, RoomReservation.class, false);
         RoomReservation roomReservation = new RoomReservation();
         copier.copy(roomReservationVo, roomReservation, null);
-        int update = roomReservationMapper.updateByPrimaryKeySelective(roomReservation);
+        int update = roomReservationQueryRepository.updateByPrimaryKeySelective(roomReservation);
         if (update == 0) {
             throw new AlertException(ResultCode.SYSTEM_ERROR);
         }

@@ -1,4 +1,4 @@
-package com.guet.ARC.mapper;
+package com.guet.ARC.dao.mybatis.support;
 
 import java.sql.JDBCType;
 import javax.annotation.Generated;

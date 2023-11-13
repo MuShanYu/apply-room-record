@@ -27,7 +27,7 @@
 
         <!-- Mapper接口 -->
         <javaClientGenerator type="ANNOTATEDMAPPER"
-                             targetPackage="com.guet.ARC.mapper"
+                             targetPackage="com.guet.ARC.dao.mybatis"
                              targetProject=".\src\main\java">
         </javaClientGenerator>
 
@@ -38,6 +38,9 @@
 <!--        <table tableName="tbl_user_role" domainObjectName="UserRole"/>-->
 <!--        <table tableName="tbl_role" domainObjectName="Role"/>-->
 <!--        <table tableName="tbl_sys_config" domainObjectName="SysConfig"/>-->
-        <table tableName="tbl_user" domainObjectName="User"/>
+<!--        <table tableName="tbl_user" domainObjectName="User"/>-->
+        <table tableName="tbl_message" domainObjectName="Message"/>
+        <table tableName="tbl_notice" domainObjectName="Notice"/>
+        <table tableName="tbl_application" domainObjectName="Application"/>
     </context>
 </generatorConfiguration>

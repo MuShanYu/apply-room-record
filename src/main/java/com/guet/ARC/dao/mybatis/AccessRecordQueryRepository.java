@@ -1,5 +1,7 @@
-package com.guet.ARC.mapper;
+package com.guet.ARC.dao.mybatis;
 
+import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
+import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.domain.AccessRecord;
 import com.guet.ARC.domain.excel.model.UserAccessRecordCountDataExcelModel;
 import com.guet.ARC.domain.vo.attendance.AttendanceCountListVo;
@@ -29,11 +31,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static com.guet.ARC.mapper.AccessRecordDynamicSqlSupport.*;
+import static com.guet.ARC.dao.mybatis.support.AccessRecordDynamicSqlSupport.*;
 import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
 
 @Mapper
-public interface AccessRecordMapper {
+public interface AccessRecordQueryRepository {
     @Generated(value = "org.mybatis.generator.api.MyBatisGenerator", date = "2022-08-09T20:41:25.258+08:00", comments = "Source Table: tbl_access_record")
     BasicColumn[] selectList = BasicColumn.columnList(id, entryTime, outTime, state, updateTime, createTime, userId, roomId);
 
