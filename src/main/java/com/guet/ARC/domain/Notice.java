@@ -2,13 +2,18 @@ package com.guet.ARC.domain;
 
 
 import com.guet.ARC.domain.enums.State;
+import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import lombok.ToString;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 
 @Entity
 @Table(name = "tbl_notice")
+@DynamicInsert
+@DynamicUpdate
 @Data
 @ToString
 public class Notice {

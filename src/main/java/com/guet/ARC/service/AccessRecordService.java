@@ -21,7 +21,7 @@ import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordRoomVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordVo;
 import com.guet.ARC.dao.mybatis.support.AccessRecordDynamicSqlSupport;
-import com.guet.ARC.dao.mybatis.repository.AccessRecordQueryRepository;
+import com.guet.ARC.dao.mybatis.AccessRecordQueryRepository;
 import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.util.CommonUtils;

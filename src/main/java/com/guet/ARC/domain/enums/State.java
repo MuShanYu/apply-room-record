@@ -6,8 +6,8 @@ package com.guet.ARC.domain.enums;
  */
 public enum State {
     // 正常
-    NORMAL,
+    DELETED,
     // 已删除
-    DELETED
+    NORMAL
 
 }

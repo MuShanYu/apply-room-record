@@ -1,4 +1,4 @@
-package com.guet.ARC.dao.mybatis.repository;
+package com.guet.ARC.dao.mybatis;
 
 import com.guet.ARC.domain.User;
 import org.apache.ibatis.annotations.*;
