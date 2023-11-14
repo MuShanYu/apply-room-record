@@ -1,12 +1,11 @@
 package com.guet.ARC.domain;
 
 
+import com.guet.ARC.domain.enums.State;
 import lombok.Data;
 import lombok.ToString;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "tbl_notice")
@@ -25,7 +24,8 @@ public class Notice {
 
     private Long updateTime;
 
-    private Short state;
+    @Enumerated(EnumType.ORDINAL)
+    private State state;
 
     private String content;
 }

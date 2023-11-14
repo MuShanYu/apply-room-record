@@ -9,7 +9,7 @@ import com.guet.ARC.domain.dto.attendance.AttendanceListQueryDTO;
 import com.guet.ARC.domain.vo.attendance.AttendanceCountListVo;
 import com.guet.ARC.domain.vo.attendance.AttendanceDetailListVo;
 import com.guet.ARC.dao.mybatis.support.AccessRecordDynamicSqlSupport;
-import com.guet.ARC.dao.mybatis.AccessRecordQueryRepository;
+import com.guet.ARC.dao.mybatis.repository.AccessRecordQueryRepository;
 import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;

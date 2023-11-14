@@ -1,4 +1,4 @@
-package com.guet.ARC.dao.mybatis;
+package com.guet.ARC.dao.mybatis.repository;
 
 import static com.guet.ARC.dao.mybatis.support.MessageDynamicSqlSupport.*;
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
@@ -34,31 +34,31 @@ import org.mybatis.dynamic.sql.util.mybatis3.MyBatis3Utils;
 
 @Mapper
 public interface MessageQueryRepository {
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4074501+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0612516+08:00", comments="Source Table: tbl_message")
     BasicColumn[] selectList = BasicColumn.columnList(id, messageType, readState, content, messageReceiverId, messageSenderId, createTime, updateTime);
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4004814+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0552621+08:00", comments="Source Table: tbl_message")
     @SelectProvider(type=SqlProviderAdapter.class, method="select")
     long count(SelectStatementProvider selectStatement);
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4014702+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0562588+08:00", comments="Source Table: tbl_message")
     @DeleteProvider(type=SqlProviderAdapter.class, method="delete")
     int delete(DeleteStatementProvider deleteStatement);
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4014702+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0562588+08:00", comments="Source Table: tbl_message")
     @InsertProvider(type=SqlProviderAdapter.class, method="insert")
     int insert(InsertStatementProvider<Message> insertStatement);
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4024671+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0572554+08:00", comments="Source Table: tbl_message")
     @InsertProvider(type=SqlProviderAdapter.class, method="insertMultiple")
     int insertMultiple(MultiRowInsertStatementProvider<Message> multipleInsertStatement);
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4024671+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0572554+08:00", comments="Source Table: tbl_message")
     @SelectProvider(type=SqlProviderAdapter.class, method="select")
     @ResultMap("MessageResult")
     Optional<Message> selectOne(SelectStatementProvider selectStatement);
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4024671+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0572554+08:00", comments="Source Table: tbl_message")
     @SelectProvider(type=SqlProviderAdapter.class, method="select")
     @Results(id="MessageResult", value = {
         @Result(column="id", property="id", jdbcType=JdbcType.VARCHAR, id=true),
@@ -72,28 +72,28 @@ public interface MessageQueryRepository {
     })
     List<Message> selectMany(SelectStatementProvider selectStatement);
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4034724+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0582519+08:00", comments="Source Table: tbl_message")
     @UpdateProvider(type=SqlProviderAdapter.class, method="update")
     int update(UpdateStatementProvider updateStatement);
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4044607+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0582519+08:00", comments="Source Table: tbl_message")
     default long count(CountDSLCompleter completer) {
         return MyBatis3Utils.countFrom(this::count, message, completer);
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4044607+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0592485+08:00", comments="Source Table: tbl_message")
     default int delete(DeleteDSLCompleter completer) {
         return MyBatis3Utils.deleteFrom(this::delete, message, completer);
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4044607+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0592485+08:00", comments="Source Table: tbl_message")
     default int deleteByPrimaryKey(String id_) {
         return delete(c -> 
             c.where(id, isEqualTo(id_))
         );
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4054575+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0592485+08:00", comments="Source Table: tbl_message")
     default int insert(Message record) {
         return MyBatis3Utils.insert(this::insert, record, message, c ->
             c.map(id).toProperty("id")
@@ -107,7 +107,7 @@ public interface MessageQueryRepository {
         );
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4064631+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0602455+08:00", comments="Source Table: tbl_message")
     default int insertMultiple(Collection<Message> records) {
         return MyBatis3Utils.insertMultiple(this::insertMultiple, records, message, c ->
             c.map(id).toProperty("id")
@@ -121,7 +121,7 @@ public interface MessageQueryRepository {
         );
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4064631+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0602455+08:00", comments="Source Table: tbl_message")
     default int insertSelective(Message record) {
         return MyBatis3Utils.insert(this::insert, record, message, c ->
             c.map(id).toPropertyWhenPresent("id", record::getId)
@@ -135,34 +135,34 @@ public interface MessageQueryRepository {
         );
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4074501+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0622477+08:00", comments="Source Table: tbl_message")
     default Optional<Message> selectOne(SelectDSLCompleter completer) {
         return MyBatis3Utils.selectOne(this::selectOne, selectList, message, completer);
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4074501+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0622477+08:00", comments="Source Table: tbl_message")
     default List<Message> select(SelectDSLCompleter completer) {
         return MyBatis3Utils.selectList(this::selectMany, selectList, message, completer);
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4084468+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0622477+08:00", comments="Source Table: tbl_message")
     default List<Message> selectDistinct(SelectDSLCompleter completer) {
         return MyBatis3Utils.selectDistinct(this::selectMany, selectList, message, completer);
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4084468+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0632353+08:00", comments="Source Table: tbl_message")
     default Optional<Message> selectByPrimaryKey(String id_) {
         return selectOne(c ->
             c.where(id, isEqualTo(id_))
         );
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4084468+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0632353+08:00", comments="Source Table: tbl_message")
     default int update(UpdateDSLCompleter completer) {
         return MyBatis3Utils.update(this::update, message, completer);
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4084468+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0632353+08:00", comments="Source Table: tbl_message")
     static UpdateDSL<UpdateModel> updateAllColumns(Message record, UpdateDSL<UpdateModel> dsl) {
         return dsl.set(id).equalTo(record::getId)
                 .set(messageType).equalTo(record::getMessageType)
@@ -174,7 +174,7 @@ public interface MessageQueryRepository {
                 .set(updateTime).equalTo(record::getUpdateTime);
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4094523+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0632353+08:00", comments="Source Table: tbl_message")
     static UpdateDSL<UpdateModel> updateSelectiveColumns(Message record, UpdateDSL<UpdateModel> dsl) {
         return dsl.set(id).equalToWhenPresent(record::getId)
                 .set(messageType).equalToWhenPresent(record::getMessageType)
@@ -186,7 +186,7 @@ public interface MessageQueryRepository {
                 .set(updateTime).equalToWhenPresent(record::getUpdateTime);
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4094523+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0642323+08:00", comments="Source Table: tbl_message")
     default int updateByPrimaryKey(Message record) {
         return update(c ->
             c.set(messageType).equalTo(record::getMessageType)
@@ -200,7 +200,7 @@ public interface MessageQueryRepository {
         );
     }
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4094523+08:00", comments="Source Table: tbl_message")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0642323+08:00", comments="Source Table: tbl_message")
     default int updateByPrimaryKeySelective(Message record) {
         return update(c ->
             c.set(messageType).equalToWhenPresent(record::getMessageType)

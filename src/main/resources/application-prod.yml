@@ -59,3 +59,6 @@ sa-token:
   is-share: true
   token-style: tik
   is-log: false
+
+mybatis:
+  mapper-locations: classpath:com/guet/ARC/dao/mybatis/*.xml

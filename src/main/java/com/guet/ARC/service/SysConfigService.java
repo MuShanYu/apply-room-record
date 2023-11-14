@@ -11,7 +11,7 @@ import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.domain.SysConfig;
 import com.guet.ARC.domain.dto.config.SysConfigAddDTO;
 import com.guet.ARC.dao.mybatis.support.SysConfigDynamicSqlSupport;
-import com.guet.ARC.dao.mybatis.SysConfigQueryRepository;
+import com.guet.ARC.dao.mybatis.repository.SysConfigQueryRepository;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;

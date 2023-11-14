@@ -14,7 +14,7 @@ import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
 import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
-import com.guet.ARC.dao.mybatis.RoomQueryRepository;
+import com.guet.ARC.dao.mybatis.repository.RoomQueryRepository;
 import com.guet.ARC.dao.mybatis.support.RoomReservationDynamicSqlSupport;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;

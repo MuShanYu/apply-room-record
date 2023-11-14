@@ -1,4 +1,4 @@
-package com.guet.ARC.dao.mybatis;
+package com.guet.ARC.dao.mybatis.repository;
 
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.excel.model.ExcelRoomRecordWriteModel;
