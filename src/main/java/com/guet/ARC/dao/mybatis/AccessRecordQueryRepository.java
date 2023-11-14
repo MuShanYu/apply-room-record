@@ -1,4 +1,4 @@
-package com.guet.ARC.dao.mybatis.repository;
+package com.guet.ARC.dao.mybatis;
 
 import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;

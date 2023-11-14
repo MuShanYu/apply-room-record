@@ -1,4 +1,4 @@
-package com.guet.ARC.dao.mybatis;
+package com.guet.ARC.dao.mybatis.query;
 
 /**
  * Author: Yulf
