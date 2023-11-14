@@ -1,5 +1,6 @@
 package com.guet.ARC.domain;
 
+import com.guet.ARC.domain.enums.ApplicationState;
 import com.guet.ARC.domain.enums.ApplicationType;
 import lombok.Data;
 import lombok.ToString;
@@ -29,7 +30,8 @@ public class Application {
 
     private String applyUserId;
 
-    private Short state;
+    @Enumerated(EnumType.ORDINAL)
+    private ApplicationState state;
 
     private String remarks;
 

@@ -6,31 +6,31 @@ import org.mybatis.dynamic.sql.SqlColumn;
 import org.mybatis.dynamic.sql.SqlTable;
 
 public final class NoticeDynamicSqlSupport {
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4114366+08:00", comments="Source Table: tbl_notice")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source Table: tbl_notice")
     public static final Notice notice = new Notice();
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4114366+08:00", comments="Source field: tbl_notice.id")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source field: tbl_notice.id")
     public static final SqlColumn<String> id = notice.id;
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4114366+08:00", comments="Source field: tbl_notice.title")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source field: tbl_notice.title")
     public static final SqlColumn<String> title = notice.title;
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4114366+08:00", comments="Source field: tbl_notice.publish_user_id")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source field: tbl_notice.publish_user_id")
     public static final SqlColumn<String> publishUserId = notice.publishUserId;
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4114366+08:00", comments="Source field: tbl_notice.create_time")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source field: tbl_notice.create_time")
     public static final SqlColumn<Long> createTime = notice.createTime;
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4114366+08:00", comments="Source field: tbl_notice.update_time")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source field: tbl_notice.update_time")
     public static final SqlColumn<Long> updateTime = notice.updateTime;
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4114366+08:00", comments="Source field: tbl_notice.state")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source field: tbl_notice.state")
     public static final SqlColumn<Short> state = notice.state;
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4114366+08:00", comments="Source field: tbl_notice.content")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source field: tbl_notice.content")
     public static final SqlColumn<String> content = notice.content;
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-13T11:46:32.4114366+08:00", comments="Source Table: tbl_notice")
+    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source Table: tbl_notice")
     public static final class Notice extends SqlTable {
         public final SqlColumn<String> id = column("id", JDBCType.VARCHAR);
 

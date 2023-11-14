@@ -65,7 +65,8 @@ sa-token:
   token-style: tik
   # 是否输出操作日志
   is-log: true
-
 #logging:
 #  level:
 #    com.guet.ARC.mapper.UserMapper: debug
+mybatis:
+  mapper-locations: classpath:com/guet/ARC/dao/mybatis/*.xml

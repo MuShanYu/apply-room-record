@@ -1,4 +1,4 @@
-package com.guet.ARC.dao.mybatis;
+package com.guet.ARC.dao.mybatis.repository;
 
 import static com.guet.ARC.dao.mybatis.support.RoleDynamicSqlSupport.*;
 import static org.mybatis.dynamic.sql.SqlBuilder.*;

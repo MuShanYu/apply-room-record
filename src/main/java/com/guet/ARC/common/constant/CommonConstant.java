@@ -2,7 +2,7 @@ package com.guet.ARC.common.constant;
 
 public interface CommonConstant {
 
-    Short STATE_NEGATIVE = -1;//删除状态
+    Short STATE_NEGATIVE = 0;//删除状态
 
     Short STATE_ACTIVE = 1;//状态正常
 
