@@ -2,6 +2,9 @@ package com.guet.ARC.dao.mybatis.support;
 
 import java.sql.JDBCType;
 import javax.annotation.Generated;
+
+import com.guet.ARC.domain.enums.ApplicationState;
+import com.guet.ARC.domain.enums.ApplicationType;
 import org.mybatis.dynamic.sql.SqlColumn;
 import org.mybatis.dynamic.sql.SqlTable;
 
@@ -19,7 +22,7 @@ public final class ApplicationDynamicSqlSupport {
     public static final SqlColumn<String> reason = application.reason;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0692224+08:00", comments="Source field: tbl_application.application_type")
-    public static final SqlColumn<Short> applicationType = application.applicationType;
+    public static final SqlColumn<ApplicationType> applicationType = application.applicationType;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0692224+08:00", comments="Source field: tbl_application.matter_record_id")
     public static final SqlColumn<String> matterRecordId = application.matterRecordId;
@@ -31,7 +34,7 @@ public final class ApplicationDynamicSqlSupport {
     public static final SqlColumn<String> applyUserId = application.applyUserId;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0702123+08:00", comments="Source field: tbl_application.state")
-    public static final SqlColumn<Short> state = application.state;
+    public static final SqlColumn<ApplicationState> state = application.state;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0702123+08:00", comments="Source field: tbl_application.remarks")
     public static final SqlColumn<String> remarks = application.remarks;
@@ -50,7 +53,7 @@ public final class ApplicationDynamicSqlSupport {
 
         public final SqlColumn<String> reason = column("reason", JDBCType.VARCHAR);
 
-        public final SqlColumn<Short> applicationType = column("application_type", JDBCType.SMALLINT);
+        public final SqlColumn<ApplicationType> applicationType = column("application_type", JDBCType.SMALLINT);
 
         public final SqlColumn<String> matterRecordId = column("matter_record_id", JDBCType.VARCHAR);
 
@@ -58,7 +61,7 @@ public final class ApplicationDynamicSqlSupport {
 
         public final SqlColumn<String> applyUserId = column("apply_user_id", JDBCType.VARCHAR);
 
-        public final SqlColumn<Short> state = column("state", JDBCType.SMALLINT);
+        public final SqlColumn<ApplicationState> state = column("state", JDBCType.SMALLINT);
 
         public final SqlColumn<String> remarks = column("remarks", JDBCType.VARCHAR);
 
