@@ -4,11 +4,15 @@ import com.guet.ARC.domain.enums.ApplicationState;
 import com.guet.ARC.domain.enums.ApplicationType;
 import lombok.Data;
 import lombok.ToString;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 
 @Entity
 @Table(name = "tbl_application" )
+@DynamicUpdate
+@DynamicInsert
 @Data
 @ToString
 public class Application {
