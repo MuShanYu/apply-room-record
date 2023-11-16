@@ -1,4 +1,4 @@
-package com.guet.ARC.component;
+package com.guet.ARC.service;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
