@@ -4,9 +4,8 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.IdUtil;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.dao.MessageRepository;
-import com.guet.ARC.dao.mybatis.MessageQueryRepository;
-import com.guet.ARC.dao.mybatis.query.MessageQuery;
 import com.guet.ARC.domain.Message;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,13 +16,8 @@ import org.springframework.stereotype.Service;
  * Date: 2023/11/15
  */
 @Service
+@Slf4j
 public class MessageService {
-
-    @Autowired
-    private MessageQuery messageQuery;
-
-    @Autowired
-    private MessageQueryRepository messageQueryRepository;
 
     @Autowired
     private MessageRepository messageRepository;
