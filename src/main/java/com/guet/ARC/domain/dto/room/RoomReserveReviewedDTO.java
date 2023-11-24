@@ -1,5 +1,6 @@
 package com.guet.ARC.domain.dto.room;
 
+import com.guet.ARC.domain.enums.ReservationState;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Range;
@@ -23,5 +24,5 @@ public class RoomReserveReviewedDTO {
     private String category;
 
     @NotNull(message = "状态不能为空")
-    private Short state;
+    private ReservationState state;
 }

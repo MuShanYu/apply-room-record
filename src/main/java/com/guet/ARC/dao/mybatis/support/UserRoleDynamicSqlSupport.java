@@ -2,6 +2,8 @@ package com.guet.ARC.dao.mybatis.support;
 
 import java.sql.JDBCType;
 import javax.annotation.Generated;
+
+import com.guet.ARC.domain.enums.State;
 import org.mybatis.dynamic.sql.SqlColumn;
 import org.mybatis.dynamic.sql.SqlTable;
 
@@ -19,7 +21,7 @@ public final class UserRoleDynamicSqlSupport {
     public static final SqlColumn<String> roleId = userRole.roleId;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.26+08:00", comments="Source field: tbl_user_role.state")
-    public static final SqlColumn<Short> state = userRole.state;
+    public static final SqlColumn<State> state = userRole.state;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.26+08:00", comments="Source field: tbl_user_role.create_time")
     public static final SqlColumn<Long> createTime = userRole.createTime;
@@ -35,7 +37,7 @@ public final class UserRoleDynamicSqlSupport {
 
         public final SqlColumn<String> roleId = column("role_id", JDBCType.VARCHAR);
 
-        public final SqlColumn<Short> state = column("state", JDBCType.SMALLINT);
+        public final SqlColumn<State> state = column("state", JDBCType.SMALLINT);
 
         public final SqlColumn<Long> createTime = column("create_time", JDBCType.BIGINT);
 

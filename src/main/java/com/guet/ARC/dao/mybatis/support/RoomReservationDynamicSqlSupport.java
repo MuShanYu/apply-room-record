@@ -2,6 +2,9 @@ package com.guet.ARC.dao.mybatis.support;
 
 import java.sql.JDBCType;
 import javax.annotation.Generated;
+
+import com.guet.ARC.domain.enums.ReservationState;
+import com.guet.ARC.domain.enums.State;
 import org.mybatis.dynamic.sql.SqlColumn;
 import org.mybatis.dynamic.sql.SqlTable;
 
@@ -25,7 +28,7 @@ public final class RoomReservationDynamicSqlSupport {
     public static final SqlColumn<String> verifyUserName = roomReservation.verifyUserName;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.254+08:00", comments="Source field: tbl_room_reservation.state")
-    public static final SqlColumn<Short> state = roomReservation.state;
+    public static final SqlColumn<ReservationState> state = roomReservation.state;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-09T20:41:25.254+08:00", comments="Source field: tbl_room_reservation.update_time")
     public static final SqlColumn<Long> updateTime = roomReservation.updateTime;
@@ -51,7 +54,7 @@ public final class RoomReservationDynamicSqlSupport {
 
         public final SqlColumn<String> verifyUserName = column("verify_user_name", JDBCType.VARCHAR);
 
-        public final SqlColumn<Short> state = column("state", JDBCType.SMALLINT);
+        public final SqlColumn<ReservationState> state = column("state", JDBCType.SMALLINT);
 
         public final SqlColumn<Long> updateTime = column("update_time", JDBCType.BIGINT);
 

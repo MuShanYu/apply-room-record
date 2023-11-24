@@ -8,14 +8,17 @@ import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.dao.SysConfigRepository;
 import com.guet.ARC.domain.SysConfig;
 import com.guet.ARC.domain.dto.config.SysConfigAddDTO;
 import com.guet.ARC.dao.mybatis.support.SysConfigDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.SysConfigQueryRepository;
+import com.guet.ARC.domain.enums.State;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,16 +31,15 @@ public class SysConfigService {
     @Autowired
     private SysConfigQueryRepository sysConfigQueryRepository;
 
+    @Autowired
+    private SysConfigRepository sysConfigRepository;
+
     // 添加系统配置
     public SysConfig addConfig(SysConfigAddDTO sysConfigAddDTO) {
         String key = sysConfigAddDTO.getKey();
         String value = sysConfigAddDTO.getValue();
         // 判断key是否已经存在
-        SelectStatementProvider selectStatementProvider = select(count())
-                .from(SysConfigDynamicSqlSupport.sysConfig)
-                .where(SysConfigDynamicSqlSupport.configKey, isEqualTo(key))
-                .build().render(RenderingStrategies.MYBATIS3);
-        if (sysConfigQueryRepository.count(selectStatementProvider) != 0) {
+        if (sysConfigRepository.existsByConfigKey(key)) {
             throw new AlertException(ResultCode.SYS_CONFIG_KEY_EXISTS);
         }
         try {
@@ -52,12 +54,9 @@ public class SysConfigService {
         long now = System.currentTimeMillis();
         sysConfig.setCreateTime(now);
         sysConfig.setUpdateTime(now);
-        sysConfig.setState(CommonConstant.STATE_ACTIVE);
+        sysConfig.setState(State.ACTIVE);
         sysConfig.setConfigDesc(sysConfigAddDTO.getConfigDesc());
-        int insert = sysConfigQueryRepository.insert(sysConfig);
-        if (insert == 0) {
-            throw new AlertException(ResultCode.SYSTEM_ERROR);
-        }
+        sysConfigRepository.save(sysConfig);
         return sysConfig;
     }
 
@@ -66,15 +65,12 @@ public class SysConfigService {
         Optional<SysConfig> sysConfigOptional = sysConfigQueryRepository.selectByPrimaryKey(id);
         if (sysConfigOptional.isPresent()) {
             SysConfig sysConfig = sysConfigOptional.get();
-            if (sysConfig.getState().equals(CommonConstant.STATE_ACTIVE)) {
-                sysConfig.setState(CommonConstant.STATE_NEGATIVE);
+            if (sysConfig.getState().equals(State.ACTIVE)) {
+                sysConfig.setState(State.NEGATIVE);
             } else {
-                sysConfig.setState(CommonConstant.STATE_ACTIVE);
+                sysConfig.setState(State.ACTIVE);
             }
-            int update = sysConfigQueryRepository.updateByPrimaryKeySelective(sysConfig);
-            if (update == 0) {
-                throw new AlertException(ResultCode.SYSTEM_ERROR);
-            }
+            sysConfigRepository.save(sysConfig);
         }
     }
 
@@ -85,6 +81,7 @@ public class SysConfigService {
                 .orderBy(SysConfigDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         PageInfo<SysConfig> pageInfo = new PageInfo<>();
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
         Page<SysConfig> queryPageData = PageHelper.startPage(page, size);
         pageInfo.setPageData(sysConfigQueryRepository.selectMany(selectStatementProvider));
         pageInfo.setPage(page);
@@ -97,7 +94,7 @@ public class SysConfigService {
         SelectStatementProvider statementProvider = select(SysConfigQueryRepository.selectList)
                 .from(SysConfigDynamicSqlSupport.sysConfig)
                 .where(SysConfigDynamicSqlSupport.configKey, isEqualTo(key))
-                .and(SysConfigDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
+                .and(SysConfigDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                 .build().render(RenderingStrategies.MYBATIS3);
         List<SysConfig> sysConfigs = sysConfigQueryRepository.selectMany(statementProvider);
         if (sysConfigs.size() != 1) {
@@ -109,9 +106,6 @@ public class SysConfigService {
     // 修改配置
     public void updateSysConfig(SysConfig sysConfig) {
         sysConfig.setUpdateTime(System.currentTimeMillis());
-        int update = sysConfigQueryRepository.updateByPrimaryKeySelective(sysConfig);
-        if (update == 0) {
-            throw new AlertException(ResultCode.SYSTEM_ERROR);
-        }
+        sysConfigRepository.save(sysConfig);
     }
 }
