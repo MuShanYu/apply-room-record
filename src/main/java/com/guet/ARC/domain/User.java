@@ -40,4 +40,6 @@ public class User {
     private Long createTime;
 
     private String mail;
+
+    private String openId;
 }

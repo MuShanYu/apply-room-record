@@ -42,6 +42,18 @@ public class UserController {
         return userService.login(userLoginDTO);
     }
 
+    @PostMapping("/user/wx/login")
+    @ApiOperation(value = "用户微信登录")
+    public Map<String, Object> wxLoginApi(@RequestParam("code") String code) {
+        return userService.wxLogin(code);
+    }
+
+    @PutMapping("/user/wx/bind")
+    @ApiOperation(value = "用户绑定微信")
+    public void wxBindApi(@RequestParam("code") String code) {
+        userService.bindWx(code);
+    }
+
     @GetMapping("/user/logout")
     @ApiOperation(value = "用户退出登录")
     public void logoutApi() {
@@ -116,4 +128,6 @@ public class UserController {
     public void updateUserTelApi(@Valid @RequestBody UserUpdateNicknameDTO userUpdateNicknameDTO) {
         userService.updateUserNickname(userUpdateNicknameDTO);
     }
+
+
 }

@@ -31,4 +31,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query(value = "SELECT DISTINCT institute FROM tbl_user", nativeQuery = true)
     List<String> findInstitutes();
 
+    Optional<User> findByOpenId(String openId);
+
 }
