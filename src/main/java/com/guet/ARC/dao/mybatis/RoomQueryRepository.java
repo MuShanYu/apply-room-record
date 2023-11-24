@@ -29,7 +29,6 @@ import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
 
 @Mapper
 public interface RoomQueryRepository {
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-10-24T13:45:23.52+08:00", comments="Source Table: tbl_room")
     BasicColumn[] selectList = BasicColumn.columnList(id, school, teachBuilding, category, roomName, equipmentInfo, capacity, state, updateTime, createTime, chargePerson, chargePersonId);
 
     BasicColumn[] selectRoomRecordExcelModelColumns = BasicColumn.columnList(id, roomName, category, chargePerson);
@@ -81,9 +80,6 @@ public interface RoomQueryRepository {
             @Result(column="charge_person", property="chargePerson", jdbcType=JdbcType.VARCHAR)
     })
     List<ExcelRoomRecordWriteModel> selectRoomRecordExcelModels(SelectStatementProvider selectStatement);
-
-    @Select("select room_name from tbl_room where id = #{roomId}")
-    String queryRoomNameById(@Param("roomId") String roomId);
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-10-24T13:45:23.516+08:00", comments="Source Table: tbl_room")
     @UpdateProvider(type=SqlProviderAdapter.class, method="update")

@@ -48,7 +48,7 @@ public class NoticeService {
         Optional<Notice> noticeOptional = noticeRepository.findById(noticeId);
         if (noticeOptional.isPresent()) {
             Notice notice = noticeOptional.get();
-            notice.setState(State.DELETED);
+            notice.setState(State.NEGATIVE);
             notice.setUpdateTime(System.currentTimeMillis());
             noticeRepository.saveAndFlush(notice);
         }
@@ -58,7 +58,7 @@ public class NoticeService {
         Optional<Notice> noticeOptional = noticeRepository.findById(noticeId);
         if (noticeOptional.isPresent()) {
             Notice notice = noticeOptional.get();
-            notice.setState(State.NORMAL);
+            notice.setState(State.ACTIVE);
             notice.setUpdateTime(System.currentTimeMillis());
             noticeRepository.saveAndFlush(notice);
         }

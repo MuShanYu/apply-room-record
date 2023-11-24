@@ -2,6 +2,8 @@ package com.guet.ARC.dao.mybatis.support;
 
 import java.sql.JDBCType;
 import javax.annotation.Generated;
+
+import com.guet.ARC.domain.enums.RoomState;
 import org.mybatis.dynamic.sql.SqlColumn;
 import org.mybatis.dynamic.sql.SqlTable;
 
@@ -31,7 +33,7 @@ public final class RoomDynamicSqlSupport {
     public static final SqlColumn<String> capacity = room.capacity;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-10-24T13:45:23.511+08:00", comments="Source field: tbl_room.state")
-    public static final SqlColumn<Short> state = room.state;
+    public static final SqlColumn<RoomState> state = room.state;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-10-24T13:45:23.511+08:00", comments="Source field: tbl_room.update_time")
     public static final SqlColumn<Long> updateTime = room.updateTime;
@@ -61,7 +63,7 @@ public final class RoomDynamicSqlSupport {
 
         public final SqlColumn<String> capacity = column("capacity", JDBCType.VARCHAR);
 
-        public final SqlColumn<Short> state = column("state", JDBCType.SMALLINT);
+        public final SqlColumn<RoomState> state = column("state", JDBCType.SMALLINT);
 
         public final SqlColumn<Long> updateTime = column("update_time", JDBCType.BIGINT);
 

@@ -14,6 +14,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  * Date: 2023/11/13
  */
 public interface ApplicationRepository extends JpaRepository<Application, String>, JpaSpecificationExecutor<Application> {
-    Page<Application> findByApplyUserIdAndApplicationTypeAndCreateTimeBetweenOrderByCreateTimeDesc(String applyUserId, ApplicationType applicationType,
-                                                                    Long startTime, Long endTime, Pageable pageable);
+
 }

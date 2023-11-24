@@ -1,12 +1,15 @@
 package com.guet.ARC.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.collection.CollectionUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.dao.RoomRepository;
+import com.guet.ARC.dao.mybatis.query.RoomQuery;
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.room.RoomAddUpdateDTO;
@@ -16,15 +19,20 @@ import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
 import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.RoomQueryRepository;
 import com.guet.ARC.dao.mybatis.support.RoomReservationDynamicSqlSupport;
+import com.guet.ARC.domain.enums.ReservationState;
+import com.guet.ARC.domain.enums.RoomState;
 import com.guet.ARC.util.CommonUtils;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,16 +44,18 @@ public class RoomService {
     private RoomQueryRepository roomQueryRepository;
 
     @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private RoomQuery roomQuery;
+
+    @Autowired
     private UserService userService;
 
     public Room addRoom(RoomAddUpdateDTO roomAddUpdateDTO) {
         // 判断房间是否已经被添加过了
         String roomName = roomAddUpdateDTO.getRoomName();
-        SelectStatementProvider statement = select(count())
-                .from(RoomDynamicSqlSupport.room)
-                .where(RoomDynamicSqlSupport.roomName, isEqualTo(roomName))
-                .build().render(RenderingStrategies.MYBATIS3);
-        if (roomQueryRepository.count(statement) > 0) {
+        if (roomRepository.countByRoomName(roomName) > 0) {
             throw new AlertException(1000, roomAddUpdateDTO.getRoomName() + "房间已经创建");
         }
         BeanCopier copier = BeanCopier.create(RoomAddUpdateDTO.class, Room.class, false);
@@ -59,16 +69,14 @@ public class RoomService {
         room.setCreateTime(now);
         room.setUpdateTime(now);
         // 新的房间不可被预约
-        room.setState(CommonConstant.ROOM_CAN_NOT_BE_RESERVED);
+        room.setState(RoomState.ROOM_CAN_NOT_BE_RESERVED);
         room.setChargePersonId(user.getId());
-        if (roomQueryRepository.insertSelective(room) == 0) {
-            throw new AlertException(ResultCode.INSERT_ERROR);
-        }
+        roomRepository.save(room);
         return room;
     }
 
     public void disableRoom(String id) {
-        Optional<Room> optionalRoom = roomQueryRepository.selectByPrimaryKey(id);
+        Optional<Room> optionalRoom = roomRepository.findById(id);
         if (optionalRoom.isPresent()) {
             Room room = optionalRoom.get();
             String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
@@ -79,16 +87,13 @@ public class RoomService {
                 }
             }
             // 修改
-            if (room.getState().equals(CommonConstant.STATE_ACTIVE) || room.getState().equals(CommonConstant.ROOM_CAN_NOT_BE_RESERVED)) {
-                room.setState(CommonConstant.STATE_NEGATIVE);
+            if (room.getState().equals(RoomState.ROOM_ACTIVE) || room.getState().equals(RoomState.ROOM_CAN_NOT_BE_RESERVED)) {
+                room.setState(RoomState.ROOM_NEGATIVE);
             } else {
-                room.setState(CommonConstant.STATE_ACTIVE);
+                room.setState(RoomState.ROOM_ACTIVE);
             }
-            UpdateStatementProvider update = update(RoomDynamicSqlSupport.room)
-                    .set(RoomDynamicSqlSupport.state).equalTo(room.getState())
-                    .where(RoomDynamicSqlSupport.id, isEqualTo(room.getId()))
-                    .build().render(RenderingStrategies.MYBATIS3);
-            roomQueryRepository.update(update);
+            room.setUpdateTime(System.currentTimeMillis());
+            roomRepository.save(room);
         } else {
             throw new AlertException(1000, "要禁用的房间不存在");
         }
@@ -105,13 +110,11 @@ public class RoomService {
             }
         }
         // 修改
-        if (room.getId() == null || room.getId().trim().equals("")) {
+        if (room.getId() == null || room.getId().trim().isEmpty()) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
         }
         room.setUpdateTime(System.currentTimeMillis());
-        if (roomQueryRepository.updateByPrimaryKeySelective(room) == 0) {
-            throw new AlertException(ResultCode.UPDATE_ERROR);
-        }
+        roomRepository.save(room);
         return room;
     }
 
@@ -126,25 +129,19 @@ public class RoomService {
             }
         }
         // 修改房间信息
-        UpdateStatementProvider updateStatementProvider = update(RoomDynamicSqlSupport.room)
-                .set(RoomDynamicSqlSupport.chargePerson).equalTo(roomChargerDTO.getChargePerson())
-                .set(RoomDynamicSqlSupport.chargePersonId).equalTo(user.getId())
-                .where(RoomDynamicSqlSupport.id, isEqualTo(roomChargerDTO.getId()))
-                .build().render(RenderingStrategies.MYBATIS3);
-        int update = roomQueryRepository.update(updateStatementProvider);
-        if (update == 0) {
-            throw new AlertException(ResultCode.UPDATE_ERROR);
+        Optional<Room> roomOptional = roomRepository.findById(roomChargerDTO.getId());
+        if (roomOptional.isPresent()) {
+            Room room = roomOptional.get();
+            room.setUpdateTime(System.currentTimeMillis());
+            room.setChargePerson(roomChargerDTO.getChargePerson());
+            room.setChargePersonId(user.getId());
+            roomRepository.save(room);
         }
     }
 
     // 状态正常的房间
     public Room queryRoomById(String id) {
-        SelectStatementProvider statementProvider = select(RoomQueryRepository.selectList)
-                .from(RoomDynamicSqlSupport.room)
-                .where(RoomDynamicSqlSupport.id, isEqualTo(id))
-                .and(RoomDynamicSqlSupport.state, isNotEqualTo(CommonConstant.STATE_NEGATIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        return roomQueryRepository.selectOne(statementProvider).orElse(null);
+        return roomRepository.findByIdAndStateNot(id, RoomState.ROOM_NEGATIVE).orElse(null);
     }
 
     /**
@@ -154,80 +151,10 @@ public class RoomService {
      * @return
      */
     public PageInfo<Room> queryRoom(RoomQueryDTO roomQueryDTO) {
-//        System.out.println(roomQueryDTO);
-        if (roomQueryDTO == null) {
-            throw new AlertException(ResultCode.PARAM_IS_INVALID);
-        }
-        if (!StringUtils.hasLength(roomQueryDTO.getCategory())) {
-            roomQueryDTO.setCategory(null);
-        }
-        if (!StringUtils.hasLength(roomQueryDTO.getSchool())) {
-            roomQueryDTO.setSchool(null);
-        }
-        if (!StringUtils.hasLength(roomQueryDTO.getTeachBuilding())) {
-            roomQueryDTO.setTeachBuilding(null);
-        }
-        // 查询出这段时间内已经预约的房间列表，已经预约是已经操作过，不需要进行状态筛选，然后再从总的中去除
-        // 先查询可以预约的空闲房间，再从中按照房间的类别等条件筛选
-        // 有多少房间在这个时间段已经预约了
-        SelectStatementProvider statementProvider = select(roomQueryRepository.selectList)
-                .from(RoomDynamicSqlSupport.room)
-                .where(RoomDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                //  搜索区间内的，预约状态是自己未预约的。
-                //  相同时间段内只允许有一条预约成功的记录，不可以重复。
-                // 预约状态为取消、驳回可再其次预约
-                // 预约状态为待审批，则这段时间内不可再次预约
-                // 预约状态为已审批，则这段时间内也不可以再次预约
-                .and(RoomDynamicSqlSupport.id, isNotIn(
-                        select(RoomReservationDynamicSqlSupport.roomId)
-                                .from(RoomReservationDynamicSqlSupport.roomReservation)
-                                .where(RoomReservationDynamicSqlSupport.reserveStartTime,
-                                        isGreaterThanOrEqualTo(roomQueryDTO.getStartTime()))
-                                .and(RoomReservationDynamicSqlSupport.reserveEndTime,
-                                        isLessThanOrEqualTo(roomQueryDTO.getEndTime()))
-                                .and(RoomReservationDynamicSqlSupport.state,
-                                        isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)
-                                )
-                ))
-                .and(RoomDynamicSqlSupport.id, isNotIn(
-                        select(RoomReservationDynamicSqlSupport.roomId)
-                                .from(RoomReservationDynamicSqlSupport.roomReservation)
-                                .where(RoomReservationDynamicSqlSupport.reserveStartTime, isLessThanOrEqualTo(roomQueryDTO.getStartTime()))
-                                .and(RoomReservationDynamicSqlSupport.reserveEndTime, isGreaterThanOrEqualTo(roomQueryDTO.getEndTime()))
-                                .and(RoomReservationDynamicSqlSupport.state,
-                                        isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)
-                                )
-                ))
-                .and(RoomDynamicSqlSupport.id, isNotIn(
-                        // 查询这段时间内是否有待审批和已审批的记录
-                        select(RoomReservationDynamicSqlSupport.roomId)
-                                .from(RoomReservationDynamicSqlSupport.roomReservation)
-                                .where(RoomReservationDynamicSqlSupport.reserveEndTime,
-                                        isGreaterThanOrEqualTo(roomQueryDTO.getStartTime()))
-                                .and(RoomReservationDynamicSqlSupport.reserveEndTime,
-                                        isLessThanOrEqualTo(roomQueryDTO.getEndTime()))
-                                .and(RoomReservationDynamicSqlSupport.state,
-                                        isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)
-                                )
-                ))
-                .and(RoomDynamicSqlSupport.id, isNotIn(
-                        // 查询这段时间内是否有待审批和已审批的记录
-                        select(RoomReservationDynamicSqlSupport.roomId)
-                                .from(RoomReservationDynamicSqlSupport.roomReservation)
-                                .where(RoomReservationDynamicSqlSupport.reserveStartTime,
-                                        isGreaterThanOrEqualTo(roomQueryDTO.getStartTime()))
-                                .and(RoomReservationDynamicSqlSupport.reserveStartTime,
-                                        isLessThanOrEqualTo(roomQueryDTO.getEndTime()))
-                                .and(RoomReservationDynamicSqlSupport.state,
-                                        isIn(CommonConstant.ROOM_RESERVE_TO_BE_REVIEWED, CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)
-                                )
-                ))
-                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomQueryDTO.getCategory()))
-                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomQueryDTO.getSchool()))
-                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomQueryDTO.getTeachBuilding()))
-                .build().render(RenderingStrategies.MYBATIS3);
         Page<Room> queryPageData = PageHelper.startPage(roomQueryDTO.getPage(), roomQueryDTO.getSize());
-        List<Room> rooms = roomQueryRepository.selectMany(statementProvider);
+        List<Room> rooms = roomQueryRepository.selectMany(
+                roomQuery.queryCanApplyRoomListSql(roomQueryDTO)
+        );
         PageInfo<Room> pageInfo = new PageInfo<>();
         pageInfo.setPage(roomQueryDTO.getPage());
         pageInfo.setPageData(rooms);
@@ -236,39 +163,36 @@ public class RoomService {
     }
 
     public PageInfo<Room> queryRoomList(RoomListQueryDTO roomListQueryDTO) {
-        if (!StringUtils.hasLength(roomListQueryDTO.getCategory())) {
-            roomListQueryDTO.setCategory(null);
-        }
-        if (!StringUtils.hasLength(roomListQueryDTO.getSchool())) {
-            roomListQueryDTO.setSchool(null);
-        }
-        if (!StringUtils.hasLength(roomListQueryDTO.getTeachBuilding())) {
-            roomListQueryDTO.setTeachBuilding(null);
-        }
-        if (!StringUtils.hasLength(roomListQueryDTO.getChargeUserId())) {
-            roomListQueryDTO.setChargeUserId(null);
-        }
-        String roomName = roomListQueryDTO.getRoomName();
-        if (!StringUtils.hasLength(roomName)) {
-            roomName = null;
-        } else {
-            roomName = "%" + roomName + "%";
-        }
         // 添加可以查看我管理的房间列表
-        SelectStatementProvider statementProvider = select(RoomQueryRepository.selectList)
-                .from(RoomDynamicSqlSupport.room)
-                .where(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomListQueryDTO.getTeachBuilding()))
-                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(roomListQueryDTO.getSchool()))
-                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomListQueryDTO.getCategory()))
-                .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomListQueryDTO.getChargeUserId()))
-                .and(RoomDynamicSqlSupport.roomName, isLikeWhenPresent(roomName))
-                .orderBy(RoomDynamicSqlSupport.createTime.descending())
-                .build().render(RenderingStrategies.MYBATIS3);
-        Page<Room> queryPageData = PageHelper.startPage(roomListQueryDTO.getPage(), roomListQueryDTO.getSize());
-        List<Room> rooms = roomQueryRepository.selectMany(statementProvider);
+        PageRequest pageRequest = PageRequest.of(roomListQueryDTO.getPage(), roomListQueryDTO.getSize());
+        org.springframework.data.domain.Page<Room> queryPageData = roomRepository.findAll((root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StringUtils.hasLength(roomListQueryDTO.getCategory())) {
+                predicates.add(cb.equal(root.get("category"), roomListQueryDTO.getCategory()));
+            }
+            if (StringUtils.hasLength(roomListQueryDTO.getSchool())) {
+                predicates.add(cb.equal(root.get("school"), roomListQueryDTO.getSchool()));
+            }
+            if (StringUtils.hasLength(roomListQueryDTO.getTeachBuilding())) {
+                predicates.add(cb.equal(root.get("teachBuilding"), roomListQueryDTO.getTeachBuilding()));
+            }
+            if (StringUtils.hasLength(roomListQueryDTO.getChargeUserId())) {
+                predicates.add(cb.equal(root.get("chargeUserId"), roomListQueryDTO.getChargeUserId()));
+            }
+            String roomName = roomListQueryDTO.getRoomName();
+            if (StringUtils.hasLength(roomName)) {
+                predicates.add(cb.like(root.get("roomName"), "%" + roomName + "%"));
+            }
+            if (CollectionUtil.isEmpty(predicates)) {
+                return cb.conjunction();
+            }
+            query.orderBy(cb.desc(root.get("createTime")));
+            return cb.and(predicates.toArray(Predicate[]::new));
+        }, pageRequest);
+        List<Room> rooms = queryPageData.getContent();
         PageInfo<Room> pageInfo = new PageInfo<>();
         pageInfo.setPage(roomListQueryDTO.getPage());
-        pageInfo.setTotalSize(queryPageData.getTotal());
+        pageInfo.setTotalSize(queryPageData.getTotalElements());
         pageInfo.setPageData(rooms);
         return pageInfo;
     }
@@ -276,12 +200,7 @@ public class RoomService {
     // 导入房间数据
     public Room insertRoomAndRegisterAdminUser(RoomAddUpdateDTO roomAddUpdateDTO) {
         // 判断房间是否已经被添加过了
-        String roomName = roomAddUpdateDTO.getRoomName();
-        SelectStatementProvider statement = select(count())
-                .from(RoomDynamicSqlSupport.room)
-                .where(RoomDynamicSqlSupport.roomName, isEqualTo(roomName))
-                .build().render(RenderingStrategies.MYBATIS3);
-        if (roomQueryRepository.count(statement) > 0) {
+        if (roomRepository.countByRoomName(roomAddUpdateDTO.getRoomName()) > 0) {
             throw new AlertException(999, roomAddUpdateDTO.getRoomName() + "房间已经创建");
         }
         BeanCopier copier = BeanCopier.create(RoomAddUpdateDTO.class, Room.class, false);
@@ -297,11 +216,9 @@ public class RoomService {
             room.setId(id);
             room.setCreateTime(now);
             room.setUpdateTime(now);
-            room.setState(CommonConstant.STATE_ACTIVE);
+            room.setState(RoomState.ROOM_ACTIVE);
             room.setChargePersonId(user.getId());
-            if (roomQueryRepository.insertSelective(room) == 0) {
-                throw new AlertException(ResultCode.INSERT_ERROR);
-            }
+            roomRepository.save(room);
         }
         return room;
     }
@@ -318,16 +235,13 @@ public class RoomService {
                 }
             }
             // 修改
-            if (room.getState().equals(CommonConstant.ROOM_CAN_NOT_BE_RESERVED)) {
-                room.setState(CommonConstant.STATE_ACTIVE);
+            if (room.getState().equals(RoomState.ROOM_CAN_NOT_BE_RESERVED)) {
+                room.setState(RoomState.ROOM_ACTIVE);
             } else {
-                room.setState(CommonConstant.ROOM_CAN_NOT_BE_RESERVED);
+                room.setState(RoomState.ROOM_CAN_NOT_BE_RESERVED);
             }
-            UpdateStatementProvider update = update(RoomDynamicSqlSupport.room)
-                    .set(RoomDynamicSqlSupport.state).equalTo(room.getState())
-                    .where(RoomDynamicSqlSupport.id, isEqualTo(roomId))
-                    .build().render(RenderingStrategies.MYBATIS3);
-            roomQueryRepository.update(update);
+            room.setUpdateTime(System.currentTimeMillis());
+            roomRepository.save(room);
         } else {
             throw new AlertException(1000, "要禁用预约的房间不存在");
         }

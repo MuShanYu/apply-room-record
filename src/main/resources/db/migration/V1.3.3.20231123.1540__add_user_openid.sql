@@ -1,0 +1,1 @@
+alter table tbl_user add column `open_id` varchar(1024) null comment '微信标识';

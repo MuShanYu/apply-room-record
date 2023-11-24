@@ -2,6 +2,8 @@ package com.guet.ARC.dao.mybatis.support;
 
 import java.sql.JDBCType;
 import javax.annotation.Generated;
+
+import com.guet.ARC.domain.enums.State;
 import org.mybatis.dynamic.sql.SqlColumn;
 import org.mybatis.dynamic.sql.SqlTable;
 
@@ -19,7 +21,7 @@ public final class SysConfigDynamicSqlSupport {
     public static final SqlColumn<String> configDesc = sysConfig.configDesc;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-23T17:21:59.545+08:00", comments="Source field: tbl_sys_config.state")
-    public static final SqlColumn<Short> state = sysConfig.state;
+    public static final SqlColumn<State> state = sysConfig.state;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2022-08-23T17:21:59.545+08:00", comments="Source field: tbl_sys_config.create_time")
     public static final SqlColumn<Long> createTime = sysConfig.createTime;
@@ -38,7 +40,7 @@ public final class SysConfigDynamicSqlSupport {
 
         public final SqlColumn<String> configDesc = column("config_desc", JDBCType.VARCHAR);
 
-        public final SqlColumn<Short> state = column("state", JDBCType.SMALLINT);
+        public final SqlColumn<State> state = column("state", JDBCType.SMALLINT);
 
         public final SqlColumn<Long> createTime = column("create_time", JDBCType.BIGINT);
 
