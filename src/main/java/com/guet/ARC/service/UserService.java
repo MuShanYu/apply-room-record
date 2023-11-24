@@ -3,6 +3,7 @@ package com.guet.ARC.service;
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
@@ -28,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
@@ -143,15 +145,7 @@ public class UserService {
         if (userOptional.isPresent()) {
             user = userOptional.get();
             map = new HashMap<>();
-            // 用户登录
-            StpUtil.login(user.getId());
-            // 获取登录token
-            String token = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
-            // 后台存储用户信息
-            StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", user.getId());
-            // 返回结果
-            map.put("user", user);
-            map.put("token", token);
+           login(map, user);
         } else {
             throw new AlertException(1000, "账号或者密码错误");
         }
@@ -166,15 +160,7 @@ public class UserService {
         if (userOptional.isPresent()) {
             user = userOptional.get();
             map = new HashMap<>();
-            // 用户登录
-            StpUtil.login(user.getId());
-            // 获取登录token
-            String token = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
-            // 后台存储用户信息
-            StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", user.getId());
-            // 返回结果
-            map.put("user", user);
-            map.put("token", token);
+            login(map, user);
             // 获取权限列表
             List<String> roleList = StpUtil.getRoleList();
             if (roleList.contains(CommonConstant.ADMIN_ROLE) || roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
@@ -192,15 +178,59 @@ public class UserService {
     }
 
     // 微信登录
-    public void wxLogin(String code) {
+    public Map<String, Object> wxLogin(String code) {
         // 获取openId
         String openid = WxUtils.getOpenid(code);
         // 查询用户是否已经绑定了，没有绑定则无法登录
-
+        if (StrUtil.isEmpty(openid)) {
+            throw new AlertException(1000, "用户标识获取失败");
+        }
+        // 判断是否已经绑定
+        String encodeOpenId = SaSecureUtil.md5(openid);
+        Optional<User> userOptional = userRepository.findByOpenId(encodeOpenId);
+        Map<String, Object> map = new HashMap<>();;
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            map.put("canWxLogin", true);
+            login(map, user);
+        } else {
+            map.put("canWxLogin", false);
+        }
+        return map;
     }
 
+    private void login(Map<String, Object> map, User user) {
+        // 用户登录
+        StpUtil.login(user.getId());
+        // 获取登录token
+        String token = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
+        // 后台存储用户信息
+        StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", user.getId());
+        // 返回结果
+        map.put("user", user);
+        map.put("token", token);
+        map.put("isBindWx", !StrUtil.isEmpty(user.getOpenId()));
+    }
     // 绑定微信
-
+    public void bindWx(String code) {
+        // 获取openId
+        String openid = WxUtils.getOpenid(code);
+        // 查询用户是否已经绑定了，没有绑定则无法登录
+        if (StrUtil.isEmpty(openid)) {
+            throw new AlertException(1000, "用户标识获取失败");
+        }
+        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            throw new AlertException(ResultCode.USER_NOT_EXIST);
+        }
+        User user = userOptional.get();
+        if (StrUtil.isEmpty(user.getOpenId())) {
+            user.setUpdateTime(System.currentTimeMillis());
+            user.setOpenId(SaSecureUtil.md5(openid));
+            userRepository.save(user);
+        }
+    }
 
     public PageInfo<UserRoleVo> queryUserList(UserListQueryDTO userListQueryDTO) {
         Integer page = userListQueryDTO.getPage();
