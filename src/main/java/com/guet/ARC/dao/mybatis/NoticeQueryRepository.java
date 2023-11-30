@@ -30,7 +30,7 @@ public interface NoticeQueryRepository {
             @Result(column = "update_time", property = "updateTime", jdbcType = JdbcType.BIGINT),
             @Result(column = "state", property = "state", jdbcType = JdbcType.SMALLINT),
             @Result(column = "content", property = "content", jdbcType = JdbcType.LONGVARCHAR),
-            @Result(column = "name", property = "publishUserNickname", jdbcType = JdbcType.VARCHAR)
+            @Result(column = "name", property = "publishUserName", jdbcType = JdbcType.VARCHAR)
     })
     List<NoticeVo> selectNoticeVo(SelectStatementProvider selectStatement);
 }
