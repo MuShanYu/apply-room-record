@@ -13,5 +13,5 @@ import lombok.ToString;
 @Data
 @ToString
 public class NoticeVo extends Notice {
-    private String publishUserNickname;
+    private String publishUserName;
 }
