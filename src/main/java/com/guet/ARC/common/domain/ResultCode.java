@@ -25,7 +25,6 @@ public enum ResultCode {
     STU_NUM_EXISTS(2009,"学号已经存在", false),
     ACCOUNT_TO_BE_IMPROVED(2010,"用户信息未完善", false),
     ACCOUNT_TO_LOGOUT(2011,"用户已经注销，无法操作", false),
-    TEL_ERROR(2012,"查询不到该手机号",false),
 
     OPERATE_OBJECT_NOT_SELF(2013, "操作的对象不能是自己", false),
 

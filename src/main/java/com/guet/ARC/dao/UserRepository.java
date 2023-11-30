@@ -14,15 +14,9 @@ import java.util.Optional;
  */
 public interface UserRepository extends JpaRepository<User, String> {
 
-    long countByStuNumAndState(String stuNum, State state);
+    boolean existsByStuNumAndState(String stuNum, State state);
 
-    long countByTelAndState(String tel, State state);
-
-    Optional<User> findByTelAndPwdAndState(String tel, String pwd, State state);
-
-    Optional<User> findByTelAndState(String tel, State state);
-
-    Optional<User> findByTel(String tel);
+    Optional<User> findByStuNum(String stuNum);
 
     Optional<User> findByMail(String mail);
 
@@ -32,5 +26,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     List<String> findInstitutes();
 
     Optional<User> findByOpenId(String openId);
+
+    Optional<User> findByStuNumAndPwdAndState(String stuNum, String pwd, State state);
+
+    boolean existsByMail(String mail);
 
 }

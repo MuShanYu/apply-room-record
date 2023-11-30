@@ -12,5 +12,5 @@ public class UserRegisterDTO {
 
     private String institute;
 
-    private String tel;
+    private String mail;
 }

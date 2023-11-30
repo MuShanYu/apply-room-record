@@ -2,6 +2,7 @@ package com.guet.ARC.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
@@ -62,9 +63,9 @@ public class RoomService {
         Room room = new Room();
         copier.copy(roomAddUpdateDTO, room, null);
         // 验证阶段，判断用户的基本信息，是否存在，是否是管理员
-        User user = userService.userCanBeCurrentRoomCharger(roomAddUpdateDTO.getChargePersonTel(), roomAddUpdateDTO.getChargePerson());
+        User user = userService.userCanBeCurrentRoomCharger(roomAddUpdateDTO.getStuNum(), roomAddUpdateDTO.getChargePerson());
         long now = System.currentTimeMillis();
-        String id = CommonUtils.generateUUID();
+        String id = IdUtil.fastSimpleUUID();
         room.setId(id);
         room.setCreateTime(now);
         room.setUpdateTime(now);
@@ -119,7 +120,7 @@ public class RoomService {
     }
 
     public void updateRoomCharger(UpdateRoomChargerDTO roomChargerDTO) {
-        User user = userService.userCanBeCurrentRoomCharger(roomChargerDTO.getChargePersonTel(), roomChargerDTO.getChargePerson());
+        User user = userService.userCanBeCurrentRoomCharger(roomChargerDTO.getChargePersonStNum(), roomChargerDTO.getChargePerson());
         // 判断是否可以修改
         String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         if (!currentUserId.equals(roomChargerDTO.getOriginChargePersonId())) {
@@ -210,7 +211,7 @@ public class RoomService {
         User user;
         // 因为前端是循环调用，所以这里必须是线程安全的
         synchronized (this) {
-            user = userService.userBeCurrentRoomCharger(roomAddUpdateDTO.getChargePersonTel(), roomAddUpdateDTO.getChargePerson());
+            user = userService.userBeCurrentRoomCharger(roomAddUpdateDTO.getStuNum(), roomAddUpdateDTO.getChargePerson());
             long now = System.currentTimeMillis();
             String id = CommonUtils.generateUUID();
             room.setId(id);
