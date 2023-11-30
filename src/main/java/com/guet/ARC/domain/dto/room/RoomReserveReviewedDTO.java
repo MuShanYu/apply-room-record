@@ -24,5 +24,5 @@ public class RoomReserveReviewedDTO {
     private String category;
 
     @NotNull(message = "状态不能为空")
-    private ReservationState state;
+    private Integer state;
 }

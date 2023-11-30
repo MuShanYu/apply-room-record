@@ -111,7 +111,7 @@ public class RoomReservationQuery {
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
                 .and(RoomDynamicSqlSupport.chargePersonId, isEqualTo(userId))
-                .and(RoomReservationDynamicSqlSupport.state, isEqualTo(queryDTO.getState()))
+                .and(RoomReservationDynamicSqlSupport.state, isEqualTo(ReservationState.valueOf(queryDTO.getState())))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
     }

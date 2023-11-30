@@ -201,7 +201,6 @@ public class RoomReservationService {
 
     // 获取待审核列表
     public PageInfo<RoomReservationAdminVo> queryRoomReserveToBeReviewed(RoomReserveReviewedDTO queryDTO) {
-
         String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         Page<RoomReservationAdminVo> queryPageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
         List<RoomReservationAdminVo> roomReservationAdminVos =
