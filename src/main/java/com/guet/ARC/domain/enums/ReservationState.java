@@ -14,4 +14,13 @@ public enum ReservationState {
     ROOM_RESERVE_TO_BE_REJECTED,
 
     ROOM_RESERVE_IS_TIME_OUT;
+
+    public static ReservationState valueOf(int ordinal) {
+        ReservationState[] values = ReservationState.values();
+        if (ordinal >= values.length) {
+            return null;
+        } else {
+            return values[ordinal];
+        }
+    }
 }
