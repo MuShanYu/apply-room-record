@@ -42,16 +42,22 @@ public class UserController {
         return userService.login(userLoginDTO);
     }
 
-    @PostMapping("/user/wx/login")
+    @PostMapping("/user/wx/login/{code}")
     @ApiOperation(value = "用户微信登录")
-    public Map<String, Object> wxLoginApi(@RequestParam("code") String code) {
+    public Map<String, Object> wxLoginApi(@PathVariable("code") String code) {
         return userService.wxLogin(code);
     }
 
-    @PutMapping("/user/wx/bind")
+    @PutMapping("/user/wx/bind/{code}")
     @ApiOperation(value = "用户绑定微信")
-    public void wxBindApi(@RequestParam("code") String code) {
+    public void wxBindApi(@PathVariable("code") String code) {
         userService.bindWx(code);
+    }
+
+    @PutMapping("/user/wx/unBind/{encodeOpenId}")
+    @ApiOperation(value = "用户解除绑定微信")
+    public void wxUnBindApi(@PathVariable("encodeOpenId") String encodeOpenId) {
+        userService.unBindWx(encodeOpenId);
     }
 
     @GetMapping("/user/logout")
@@ -67,9 +73,9 @@ public class UserController {
     }
 
     @GetMapping("/user/get/verifyCode")
-    @ApiOperation(value = "获取六位验证码")
-    public Map<String, String> getVerifyCodeApi(@RequestParam("tel") String tel) {
-        return userService.getVerifyCode(tel);
+    @ApiOperation(value = "获取4位验证码")
+    public void getVerifyCodeApi(@RequestParam("stuNum") String stuNum) {
+        userService.sendVerifyCode(stuNum);
     }
 
     @PostMapping("/user/update/pwd")
@@ -107,13 +113,6 @@ public class UserController {
         res.put("errorData", userService.batchRegister(registerDTOS, errorMsg));
         res.put("errorMsg", errorMsg);
         return res;
-    }
-
-    @PostMapping("/admin/update/user/tel")
-    @ApiOperation(value = "更改用户的手机号")
-    @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
-    public void updateUserTelApi(@Valid @RequestBody UserUpdateTelDTO userUpdateTelDTO) {
-        userService.updateUserTel(userUpdateTelDTO);
     }
 
     @PostMapping("/admin/update/user/name")

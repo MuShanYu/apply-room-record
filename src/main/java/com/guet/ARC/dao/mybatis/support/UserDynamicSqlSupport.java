@@ -26,9 +26,6 @@ public final class UserDynamicSqlSupport {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-02-23T14:20:41.58+08:00", comments="Source field: tbl_user.name")
     public static final SqlColumn<String> name = user.name;
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-02-23T14:20:41.58+08:00", comments="Source field: tbl_user.tel")
-    public static final SqlColumn<String> tel = user.tel;
-
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-02-23T14:20:41.58+08:00", comments="Source field: tbl_user.institute")
     public static final SqlColumn<String> institute = user.institute;
 
@@ -55,8 +52,6 @@ public final class UserDynamicSqlSupport {
         public final SqlColumn<String> stuNum = column("stu_num", JDBCType.VARCHAR);
 
         public final SqlColumn<String> name = column("name", JDBCType.VARCHAR);
-
-        public final SqlColumn<String> tel = column("tel", JDBCType.VARCHAR);
 
         public final SqlColumn<String> institute = column("institute", JDBCType.VARCHAR);
 
