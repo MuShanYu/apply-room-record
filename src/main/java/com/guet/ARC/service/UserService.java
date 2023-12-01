@@ -204,6 +204,7 @@ public class UserService {
         // 后台存储用户信息
         StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", user.getId());
         user.setPwd("");
+        user.setOpenId("");
         // 返回结果
         map.put("user", user);
         map.put("token", token);
@@ -426,6 +427,32 @@ public class UserService {
         user.setId(userUpdateNicknameDTO.getUserId());
         user.setUpdateTime(System.currentTimeMillis());
         userRepository.save(user);
+    }
+
+    public Map<String, Object> refreshToken(String userId, String token) {
+        // 用的redis存储，时间一到token就会被清楚，变为未登录，所以直接判定当前会话有没有登录即可
+        // 判定当前会话是否登录
+        Map<String, Object> res = new HashMap<>();
+        if (StpUtil.getLoginIdDefaultNull() == null) {
+            // 会话过期，进行续期
+            // 用户是否存在
+            if (!userRepository.existsById(userId)) {
+                throw new AlertException(ResultCode.USER_NOT_EXIST);
+            }
+            // 用户登录
+            StpUtil.login(userId);
+            // 获取登录token
+            String loginToken = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
+            // 后台存储用户信息
+            StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", userId);
+            // 返回结果
+            res.put("token", loginToken);
+            res.put("isNeedRefresh", Boolean.TRUE);
+        } else {
+            res.put("token", "");
+            res.put("isNeedRefresh", Boolean.FALSE);
+        }
+        return res;
     }
 
 }

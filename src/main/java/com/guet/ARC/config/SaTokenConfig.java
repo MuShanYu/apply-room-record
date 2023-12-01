@@ -33,6 +33,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
         loginExcludePathPatterns.add("/user/get/verifyCode");
         loginExcludePathPatterns.add("/user/get/classify/room");
         loginExcludePathPatterns.add("/config/get/by/**");
+        loginExcludePathPatterns.add("/user/refresh/token");
         // swagger
         loginExcludePathPatterns.add("/v3/**");
         loginExcludePathPatterns.add("/swagger-ui/**");
