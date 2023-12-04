@@ -2,6 +2,8 @@ package com.guet.ARC.dao.mybatis.support;
 
 import java.sql.JDBCType;
 import javax.annotation.Generated;
+
+import com.guet.ARC.domain.enums.State;
 import org.mybatis.dynamic.sql.SqlColumn;
 import org.mybatis.dynamic.sql.SqlTable;
 
@@ -25,7 +27,7 @@ public final class NoticeDynamicSqlSupport {
     public static final SqlColumn<Long> updateTime = notice.updateTime;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source field: tbl_notice.state")
-    public static final SqlColumn<Short> state = notice.state;
+    public static final SqlColumn<State> state = notice.state;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0662255+08:00", comments="Source field: tbl_notice.content")
     public static final SqlColumn<String> content = notice.content;
@@ -42,7 +44,7 @@ public final class NoticeDynamicSqlSupport {
 
         public final SqlColumn<Long> updateTime = column("update_time", JDBCType.BIGINT);
 
-        public final SqlColumn<Short> state = column("state", JDBCType.SMALLINT);
+        public final SqlColumn<State> state = column("state", JDBCType.SMALLINT);
 
         public final SqlColumn<String> content = column("content", JDBCType.LONGVARCHAR);
 
