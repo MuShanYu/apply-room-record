@@ -33,9 +33,15 @@ public class NoticeService {
     @Autowired
     private NoticeQuery noticeQuery;
 
-    public PageInfo<NoticeVo> queryNoticeList(NoticeQueryDTO queryDTO) {
+    public PageInfo<NoticeVo> queryNoticeListAdmin(NoticeQueryDTO queryDTO) {
         Page<NoticeVo> pageResult = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
-        noticeQueryRepository.selectNoticeVo(noticeQuery.queryNoticeListSql());
+        noticeQueryRepository.selectNoticeVo(noticeQuery.queryNoticeListAdminSql(queryDTO.getTitle()));
+        return new PageInfo<>(pageResult);
+    }
+
+    public PageInfo<NoticeVo> queryNoticeList(Integer page, Integer size) {
+        Page<NoticeVo> pageResult = PageHelper.startPage(page, size);
+        noticeQueryRepository.selectNoticeVo(noticeQuery.queryNoticeListUserSql());
         return new PageInfo<>(pageResult);
     }
 
