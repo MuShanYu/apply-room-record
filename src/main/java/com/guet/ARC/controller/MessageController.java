@@ -1,15 +1,16 @@
 package com.guet.ARC.controller;
 
 import com.guet.ARC.common.anno.ResponseBodyResult;
-import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.domain.Message;
-import com.guet.ARC.domain.vo.message.MessageVo;
+import com.guet.ARC.domain.enums.MessageType;
 import com.guet.ARC.service.MessageService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * Author: Yulf
@@ -38,8 +39,16 @@ public class MessageController {
 
     @GetMapping("/message/list")
     @ApiOperation(value = "查询我的消息列表")
-    public PageInfo<MessageVo> queryMyMessageList(@RequestParam("page") Integer page,
-                                                  @RequestParam("size") Integer size) {
-        return messageService.queryMyMessageList(page, size);
+    public Map<String, Object> queryMyMessageList(@RequestParam("page") Integer page,
+                                                  @RequestParam("size") Integer size,
+                                                  @RequestParam("messageType")MessageType messageType) {
+        return messageService.queryMyMessageList(page, size, messageType);
     }
+
+    @PutMapping("/message/{messageId}")
+    @ApiOperation(value = "将消息设为已读")
+    public void setMessageToReadApi(@PathVariable("messageId") String messageId) {
+        messageService.setMessageToRead(messageId);
+    }
+
 }
