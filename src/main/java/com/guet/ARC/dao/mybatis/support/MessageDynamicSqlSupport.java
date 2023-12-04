@@ -2,6 +2,9 @@ package com.guet.ARC.dao.mybatis.support;
 
 import java.sql.JDBCType;
 import javax.annotation.Generated;
+
+import com.guet.ARC.domain.enums.MessageType;
+import com.guet.ARC.domain.enums.ReadState;
 import org.mybatis.dynamic.sql.SqlColumn;
 import org.mybatis.dynamic.sql.SqlTable;
 
@@ -13,10 +16,10 @@ public final class MessageDynamicSqlSupport {
     public static final SqlColumn<String> id = message.id;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0542654+08:00", comments="Source field: tbl_message.message_type")
-    public static final SqlColumn<Short> messageType = message.messageType;
+    public static final SqlColumn<MessageType> messageType = message.messageType;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0542654+08:00", comments="Source field: tbl_message.read_state")
-    public static final SqlColumn<Short> readState = message.readState;
+    public static final SqlColumn<ReadState> readState = message.readState;
 
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-11-14T09:19:41.0542654+08:00", comments="Source field: tbl_message.content")
     public static final SqlColumn<String> content = message.content;
@@ -37,9 +40,9 @@ public final class MessageDynamicSqlSupport {
     public static final class Message extends SqlTable {
         public final SqlColumn<String> id = column("id", JDBCType.VARCHAR);
 
-        public final SqlColumn<Short> messageType = column("message_type", JDBCType.SMALLINT);
+        public final SqlColumn<MessageType> messageType = column("message_type", JDBCType.SMALLINT);
 
-        public final SqlColumn<Short> readState = column("read_state", JDBCType.SMALLINT);
+        public final SqlColumn<ReadState> readState = column("read_state", JDBCType.SMALLINT);
 
         public final SqlColumn<String> content = column("content", JDBCType.VARCHAR);
 
