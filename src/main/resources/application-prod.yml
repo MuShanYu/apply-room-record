@@ -1,5 +1,5 @@
 server:
-  port: 8500
+  port: 80
 #  ssl:
 #    key-store: classpath:www.mushanyu.xyz.pfx
 #    key-store-password: sir05uov
