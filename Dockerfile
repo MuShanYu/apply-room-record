@@ -1,6 +1,6 @@
 # 二开推荐阅读[如何提高项目构建效率](https://developers.weixin.qq.com/miniprogram/dev/wxcloudrun/src/scene/build/speed.html)
 # 选择构建用基础镜像。如需更换，请到[dockerhub官方仓库](https://hub.docker.com/_/java?tab=tags)自行选择后替换。
-FROM maven:3.6.0-jdk-8-slim as build
+FROM maven:3.8.6-jdk-11-slim as build
 
 # 指定构建过程中的工作目录
 WORKDIR /app
@@ -21,7 +21,7 @@ FROM alpine:3.13
 # 安装依赖包，如需其他依赖包，请到alpine依赖包管理(https://pkgs.alpinelinux.org/packages?name=php8*imagick*&branch=v3.13)查找。
 # 选用国内镜像源以提高下载速度
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tencent.com/g' /etc/apk/repositories \
-    && apk add --update --no-cache openjdk8-jre-base \
+    && apk add --update --no-cache openjdk11-jre \
     && rm -f /var/cache/apk/*
 
 # 容器默认时区为UTC，如需使用上海时间请启用以下时区设置命令
@@ -43,4 +43,4 @@ EXPOSE 80
 # 执行启动命令.
 # 写多行独立的CMD命令是错误写法！只有最后一行CMD命令会被执行，之前的都会被忽略，导致业务报错。
 # 请参考[Docker官方文档之CMD命令](https://docs.docker.com/engine/reference/builder/#cmd)
-CMD ["java", "-jar", "/app/apply-room-record.jar"]
+CMD ["java", "-jar", "/app/target/apply-room-record.jar"]
