@@ -1,5 +1,5 @@
 server:
-  port: 8600
+  port: 8500
 spring:
   mvc:
     pathmatch:
@@ -13,6 +13,7 @@ spring:
     host: redis
     port: 6379
     timeout: 10000
+    password: 123456
     lettuce:
       pool:
         max-active: 250
@@ -28,8 +29,8 @@ spring:
   mail:
     host: smtp.qq.com
     port: 465
-    username: 1980634531@qq.com
-    password: cyxqyxsmnbzgccge
+    username: yulinfeng516@foxmail.com
+    password: czvizwbbcybydijd
     default-encoding: UTF-8
     protocol: smtp
     properties:
@@ -44,7 +45,7 @@ spring:
 
   documentation:
     swagger-ui:
-      enabled: true
+      enabled: false
 
 # Sa-Token 配置
 sa-token:
@@ -55,3 +56,6 @@ sa-token:
   is-share: true
   token-style: tik
   is-log: false
+
+mybatis:
+  mapper-locations: classpath:com/guet/ARC/dao/mybatis/*.xml
