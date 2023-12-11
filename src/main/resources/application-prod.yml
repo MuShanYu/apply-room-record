@@ -1,5 +1,5 @@
 server:
-  port: 80
+  port: 8500
 #  ssl:
 #    key-store: classpath:www.mushanyu.xyz.pfx
 #    key-store-password: sir05uov
@@ -10,13 +10,14 @@ spring:
       matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
+    url: jdbc:mysql://mysql:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
     username: root
-    password: 5GzbDRH5
+    password: root
   redis:
-    host: 127.0.0.1
+    host: redis
     port: 6379
     timeout: 10000
+    password: 123456
     lettuce:
       pool:
         max-active: 250
@@ -32,8 +33,8 @@ spring:
   mail:
     host: smtp.qq.com
     port: 465
-    username: 1980634531@qq.com
-    password: cyxqyxsmnbzgccge
+    username: yulinfeng516@foxmail.com
+    password: czvizwbbcybydijd
     default-encoding: UTF-8
     protocol: smtp
     properties:

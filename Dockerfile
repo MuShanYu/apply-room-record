@@ -23,12 +23,8 @@ FROM alpine:3.13
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tencent.com/g' /etc/apk/repositories \
     && apk add --update --no-cache openjdk11-jre \
     && rm -f /var/cache/apk/*
-
-# 容器默认时区为UTC，如需使用上海时间请启用以下时区设置命令
+# 服务器在北京+8
 # RUN apk add tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai > /etc/timezone
-
-# 使用 HTTPS 协议访问容器云调用证书安装
-RUN apk add ca-certificates
 
 # 指定运行时的工作目录
 WORKDIR /app
@@ -38,7 +34,7 @@ COPY --from=build /app/target/*.jar .
 
 # 暴露端口
 # 此处端口必须与「服务设置」-「流水线」以及「手动上传代码包」部署时填写的端口一致，否则会部署失败。
-EXPOSE 80
+EXPOSE 8500
 
 # 执行启动命令.
 # 写多行独立的CMD命令是错误写法！只有最后一行CMD命令会被执行，之前的都会被忽略，导致业务报错。
