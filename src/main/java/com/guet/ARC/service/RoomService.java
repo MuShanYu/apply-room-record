@@ -177,8 +177,8 @@ public class RoomService {
             if (StringUtils.hasLength(roomListQueryDTO.getTeachBuilding())) {
                 predicates.add(cb.equal(root.get("teachBuilding"), roomListQueryDTO.getTeachBuilding()));
             }
-            if (StringUtils.hasLength(roomListQueryDTO.getChargeUserId())) {
-                predicates.add(cb.equal(root.get("chargeUserId"), roomListQueryDTO.getChargeUserId()));
+            if (StringUtils.hasLength(roomListQueryDTO.getChargePersonId())) {
+                predicates.add(cb.equal(root.get("chargePersonId"), roomListQueryDTO.getChargePersonId()));
             }
             String roomName = roomListQueryDTO.getRoomName();
             if (StringUtils.hasLength(roomName)) {
