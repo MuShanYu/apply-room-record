@@ -22,5 +22,5 @@ public class RoomListQueryDTO {
 
     private String roomName;
 
-    private String chargeUserId;
+    private String chargePersonId;
 }
