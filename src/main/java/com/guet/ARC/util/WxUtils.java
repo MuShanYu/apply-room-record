@@ -1,8 +1,11 @@
 package com.guet.ARC.util;
 
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -14,6 +17,9 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Author: Yulf
  * Date: 2023/11/21
@@ -21,7 +27,16 @@ import java.io.IOException;
 @Slf4j
 public class WxUtils {
 
-
+    @Data
+    public static class WxMessage {
+        private String touser;//用户openid
+        private String access_token;
+        private String template_id;//模版id
+        private String page = "pages/index/index";//默认跳到小程序首页
+        private String miniprogram_state = "developer";
+        private String lang = "zh_CN";
+        private Map<String, Map<String, Object>> data;//推送文字
+    }
 
     public static String getOpenid(String code) {
         String url = "https://api.weixin.qq.com/sns/jscode2session?appid=wx3cdb834f59308215&secret" +
@@ -55,67 +70,10 @@ public class WxUtils {
         return null;
     }
 
-//    public static void main(String[] args) {
-//        MessageDTO build = MessageDTO.builder()
-//                .thing21("办事事项审核通知")
-//                .date4("2022-04-19")
-//                .name1("于林峰")
-//                .phrase2("通过")
-//                .thing3("进入小程序查看审核详情信息")
-//                .build();
-//        sendSubscriptionMessage("ouN8v5HpNgLZpoytBOL560h47sws", build);
-//    }
-
-    /*public static void sendSubscriptionMessage(String openid, MessageDTO messageDTO) {
-        String accessToken = getAccessToken();
-        String sendMessageUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" + accessToken;
-        MessageTemplate messageTemplate = MessageTemplate.builder()
-                .access_token(getAccessToken())
-                .touser(openid)
-                .template_id("Mxo34TDWXM2byXwSbX1tDcKvbaUlTiuc_bzxAoiehc4")
-                .page("pages/home/index")
-                .miniprogram_state("developer")
-                .lang("zh_CN")
-                .data(
-                        MessageDataTemplate.builder()
-                                .thing21(MessageDataValueTemplate.builder().value(messageDTO.getThing21()).build())
-                                .date4(MessageDataValueTemplate.builder().value(messageDTO.getDate4()).build())
-                                .name1(MessageDataValueTemplate.builder().value(messageDTO.getName1()).build())
-                                .phrase2(MessageDataValueTemplate.builder().value(messageDTO.getPhrase2()).build())
-                                .thing3(MessageDataValueTemplate.builder().value(messageDTO.getThing3()).build())
-                                .build()
-                ).build();
-        String postJson = JSON.toJSONString(messageTemplate);
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost httpPost = new HttpPost(sendMessageUrl);
-        CloseableHttpResponse response = null;
-        try {
-            StringEntity entity = new StringEntity(postJson, "UTF-8");
-            httpPost.setEntity(entity);
-            httpPost.setHeader("Content-type", "application/json;charset=utf-8");
-            response = httpClient.execute(httpPost);
-            if (response.getStatusLine().getStatusCode() != 200) {
-                // 获取请求体内容
-                throw new AlertException(ResultCode.SYSTEM_ERROR);
-            }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        } finally {
-            try {
-                if (response != null) {
-                    response.close();
-                }
-                //相当于关闭浏览器
-                httpClient.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }*/
-
-    /*private static String getAccessToken() {
+    private static String getAccessToken() {
         // 获取ACCESS_TOKEN
-        String getTokenUrl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=wxdb9e3440c6290f03&secret=5c343482284c13b7f24c955ab885f9cf";
+        String getTokenUrl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&" +
+                "appid=wx3cdb834f59308215&secret=b9cb7ee08766923b459306233996ad3e";
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
         HttpGet httpGet = new HttpGet(getTokenUrl);
         CloseableHttpResponse response = null;
@@ -138,9 +96,45 @@ public class WxUtils {
                 //相当于关闭浏览器
                 httpClient.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("get access token error:", e);
             }
         }
         return null;
-    }*/
+    }
+
+    public static void sendSubscriptionMessage(String openid, String tempId, Map<String, Map<String, Object>> data) {
+        String accessToken = getAccessToken();
+        String sendMessageUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" + accessToken;
+        WxMessage wxMessage = new WxMessage();
+        wxMessage.setAccess_token(getAccessToken());
+        wxMessage.setTouser(openid);
+        wxMessage.setTemplate_id(tempId);
+        wxMessage.setData(data);
+        String postJson = JSON.toJSONString(wxMessage);
+        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+        HttpPost httpPost = new HttpPost(sendMessageUrl);
+        CloseableHttpResponse response = null;
+        try {
+            StringEntity entity = new StringEntity(postJson, "UTF-8");
+            httpPost.setEntity(entity);
+            httpPost.setHeader("Content-type", "application/json;charset=utf-8");
+            response = httpClient.execute(httpPost);
+            if (response.getStatusLine().getStatusCode() != 200) {
+                // 获取请求体内容
+                throw new AlertException(ResultCode.SYSTEM_ERROR);
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } finally {
+            try {
+                if (response != null) {
+                    response.close();
+                }
+                //相当于关闭浏览器
+                httpClient.close();
+            } catch (IOException e) {
+                log.error("send message：", e);
+            }
+        }
+    }
 }

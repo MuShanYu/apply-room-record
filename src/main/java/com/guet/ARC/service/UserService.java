@@ -10,6 +10,7 @@ import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
+import com.guet.ARC.common.enmu.WxMessageTemplateId;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.UserRoleRepository;
@@ -178,13 +179,14 @@ public class UserService {
     public Map<String, Object> wxLogin(String code) {
         // 获取openId
         String openid = WxUtils.getOpenid(code);
+
         // 查询用户是否已经绑定了，没有绑定则无法登录
         if (StrUtil.isEmpty(openid)) {
             throw new AlertException(1000, "用户标识获取失败");
         }
         // 判断是否已经绑定
-        String encodeOpenId = SaSecureUtil.md5(openid);
-        Optional<User> userOptional = userRepository.findByOpenId(encodeOpenId);
+//        log.info("openId:{}", openid);
+        Optional<User> userOptional = userRepository.findByOpenId(openid);
         Map<String, Object> map = new HashMap<>();;
         if (userOptional.isPresent()) {
             User user = userOptional.get();
@@ -226,13 +228,13 @@ public class UserService {
         User user = userOptional.get();
         if (StrUtil.isEmpty(user.getOpenId())) {
             user.setUpdateTime(System.currentTimeMillis());
-            user.setOpenId(SaSecureUtil.md5(openid));
+            user.setOpenId(openid);
             userRepository.save(user);
         }
     }
 
-    public void unBindWx(String encodeOpenId) {
-        Optional<User> userOptional = userRepository.findByOpenId(encodeOpenId);
+    public void unBindWx(String openId) {
+        Optional<User> userOptional = userRepository.findByOpenId(openId);
         if (userOptional.isEmpty()) {
             throw new AlertException(ResultCode.USER_NOT_EXIST);
         }
