@@ -81,7 +81,6 @@ public class SysConfigService {
                 .orderBy(SysConfigDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         PageInfo<SysConfig> pageInfo = new PageInfo<>();
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
         Page<SysConfig> queryPageData = PageHelper.startPage(page, size);
         pageInfo.setPageData(sysConfigQueryRepository.selectMany(selectStatementProvider));
         pageInfo.setPage(page);

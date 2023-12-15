@@ -165,7 +165,7 @@ public class RoomService {
 
     public PageInfo<Room> queryRoomList(RoomListQueryDTO roomListQueryDTO) {
         // 添加可以查看我管理的房间列表
-        PageRequest pageRequest = PageRequest.of(roomListQueryDTO.getPage(), roomListQueryDTO.getSize());
+        PageRequest pageRequest = PageRequest.of(roomListQueryDTO.getPage() - 1, roomListQueryDTO.getSize());
         org.springframework.data.domain.Page<Room> queryPageData = roomRepository.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (StringUtils.hasLength(roomListQueryDTO.getCategory())) {
