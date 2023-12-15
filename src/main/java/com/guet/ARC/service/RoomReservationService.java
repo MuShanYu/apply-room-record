@@ -150,7 +150,7 @@ public class RoomReservationService {
             throw new AlertException(1000, "查询数据的时间跨度不允许超过30天");
         }
         // 查询相应房间的所有预约记录
-        PageRequest pageRequest = PageRequest.of(roomApplyDetailListQueryDTO.getPage(), roomApplyDetailListQueryDTO.getSize());
+        PageRequest pageRequest = PageRequest.of(roomApplyDetailListQueryDTO.getPage() - 1, roomApplyDetailListQueryDTO.getSize());
         org.springframework.data.domain.Page<RoomReservation> queryPageData =
                 roomReservationRepository.findByRoomIdAndCreateTimeBetween(roomId, webAppDateStart, webAppDateEnd, pageRequest);
         List<RoomReservation> roomReservationList = queryPageData.getContent();
