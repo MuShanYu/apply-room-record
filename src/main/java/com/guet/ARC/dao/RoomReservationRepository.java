@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -17,8 +16,8 @@ public interface RoomReservationRepository extends JpaRepository<RoomReservation
     Page<RoomReservation> findByRoomIdAndCreateTimeBetween(String roomId, Long startTime, Long endTime,
                                                            Pageable pageable);
 
-    long countByReserveStartTimeAndReserveEndTimeAndRoomIdAndIdAndStateIn(Long reserveStartTime, Long reserveEndTime,
-                                                                          String roomId, String id, List<ReservationState> state);
+    long countByReserveStartTimeAndReserveEndTimeAndRoomIdAndStateIn(Long reserveStartTime, Long reserveEndTime,
+                                                                          String roomId, List<ReservationState> state);
 
     long countByState(ReservationState reservationState);
 }

@@ -6,6 +6,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.mail.internet.InternetAddress;
@@ -26,6 +27,7 @@ public class EmailService {
      * @param subject 主题
      * @param content 内容
      */
+    @Async
     public void sendSimpleMail(String to, String subject, String content) {
         //创建SimpleMailMessage对象
         SimpleMailMessage message = new SimpleMailMessage();
@@ -47,6 +49,7 @@ public class EmailService {
      * @param subject 主题
      * @param content 内容
      */
+    @Async
     public void sendHtmlMail(String to, String subject, String content) {
         //获取MimeMessage对象
         MimeMessage message = javaMailSender.createMimeMessage();

@@ -7,6 +7,8 @@ import lombok.ToString;
 @Data
 @ToString
 public class RoomReservationAdminVo {
+
+    private String id;
     private String name;
 
     private String roomUsage;
@@ -34,4 +36,8 @@ public class RoomReservationAdminVo {
     private String capacity;
 
     private ReservationState state;
+
+    private Long updateTime;
+
+    private Long createTime;
 }
