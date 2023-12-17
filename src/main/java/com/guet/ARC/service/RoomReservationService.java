@@ -1,16 +1,17 @@
 package com.guet.ARC.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
+import com.guet.ARC.common.enmu.WxMessageTemplateId;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.RoomRepository;
 import com.guet.ARC.dao.RoomReservationRepository;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.mybatis.RoomReservationQueryRepository;
-import com.guet.ARC.dao.mybatis.UserQueryRepository;
 import com.guet.ARC.dao.mybatis.query.RoomReservationQuery;
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.RoomReservation;
@@ -25,6 +26,7 @@ import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
 import com.guet.ARC.util.CommonUtils;
+import com.guet.ARC.util.WxUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.data.domain.PageRequest;
@@ -32,19 +34,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class RoomReservationService {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private UserQueryRepository userQueryRepository;
 
     @Autowired
     private RoomReservationQueryRepository roomReservationQueryRepository;
@@ -75,7 +72,8 @@ public class RoomReservationService {
         }
     }
 
-    public RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
+    //同步方法
+    public synchronized RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
         // 检测预约起始和预约结束时间
         long subTime = applyRoomDTO.getEndTime() - applyRoomDTO.getStartTime();
         long hour_12 = 43200000;
@@ -108,28 +106,54 @@ public class RoomReservationService {
         roomReservation.setUserId(userId);
         roomReservation.setRoomId(applyRoomDTO.getRoomId());
         roomReservationRepository.save(roomReservation);
-        // 邮件通知审核人
-        // 获取审核人邮件
-        String chargePersonMail = userQueryRepository.queryChargeUserMailByRoomId(applyRoomDTO.getRoomId());
-        if (StringUtils.hasLength(chargePersonMail)) {
-            // 如果有邮箱就发送通知
-            // 获取用户的姓名
-            Optional<Room> roomOptional = roomRepository.findById(applyRoomDTO.getRoomId());
-            if (roomOptional.isPresent()) {
-                Room room = roomOptional.get();
-                userRepository.findById(userId).ifPresent(user -> {
+        // 发送预约房间通知给审核人
+        Optional<Room> roomOptional = roomRepository.findById(roomReservation.getRoomId());
+        if (roomOptional.isPresent()) {
+            Room room = roomOptional.get();
+            String chargePersonId = room.getChargePersonId();
+            Optional<User> userOptional = userRepository.findById(chargePersonId);
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+                // 发送审核邮件
+                if (!StrUtil.isEmpty(user.getMail())) {
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
                     String reserveTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis()));
                     String startTimeStr = sdf.format(new Date(applyRoomDTO.getStartTime()));
                     String endTimeStr = sdf.format(new Date(applyRoomDTO.getEndTime()));
                     String content = "您收到来自" + user.getName() +
-                            reserveTimeStr+ "的" + room.getRoomName() + "房间预约申请，预约时间" + startTimeStr + "至" + endTimeStr + "，请您及时处理。"+
+                            reserveTimeStr + "的" + room.getRoomName() + "房间预约申请，预约时间" + startTimeStr + "至" + endTimeStr + "，请您及时处理。" +
                             "<a style='color: #409EFF;' href='https://www.mushanyu.xyz/#/room/approve'>点击进入系统</a>";
-                    emailService.sendHtmlMail(chargePersonMail,user.getName() + "房间预约申请待审核通知", content);
-                });
+                    // 异步发送
+                    emailService.sendHtmlMail(user.getMail(), user.getName() + "房间预约申请待审核通知", content);
+                }
+                // 发送订阅消息
+                if (!StrUtil.isEmpty(user.getOpenId())) {
+                    // 绑定微信才可接受订阅消息
+                    // 构建消息体，并异步发送
+                    CompletableFuture.runAsync(() -> {
+                        WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_NOTICE_TEMPLATE.getId(),
+                                createApplyNotice(room, user, roomReservation));
+                    });
+                }
             }
         }
         return roomReservation;
+    }
+
+    private Map<String, Map<String, Object>> createApplyNotice(Room room, User user, RoomReservation roomReservation) {
+        Map<String, Map<String, Object>> data = new HashMap<>();
+        // 处理姓名，wx不可超过五个字符
+        String name = user.getName().length() > 5 ? user.getName().substring(0, 5) : user.getName();
+        data.put("name1", CommonUtils.createValueItem(name));
+        data.put("thing2", CommonUtils.createValueItem(room.getRoomName()));
+        // 时分秒
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
+        data.put("time22", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveStartTime()))));
+        data.put("time23", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveEndTime()))));
+        // 预约理由
+        String mem = roomReservation.getRoomUsage().length() > 20 ? roomReservation.getRoomId().substring(0, 20) : roomReservation.getRoomUsage();
+        data.put("thing7", CommonUtils.createValueItem(mem));
+        return data;
     }
 
     public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
@@ -210,7 +234,7 @@ public class RoomReservationService {
             Optional<User> optionalUser = userRepository.findById(roomReservationAdminVo.getUserId());
             if (optionalUser.isPresent()) {
                 User user = optionalUser.get();
-                roomReservationAdminVo.setName(user.getNickname());
+                roomReservationAdminVo.setName(user.getName());
             }
             // fix:问题：只要现在的时间大于结束时间就会被认为超时未处理，应该要加上是否已经被处理，未被处理的才要判断是否超时
             if (now > roomReservationAdminVo.getReserveEndTime()
@@ -240,10 +264,6 @@ public class RoomReservationService {
             if (System.currentTimeMillis() >= roomReservation.getReserveEndTime()) {
                 throw new AlertException(1000, "已超过预约结束时间,无法操作");
             }
-            // 是否在相同时间内已经预约过了，也就是这段时间内是否有其他待审核预约、已审核预约
-            if (checkSameTimeReservationWithStatus(reserveId)) {
-                throw new AlertException(1000, "用户在相同时间再次进行预约，无法从驳回进行通过操作");
-            }
             // 发送通知邮件信息
             Optional<User> roomChargePersonOptional = userRepository.findById(roomReservation.getUserId());
             String toPersonMail = null;
@@ -260,13 +280,17 @@ public class RoomReservationService {
             String endTimeStr = sdf.format(new Date(roomReservation.getReserveEndTime()));
             String createTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(roomReservation.getCreateTime()));
             if (pass) {
+                // 是否在相同时间内已经预约过了，也就是这段时间内是否有其他待审核预约、已审核预约,表示该房间已被站其他人占用，本次预约就不能再给通过了
+                if (checkSameTimeReservationWithStatus(reserveId)) {
+                    throw new AlertException(1000, "用户在相同时间再次进行预约，无法从驳回进行通过操作");
+                }
                 roomReservation.setState(ReservationState.ROOM_RESERVE_ALREADY_REVIEWED);
                 // 发送通过邮件提醒
                 if (StringUtils.hasLength(toPersonMail)) {
                     // 如果有邮箱就发送通知
                     String content = "您" + createTimeStr +
-                            "发起的"+ roomName +"预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，已由审核员审核通过。";
-                    emailService.sendSimpleMail(toPersonMail,roomName + "预约申请审核结果通知", content);
+                            "发起的" + roomName + "预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，已由审核员审核通过。";
+                    emailService.sendSimpleMail(toPersonMail, roomName + "预约申请审核结果通知", content);
                 }
             } else {
                 roomReservation.setState(ReservationState.ROOM_RESERVE_TO_BE_REJECTED);
@@ -274,8 +298,8 @@ public class RoomReservationService {
                 if (StringUtils.hasLength(toPersonMail)) {
                     // 如果有邮箱就发送通知
                     String content = "您" + createTimeStr +
-                            "发起的"+ roomName +"预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，审核不通过。原因为：" + rejectReason + "。";
-                    emailService.sendSimpleMail(toPersonMail,roomName + "预约申请审核结果通知", content);
+                            "发起的" + roomName + "预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，审核不通过。原因为：" + rejectReason + "。";
+                    emailService.sendSimpleMail(toPersonMail, roomName + "预约申请审核结果通知", content);
                 }
             }
             roomReservation.setVerifyUserName(user.getName());
@@ -293,11 +317,11 @@ public class RoomReservationService {
 
     /**
      * 主要是用于处理已驳回是在进行通过的情况
+     *
      * @param reserveId
      * @return
      */
     private boolean checkSameTimeReservationWithStatus(String reserveId) {
-        boolean returnFlag = true;
         // 这段时间内这个房间是否有其他待审核预约、已审核预约记录，这两个状态表示房间已经被占有
         Optional<RoomReservation> roomReservationOptional = roomReservationRepository.findById(reserveId);
         if (roomReservationOptional.isPresent()) {
@@ -309,8 +333,8 @@ public class RoomReservationService {
             List<ReservationState> reservationStates = new ArrayList<>();
             reservationStates.add(ReservationState.ROOM_RESERVE_TO_BE_REVIEWED);
             reservationStates.add(ReservationState.ROOM_RESERVE_ALREADY_REVIEWED);
-            long count = roomReservationRepository.countByReserveStartTimeAndReserveEndTimeAndRoomIdAndIdAndStateIn(
-                    reserveStartTime, reserveEndTime, roomId, reserveId, reservationStates
+            long count = roomReservationRepository.countByReserveStartTimeAndReserveEndTimeAndRoomIdAndStateIn(
+                    reserveStartTime, reserveEndTime, roomId, reservationStates
             );
             // 表示有冲突，驳回后用户在这段时间尝试了重新预约
             return count > 0;

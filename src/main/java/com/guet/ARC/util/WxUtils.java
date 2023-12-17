@@ -17,7 +17,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -111,6 +110,7 @@ public class WxUtils {
         wxMessage.setTemplate_id(tempId);
         wxMessage.setData(data);
         String postJson = JSON.toJSONString(wxMessage);
+        log.info("send message - {}", wxMessage);
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost httpPost = new HttpPost(sendMessageUrl);
         CloseableHttpResponse response = null;
@@ -119,6 +119,7 @@ public class WxUtils {
             httpPost.setEntity(entity);
             httpPost.setHeader("Content-type", "application/json;charset=utf-8");
             response = httpClient.execute(httpPost);
+            log.info("send message response - {}", JSON.toJSONString(response));
             if (response.getStatusLine().getStatusCode() != 200) {
                 // 获取请求体内容
                 throw new AlertException(ResultCode.SYSTEM_ERROR);

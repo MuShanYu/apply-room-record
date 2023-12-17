@@ -10,18 +10,17 @@ import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
-import com.guet.ARC.common.enmu.WxMessageTemplateId;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.UserRoleRepository;
+import com.guet.ARC.dao.mybatis.UserQueryRepository;
+import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.domain.Role;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.UserRole;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.enums.State;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
-import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
-import com.guet.ARC.dao.mybatis.UserQueryRepository;
 import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.RedisCacheUtil;
 import com.guet.ARC.util.WxUtils;
@@ -37,7 +36,8 @@ import org.springframework.util.StringUtils;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.mybatis.dynamic.sql.SqlBuilder.*;
+import static org.mybatis.dynamic.sql.SqlBuilder.isLikeWhenPresent;
+import static org.mybatis.dynamic.sql.SqlBuilder.select;
 
 @Service
 @Slf4j
@@ -205,12 +205,12 @@ public class UserService {
         String token = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
         // 后台存储用户信息
         StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", user.getId());
-        user.setPwd("");
-        user.setOpenId("");
         // 返回结果
         map.put("user", user);
         map.put("token", token);
         map.put("isBindWx", !StrUtil.isEmpty(user.getOpenId()));
+        user.setPwd("");
+        user.setOpenId("");
     }
     // 绑定微信
     public void bindWx(String code) {
