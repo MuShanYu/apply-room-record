@@ -69,6 +69,18 @@ public class RoomReservationService {
             roomReservation.setState(ReservationState.ROOM_RESERVE_CANCELED);
             roomReservation.setUpdateTime(System.currentTimeMillis());
             roomReservationRepository.save(roomReservation);
+            // 发送取消预约申请,给审核人发
+            Optional<Room> roomOptional = roomRepository.findById(roomReservation.getRoomId());
+            if (roomOptional.isPresent()) {
+                Room room = roomOptional.get();
+                Optional<User> userOptional = userRepository.findById(room.getChargePersonId());
+                if (userOptional.isPresent()) {
+                    User user = userOptional.get();
+                    CompletableFuture.runAsync(() -> {
+                        roomReservation.getState().sendReservationNoticeMessage(room, user, roomReservation);
+                    });
+                }
+            }
         }
     }
 
@@ -131,29 +143,12 @@ public class RoomReservationService {
                     // 绑定微信才可接受订阅消息
                     // 构建消息体，并异步发送
                     CompletableFuture.runAsync(() -> {
-                        WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_NOTICE_TEMPLATE.getId(),
-                                createApplyNotice(room, user, roomReservation));
+                        roomReservation.getState().sendReservationNoticeMessage(room, user, roomReservation);
                     });
                 }
             }
         }
         return roomReservation;
-    }
-
-    private Map<String, Map<String, Object>> createApplyNotice(Room room, User user, RoomReservation roomReservation) {
-        Map<String, Map<String, Object>> data = new HashMap<>();
-        // 处理姓名，wx不可超过五个字符
-        String name = user.getName().length() > 5 ? user.getName().substring(0, 5) : user.getName();
-        data.put("name1", CommonUtils.createValueItem(name));
-        data.put("thing2", CommonUtils.createValueItem(room.getRoomName()));
-        // 时分秒
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
-        data.put("time22", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveStartTime()))));
-        data.put("time23", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveEndTime()))));
-        // 预约理由
-        String mem = roomReservation.getRoomUsage().length() > 20 ? roomReservation.getRoomId().substring(0, 20) : roomReservation.getRoomUsage();
-        data.put("thing7", CommonUtils.createValueItem(mem));
-        return data;
     }
 
     public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
@@ -274,6 +269,8 @@ public class RoomReservationService {
             String roomName = null;
             if (roomOptional.isPresent()) {
                 roomName = roomOptional.get().getRoomName();
+            } else {
+                throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
             }
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             String startTimeStr = sdf.format(new Date(roomReservation.getReserveStartTime()));
@@ -305,7 +302,10 @@ public class RoomReservationService {
             }
             roomReservation.setVerifyUserName(user.getName());
             roomReservationRepository.save(roomReservation);
-
+            // 发送订阅消息
+            CompletableFuture.runAsync(() -> {
+                roomReservation.getState().sendReservationNoticeMessage(roomOptional.get(), user, roomReservation);
+            });
         } else {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
         }
