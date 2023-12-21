@@ -112,16 +112,16 @@ public class RoomReservationService {
             Room room = roomOptional.get();
             String chargePersonId = room.getChargePersonId();
             Optional<User> userOptional = userRepository.findById(chargePersonId);
-            if (userOptional.isPresent()) {
+            Optional<User> curUserOptional = userRepository.findById(userId);
+            if (userOptional.isPresent() && curUserOptional.isPresent()) {
                 User user = userOptional.get();
                 // 发送审核邮件
                 if (!StrUtil.isEmpty(user.getMail())) {
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-                    String reserveTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(System.currentTimeMillis()));
                     String startTimeStr = sdf.format(new Date(applyRoomDTO.getStartTime()));
                     String endTimeStr = sdf.format(new Date(applyRoomDTO.getEndTime()));
-                    String content = "您收到来自" + user.getName() +
-                            reserveTimeStr + "的" + room.getRoomName() + "房间预约申请，预约时间" + startTimeStr + "至" + endTimeStr + "，请您及时处理。" +
+                    String content = "您收到来自" + curUserOptional.get().getName()
+                            + "的" + room.getRoomName() + "房间预约申请，预约时间" + startTimeStr + "至" + endTimeStr + "，请您及时处理。" +
                             "<a style='color: #409EFF;' href='https://www.mushanyu.xyz/#/room/approve'>点击进入系统</a>";
                     // 异步发送
                     emailService.sendHtmlMail(user.getMail(), user.getName() + "房间预约申请待审核通知", content);
