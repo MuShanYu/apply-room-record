@@ -280,8 +280,9 @@ public class RoomReservationService {
             String endTimeStr = sdf.format(new Date(roomReservation.getReserveEndTime()));
             String createTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(roomReservation.getCreateTime()));
             if (pass) {
-                // 是否在相同时间内已经预约过了，也就是这段时间内是否有其他待审核预约、已审核预约,表示该房间已被站其他人占用，本次预约就不能再给通过了
-                if (checkSameTimeReservationWithStatus(reserveId)) {
+                // 是否在相同时间内已经预约过了，也就是这段时间内是否有其他待审核预约、已审核预约,表示该房间已被站其他人占用，本次预约就不能再给通过了，已经是驳回状态
+                if (roomReservation.getState().equals(ReservationState.ROOM_RESERVE_TO_BE_REJECTED) &&
+                        checkSameTimeReservationWithStatus(reserveId)) {
                     throw new AlertException(1000, "用户在相同时间再次进行预约，无法从驳回进行通过操作");
                 }
                 roomReservation.setState(ReservationState.ROOM_RESERVE_ALREADY_REVIEWED);
