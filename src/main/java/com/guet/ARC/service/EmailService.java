@@ -1,8 +1,10 @@
 package com.guet.ARC.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -14,6 +16,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.File;
 
 @Service
+@Slf4j
 public class EmailService {
     @Autowired
     private JavaMailSender javaMailSender;
@@ -69,7 +72,8 @@ public class EmailService {
             //发送
             javaMailSender.send(message);
         } catch (Exception e) {
-            e.printStackTrace();
+            // 记录发送失败，添加发送任务重发
+            log.error("mail send failed. - ", e);
         }
     }
 

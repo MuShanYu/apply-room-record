@@ -69,7 +69,7 @@ sa-token:
   is-log: true
 #logging:
 #  level:
-#    com.guet.ARC.mapper.UserMapper: debug
+#    com.guet.ARC.dao: debug
 mybatis:
   configuration:
     default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
