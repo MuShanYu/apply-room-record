@@ -143,7 +143,8 @@ public class UserService {
         if (userOptional.isPresent()) {
             user = userOptional.get();
             map = new HashMap<>();
-           login(map, user);
+            login(map, user);
+            map.put("roles", StpUtil.getRoleList());
         } else {
             throw new AlertException(1000, "账号或者密码错误");
         }
@@ -169,7 +170,7 @@ public class UserService {
                 StpUtil.logout();
                 throw new AlertException(1000, "您不是管理员，没有权限登录后台管理");
             }
-        }else {
+        } else {
             throw new AlertException(1000, "账号或者密码错误");
         }
         return map;
@@ -187,11 +188,13 @@ public class UserService {
         // 判断是否已经绑定
         log.info("openId:{}", openid);
         Optional<User> userOptional = userRepository.findByOpenId(openid);
-        Map<String, Object> map = new HashMap<>();;
+        Map<String, Object> map = new HashMap<>();
+        ;
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             map.put("canWxLogin", true);
             login(map, user);
+            map.put("roles", StpUtil.getRoleList());
         } else {
             map.put("canWxLogin", false);
         }
@@ -212,6 +215,7 @@ public class UserService {
         user.setPwd("");
         user.setOpenId("");
     }
+
     // 绑定微信
     public void bindWx(String code) {
         // 获取openId
@@ -299,6 +303,7 @@ public class UserService {
             throw new AlertException(1000, stuNum + "用户不存在");
         }
     }
+
     public void updatePwd(UserUpdatePwdDTO dto) {
         // 获取code
         Integer code = (Integer) redisCacheUtil.getCacheObject(dto.getStuNum());

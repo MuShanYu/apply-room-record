@@ -25,4 +25,8 @@ public class RoomReserveReviewedDTO {
 
     @NotNull(message = "状态不能为空")
     private Integer state;
+
+    private String stuNum;
+
+    private String applyUserId;
 }

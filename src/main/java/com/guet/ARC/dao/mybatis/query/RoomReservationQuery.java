@@ -1,5 +1,6 @@
 package com.guet.ARC.dao.mybatis.query;
 
+import cn.hutool.core.util.StrUtil;
 import com.guet.ARC.dao.mybatis.RoomReservationQueryRepository;
 import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.support.RoomReservationDynamicSqlSupport;
@@ -102,7 +103,9 @@ public class RoomReservationQuery {
         if (!StringUtils.hasLength(queryDTO.getTeachBuilding())) {
             queryDTO.setTeachBuilding(null);
         }
-
+        if (StrUtil.isEmpty(queryDTO.getApplyUserId())) {
+            queryDTO.setApplyUserId(null);
+        }
         return select(RoomReservationQueryRepository.roomReservationList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
@@ -111,6 +114,7 @@ public class RoomReservationQuery {
                 .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(queryDTO.getCategory()))
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(queryDTO.getTeachBuilding()))
                 .and(RoomDynamicSqlSupport.chargePersonId, isEqualTo(userId))
+                .and(RoomReservationDynamicSqlSupport.userId, isEqualToWhenPresent(queryDTO.getApplyUserId()))
                 .and(RoomReservationDynamicSqlSupport.state, isEqualTo(ReservationState.valueOf(queryDTO.getState())))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
