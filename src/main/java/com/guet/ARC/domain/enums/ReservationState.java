@@ -1,11 +1,13 @@
 package com.guet.ARC.domain.enums;
 
+import cn.hutool.core.util.StrUtil;
 import com.guet.ARC.common.enmu.WxMessageTemplateId;
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.RoomReservation;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.WxUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -16,6 +18,7 @@ import java.util.Map;
  * Author: Yulf
  * Date: 2023/11/22
  */
+@Slf4j
 public enum ReservationState {
     // 待审核
     ROOM_RESERVE_TO_BE_REVIEWED {
@@ -33,8 +36,10 @@ public enum ReservationState {
             // 预约理由
             String mem = roomReservation.getRoomUsage().length() > 20 ? roomReservation.getRoomId().substring(0, 20) : roomReservation.getRoomUsage();
             data.put("thing7", CommonUtils.createValueItem(mem));
-            // 发送
-            WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_NOTICE_TEMPLATE.getId(), data);
+            log.info("ready send message to {}, message is {}", user.getName(), data);
+            if (!StrUtil.isEmpty(user.getOpenId())) {
+                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
+            }
         }
     },
     // 已审核
@@ -46,10 +51,16 @@ public enum ReservationState {
             String name = user.getName().length() > 5 ? user.getName().substring(0, 5) : user.getName();
             data.put("name5", CommonUtils.createValueItem(name));
             // 时分秒
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
+            data.put("date3", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveStartTime()))));
+            data.put("date4", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveEndTime()))));
+
             data.put("thing2", CommonUtils.createValueItem(room.getRoomName()));
-            data.put("phrase1", CommonUtils.createValueItem("审核通过"));
-            // 发送
-            WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
+            data.put("phrase8", CommonUtils.createValueItem("审核通过"));
+            log.info("ready send message to {}, message is {}", user.getName(), data);
+            if (!StrUtil.isEmpty(user.getOpenId())) {
+                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
+            }
         }
     },
 
@@ -66,8 +77,10 @@ public enum ReservationState {
             data.put("time4", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getUpdateTime()))));
             String reason = "取消预约房间" + room.getRoomName();
             data.put("phrase3", CommonUtils.createValueItem(reason));
-            // 发送
-            WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.WITHDRAW_NOTICE_TEMPLATE.getId(), data);
+            log.info("ready send message to {}, message is {}", user.getName(), data);
+            if (!StrUtil.isEmpty(user.getOpenId())) {
+                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
+            }
         }
     },
 
@@ -80,10 +93,17 @@ public enum ReservationState {
             String name = user.getName().length() > 5 ? user.getName().substring(0, 5) : user.getName();
             data.put("name5", CommonUtils.createValueItem(name));
             // 时分秒
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
+            data.put("date3", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveStartTime()))));
+            data.put("date4", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveEndTime()))));
+
             data.put("thing2", CommonUtils.createValueItem(room.getRoomName()));
-            data.put("phrase1", CommonUtils.createValueItem("审核不通过，拒绝原因已发放至您的邮箱"));
+            data.put("phrase8", CommonUtils.createValueItem("审核不通过，原因已发送至您的邮箱"));
+            log.info("ready send message to {}, message is {}", user.getName(), data);
+            if (!StrUtil.isEmpty(user.getOpenId())) {
+                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
+            }
             // 发送
-            WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
         }
     },
 
