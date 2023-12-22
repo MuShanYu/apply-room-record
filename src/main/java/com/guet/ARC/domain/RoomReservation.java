@@ -39,4 +39,6 @@ public class RoomReservation {
     private String userId;
 
     private String roomId;
+
+    private String remark;
 }

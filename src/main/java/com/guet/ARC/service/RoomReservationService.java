@@ -61,7 +61,7 @@ public class RoomReservationService {
     private EmailService emailService;
 
 
-    public void cancelApply(String roomReservationId) {
+    public void cancelApply(String roomReservationId, String reason) {
         if (roomReservationId == null || roomReservationId.trim().isEmpty()) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
         }
@@ -70,6 +70,7 @@ public class RoomReservationService {
             RoomReservation roomReservation = optionalRoomReservation.get();
             roomReservation.setState(ReservationState.ROOM_RESERVE_CANCELED);
             roomReservation.setUpdateTime(System.currentTimeMillis());
+            roomReservation.setRemark(reason);
             roomReservationRepository.save(roomReservation);
             // 发送取消预约申请,给审核人发
             Optional<Room> roomOptional = roomRepository.findById(roomReservation.getRoomId());
@@ -145,6 +146,8 @@ public class RoomReservationService {
                     // 绑定微信才可接受订阅消息
                     // 构建消息体，并异步发送
                     CompletableFuture.runAsync(() -> {
+                        // 因为需要房间管理者的openid，所有user要更改一下name未预约人
+                        user.setName(curUserOptional.get().getName());
                         roomReservation.getState().sendReservationNoticeMessage(room, user, roomReservation);
                     });
                 }
@@ -288,6 +291,7 @@ public class RoomReservationService {
                         checkSameTimeReservationWithStatus(reserveId)) {
                     throw new AlertException(1000, "用户在相同时间再次进行预约，无法从驳回进行通过操作");
                 }
+                roomReservation.setRemark("符合要求，审核通过。");
                 roomReservation.setState(ReservationState.ROOM_RESERVE_ALREADY_REVIEWED);
                 // 发送通过邮件提醒
                 if (StringUtils.hasLength(toPersonMail)) {
@@ -297,6 +301,7 @@ public class RoomReservationService {
                     emailService.sendSimpleMail(toPersonMail, roomName + "预约申请审核结果通知", content);
                 }
             } else {
+                roomReservation.setRemark(rejectReason);
                 roomReservation.setState(ReservationState.ROOM_RESERVE_TO_BE_REJECTED);
                 // 发送通过邮件提醒
                 if (StringUtils.hasLength(toPersonMail)) {
