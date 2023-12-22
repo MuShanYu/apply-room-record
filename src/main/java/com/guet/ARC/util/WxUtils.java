@@ -3,23 +3,14 @@ package com.guet.ARC.util;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
-import com.guet.ARC.domain.RoomReservation;
-import com.guet.ARC.domain.enums.ReservationState;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
+import okhttp3.*;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Author: Yulf
@@ -27,6 +18,13 @@ import java.util.Map;
  */
 @Slf4j
 public class WxUtils {
+
+    private final static OkHttpClient okHttpClient = new OkHttpClient.Builder()
+            .connectTimeout(500, TimeUnit.SECONDS)
+            .writeTimeout(500, TimeUnit.SECONDS)
+            .readTimeout(500, TimeUnit.SECONDS)
+            .callTimeout(500, TimeUnit.SECONDS)
+            .build();
 
     @Data
     public static class WxMessage {
@@ -42,31 +40,19 @@ public class WxUtils {
     public static String getOpenid(String code) {
         String url = "https://api.weixin.qq.com/sns/jscode2session?appid=?&secret" +
                 "=?&js_code=" + code + "&grant_type=authorization_code&connect_redirect=1";
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet httpGet = new HttpGet(url);
-        CloseableHttpResponse response = null;
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
         try {
-            response = httpClient.execute(httpGet);
-            if (response.getStatusLine().getStatusCode() == 200) {
-                // 获取请求体内容
-                HttpEntity entity = response.getEntity();
-                String content = EntityUtils.toString(entity, "utf-8");
-                JSONObject jsonObject = JSONObject.parseObject(content);
+            Response response = okHttpClient.newCall(request).execute();
+            if (response.body() != null) {
+                JSONObject jsonObject = JSONObject.parseObject(response.body().string());
                 return jsonObject.getString("openid");
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("get openid failed.", e);
             throw new AlertException(1000, "用户微信标识获取失败.");
-        } finally {
-            try {
-                if (response != null) {
-                    response.close();
-                }
-                //相当于关闭浏览器
-                httpClient.close();
-            } catch (IOException e) {
-                log.error("Filed.", e);
-            }
         }
         return null;
     }
@@ -75,30 +61,25 @@ public class WxUtils {
         // 获取ACCESS_TOKEN
         String getTokenUrl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&" +
                 "appid=?&secret=?";
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet httpGet = new HttpGet(getTokenUrl);
-        CloseableHttpResponse response = null;
+        Request request = new Request.Builder()
+                .url(getTokenUrl)
+                .get()
+                .build();
         try {
-            response = httpClient.execute(httpGet);
-            if (response.getStatusLine().getStatusCode() == 200) {
-                // 获取请求体内容
-                HttpEntity entity = response.getEntity();
-                String content = EntityUtils.toString(entity, "utf-8");
-                JSONObject jsonObject = JSONObject.parseObject(content);
-                return jsonObject.getString("access_token");
-            }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        } finally {
-            try {
-                if (response != null) {
-                    response.close();
+            Response response = okHttpClient.newCall(request).execute();
+            if (response.isSuccessful()) {
+                // 相应成功
+                if (response.body() != null) {
+                    String res = response.body().string();
+                    JSONObject jsonObject = JSONObject.parseObject(res);
+                    return jsonObject.getString("access_token");
                 }
-                //相当于关闭浏览器
-                httpClient.close();
-            } catch (IOException e) {
-                log.error("get access token error:", e);
+            } else {
+                // 响应失败
+                log.error("request failed. case there is no response.{}", response);
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return null;
     }
@@ -113,31 +94,22 @@ public class WxUtils {
         wxMessage.setData(data);
         String postJson = JSON.toJSONString(wxMessage);
         log.info("send message - {}", wxMessage);
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost httpPost = new HttpPost(sendMessageUrl);
-        CloseableHttpResponse response = null;
+        RequestBody requestBody = RequestBody.create(postJson, MediaType.get("application/json"));
+        Request request = new Request.Builder()
+                .url(sendMessageUrl)
+                .post(requestBody)
+                .build();
         try {
-            StringEntity entity = new StringEntity(postJson, "UTF-8");
-            httpPost.setEntity(entity);
-            httpPost.setHeader("Content-type", "application/json;charset=utf-8");
-            response = httpClient.execute(httpPost);
-            log.info("send message response - {}", JSON.toJSONString(response));
-            if (response.getStatusLine().getStatusCode() != 200) {
-                // 获取请求体内容
-                throw new AlertException(ResultCode.SYSTEM_ERROR);
-            }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        } finally {
-            try {
-                if (response != null) {
-                    response.close();
+            Response response = okHttpClient.newCall(request).execute();
+            if (response.isSuccessful()) {
+                if (response.body() != null) {
+                    log.info("send message response - {}", response.body().string());
+                } else {
+                    log.warn("message send failed.");
                 }
-                //相当于关闭浏览器
-                httpClient.close();
-            } catch (IOException e) {
-                log.error("send message：", e);
             }
+        } catch (IOException e) {
+            log.error("request failed.", e);
         }
     }
 }
