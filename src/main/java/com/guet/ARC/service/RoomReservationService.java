@@ -27,6 +27,7 @@ import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
 import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.WxUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +39,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@Slf4j
 public class RoomReservationService {
 
     @Autowired
@@ -251,6 +253,7 @@ public class RoomReservationService {
         }
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         Optional<RoomReservation> roomReservationOptional = roomReservationRepository.findById(reserveId);
+        // 审核人
         Optional<User> userOptional = userRepository.findById(userId);
         if (roomReservationOptional.isPresent() && userOptional.isPresent()) {
             RoomReservation roomReservation = roomReservationOptional.get();
@@ -260,10 +263,13 @@ public class RoomReservationService {
                 throw new AlertException(1000, "已超过预约结束时间,无法操作");
             }
             // 发送通知邮件信息
-            Optional<User> roomChargePersonOptional = userRepository.findById(roomReservation.getUserId());
+            // 发起请求的用户
+            Optional<User> roomReservationUserOptional = userRepository.findById(roomReservation.getUserId());
             String toPersonMail = null;
-            if (roomChargePersonOptional.isPresent()) {
-                toPersonMail = roomChargePersonOptional.get().getMail();
+            if (roomReservationUserOptional.isPresent()) {
+                toPersonMail = roomReservationUserOptional.get().getMail();
+            } else {
+                throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
             }
             Optional<Room> roomOptional = roomRepository.findById(roomReservation.getRoomId());
             String roomName = null;
@@ -302,9 +308,10 @@ public class RoomReservationService {
             }
             roomReservation.setVerifyUserName(user.getName());
             roomReservationRepository.save(roomReservation);
+            log.info("user - {}", user);
             // 发送订阅消息
             CompletableFuture.runAsync(() -> {
-                roomReservation.getState().sendReservationNoticeMessage(roomOptional.get(), user, roomReservation);
+                roomReservation.getState().sendReservationNoticeMessage(roomOptional.get(), roomReservationUserOptional.get(), roomReservation);
             });
         } else {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
