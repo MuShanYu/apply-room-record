@@ -227,6 +227,10 @@ public class RoomReservationService {
     public PageInfo<RoomReservationAdminVo> queryRoomReserveToBeReviewed(RoomReserveReviewedDTO queryDTO) {
         String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         Page<RoomReservationAdminVo> queryPageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
+        if (!StrUtil.isEmpty(queryDTO.getStuNum())) {
+            Optional<User> userOptional = userRepository.findByStuNum(queryDTO.getStuNum());
+            userOptional.ifPresent(user -> queryDTO.setApplyUserId(user.getId()));
+        }
         List<RoomReservationAdminVo> roomReservationAdminVos =
                 roomReservationQueryRepository.selectRoomReservationsAdminVo(roomReservationQuery.queryRoomReserveToBeReviewedSql(queryDTO, currentUserId));
         long now = System.currentTimeMillis();
