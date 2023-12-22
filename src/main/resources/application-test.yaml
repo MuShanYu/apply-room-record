@@ -48,7 +48,7 @@ spring:
     swagger-ui:
       enabled: true
   jpa:
-    show-sql: true
+    show-sql: false
     open-in-view: false
     generate-ddl: false
 
