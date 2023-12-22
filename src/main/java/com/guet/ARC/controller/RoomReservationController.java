@@ -36,8 +36,9 @@ public class RoomReservationController {
 
     @GetMapping("/roomReservation/cancel")
     @ApiOperation(value = "取消预约")
-    public void cancelApply(@NotEmpty @RequestParam(value = "roomReservationId") String roomReservationId) {
-        roomReservationService.cancelApply(roomReservationId);
+    public void cancelApply(@NotEmpty @RequestParam(value = "roomReservationId") String roomReservationId,
+                            @NotEmpty @RequestParam(value = "reason") String reason) {
+        roomReservationService.cancelApply(roomReservationId, reason);
     }
 
     @PostMapping("/roomReservation/apply")

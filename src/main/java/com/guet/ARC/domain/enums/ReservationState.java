@@ -29,16 +29,17 @@ public enum ReservationState {
             String name = user.getName().length() > 5 ? user.getName().substring(0, 5) : user.getName();
             data.put("name1", CommonUtils.createValueItem(name));
             data.put("thing2", CommonUtils.createValueItem(room.getRoomName()));
-            // 时分秒
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
-            data.put("time22", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveStartTime()))));
-            data.put("time23", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveEndTime()))));
+            // 预约时间段 2022年04月15日 13:00~14:00
+            SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日 HH:mm");
+            SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
+            String timeDateStr = sdf.format(new Date(roomReservation.getReserveStartTime())) + "~" + sdf2.format(new Date(roomReservation.getReserveEndTime()));
+            data.put("time60", CommonUtils.createValueItem(timeDateStr));
             // 预约理由
             String mem = roomReservation.getRoomUsage().length() > 20 ? roomReservation.getRoomId().substring(0, 20) : roomReservation.getRoomUsage();
             data.put("thing7", CommonUtils.createValueItem(mem));
             log.info("ready send message to {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
-                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
+                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_NOTICE_TEMPLATE.getId(), data);
             }
         }
     },
@@ -49,17 +50,20 @@ public enum ReservationState {
             Map<String, Map<String, Object>> data = new HashMap<>();
             // 处理姓名，wx不可超过五个字符
             String name = user.getName().length() > 5 ? user.getName().substring(0, 5) : user.getName();
-            data.put("name5", CommonUtils.createValueItem(name));
-            // 时分秒
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
-            data.put("date3", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveStartTime()))));
-            data.put("date4", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveEndTime()))));
+            data.put("thing33", CommonUtils.createValueItem(name));
 
-            data.put("thing2", CommonUtils.createValueItem(room.getRoomName()));
-            data.put("phrase8", CommonUtils.createValueItem("审核通过"));
+            data.put("thing47", CommonUtils.createValueItem(room.getRoomName()));
+            // 预约时间段 2022年04月15日 13:00~14:00
+            SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日 HH:mm");
+            SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
+            String timeDateStr = sdf.format(new Date(roomReservation.getReserveStartTime())) + "~" + sdf2.format(new Date(roomReservation.getReserveEndTime()));
+            data.put("thing13", CommonUtils.createValueItem(timeDateStr));
+
+
+            data.put("thing4", CommonUtils.createValueItem("符合要求，审核通过。"));
             log.info("ready send message to {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
-                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
+                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_SUCCESS_NOTICE_TEMPLATE.getId(), data);
             }
         }
     },
@@ -71,15 +75,26 @@ public enum ReservationState {
             Map<String, Map<String, Object>> data = new HashMap<>();
             // 处理姓名，wx不可超过五个字符
             String name = user.getName().length() > 5 ? user.getName().substring(0, 5) : user.getName();
-            data.put("name1", CommonUtils.createValueItem(name));
-            // 时分秒
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
-            data.put("time4", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getUpdateTime()))));
-            String reason = "取消预约房间" + room.getRoomName();
-            data.put("phrase3", CommonUtils.createValueItem(reason));
+            data.put("thing10", CommonUtils.createValueItem(name));
+            // 预约地点
+            data.put("thing13", CommonUtils.createValueItem(room.getRoomName()));
+            // 预约时间段 2022年04月15日 13:00~14:00
+            SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日");
+            SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
+            String timeDateStr = sdf2.format(new Date(roomReservation.getReserveStartTime())) + "-" + sdf2.format(new Date(roomReservation.getReserveEndTime()))
+                    + "时段，" + sdf.format(new Date(roomReservation.getReserveStartTime()));
+            log.info("str length {}", timeDateStr.length());
+            data.put("thing8", CommonUtils.createValueItem(timeDateStr));
+
+            String reason = "";
+            if (!StrUtil.isEmpty(roomReservation.getRemark())) {
+                reason = roomReservation.getRemark().length() > 20 ?
+                        roomReservation.getRemark().substring(0, 16) + "..." : roomReservation.getRemark();
+            }
+            data.put("thing4", CommonUtils.createValueItem(reason));
             log.info("ready send message to {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
-                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
+                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.WITHDRAW_NOTICE_TEMPLATE.getId(), data);
             }
         }
     },
@@ -89,21 +104,21 @@ public enum ReservationState {
         @Override
         public void sendReservationNoticeMessage(Room room, User user, RoomReservation roomReservation) {
             Map<String, Map<String, Object>> data = new HashMap<>();
-            // 处理姓名，wx不可超过五个字符
-            String name = user.getName().length() > 5 ? user.getName().substring(0, 5) : user.getName();
-            data.put("name5", CommonUtils.createValueItem(name));
-            // 时分秒
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
-            data.put("date3", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveStartTime()))));
-            data.put("date4", CommonUtils.createValueItem(sdf.format(new Date(roomReservation.getReserveEndTime()))));
+            data.put("thing1", CommonUtils.createValueItem(room.getRoomName()));
 
-            data.put("thing2", CommonUtils.createValueItem(room.getRoomName()));
-            data.put("phrase8", CommonUtils.createValueItem("审核不通过，原因已发送至您的邮箱"));
+            // 预约时间段 2022年04月15日 13:00~14:00
+            SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日 HH:mm");
+            SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
+            String timeDateStr = sdf.format(new Date(roomReservation.getReserveStartTime())) + "~" + sdf2.format(new Date(roomReservation.getReserveEndTime()));
+            data.put("date2", CommonUtils.createValueItem(timeDateStr));
+
+            String reason = roomReservation.getRemark().length() > 20 ?
+                    roomReservation.getRemark().substring(0, 16) + "..." : roomReservation.getRemark();
+            data.put("thing17", CommonUtils.createValueItem(reason));
             log.info("ready send message to {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
-                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_RESULT_NOTICE_TEMPLATE.getId(), data);
+                WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_FAILED_NOTICE_TEMPLATE.getId(), data);
             }
-            // 发送
         }
     },
 
