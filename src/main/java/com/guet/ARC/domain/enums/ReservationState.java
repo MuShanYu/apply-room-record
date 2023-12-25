@@ -104,7 +104,7 @@ public enum ReservationState {
         @Override
         public void sendReservationNoticeMessage(Room room, User user, RoomReservation roomReservation) {
             Map<String, Map<String, Object>> data = new HashMap<>();
-            data.put("thing1", CommonUtils.createValueItem(room.getRoomName()));
+            data.put("thing19", CommonUtils.createValueItem(room.getRoomName()));
 
             // 预约时间段 2022年04月15日 13:00~14:00
             SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日 HH:mm");
@@ -114,7 +114,7 @@ public enum ReservationState {
 
             String reason = roomReservation.getRemark().length() > 20 ?
                     roomReservation.getRemark().substring(0, 16) + "..." : roomReservation.getRemark();
-            data.put("thing17", CommonUtils.createValueItem(reason));
+            data.put("thing4", CommonUtils.createValueItem(reason));
             log.info("ready send message to {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
                 WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_FAILED_NOTICE_TEMPLATE.getId(), data);
