@@ -1,0 +1,57 @@
+server:
+  port: 8600
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://mysql:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
+    username: your username
+    password: your password
+  redis:
+    host: redis
+    port: 6379
+    timeout: 10000
+    lettuce:
+      pool:
+        max-active: 250
+        min-idle: 5
+        max-wait: 5000ms
+        max-idle: 20
+
+  servlet:
+    multipart:
+      max-file-size: 12MB
+      max-request-size: 12MB
+
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: your username
+    password: your password
+    default-encoding: UTF-8
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            enable: true
+
+  documentation:
+    swagger-ui:
+      enabled: true
+
+# Sa-Token 配置
+sa-token:
+  token-name: token
+  timeout: 2592000 # 七天 604800
+  activity-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: tik
+  is-log: false

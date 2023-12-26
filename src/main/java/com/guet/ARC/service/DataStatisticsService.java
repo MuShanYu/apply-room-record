@@ -139,7 +139,7 @@ public class DataStatisticsService {
                         .where(RoomReservationDynamicSqlSupport.state, isEqualTo(state))
                         .and(RoomReservationDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                         .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
-                        .and(RoomReservationDynamicSqlSupport.createTime, isBetween(webAppDateStart).and(oneDayAfter))
+                        .and(RoomReservationDynamicSqlSupport.updateTime, isBetween(webAppDateStart).and(oneDayAfter))
                         .build().render(RenderingStrategies.MYBATIS3);
                 if (state.equals(CommonConstant.ROOM_RESERVE_ALREADY_REVIEWED)) {
                     // 通过审批的次数
