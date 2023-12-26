@@ -4,7 +4,7 @@ server:
 spring:
   mvc:
     pathmatch:
-      matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题
+      matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题.
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
