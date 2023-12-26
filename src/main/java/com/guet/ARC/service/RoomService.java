@@ -179,6 +179,7 @@ public class RoomService {
                 // 预约状态为待审批，则这段时间内不可再次预约
                 // 预约状态为已审批，则这段时间内也不可以再次预约
                 .and(RoomDynamicSqlSupport.id, isNotIn(
+                        //gs<rs<re<ge
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.reserveStartTime,
@@ -190,6 +191,7 @@ public class RoomService {
                                 )
                 ))
                 .and(RoomDynamicSqlSupport.id, isNotIn(
+                        //rs<gs<ge<re
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.reserveStartTime, isLessThanOrEqualTo(roomQueryDTO.getStartTime()))
@@ -199,7 +201,7 @@ public class RoomService {
                                 )
                 ))
                 .and(RoomDynamicSqlSupport.id, isNotIn(
-                        // 查询这段时间内是否有待审批和已审批的记录
+                        // rs<gs<re<ge
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.reserveEndTime,
@@ -211,7 +213,7 @@ public class RoomService {
                                 )
                 ))
                 .and(RoomDynamicSqlSupport.id, isNotIn(
-                        // 查询这段时间内是否有待审批和已审批的记录
+                        // gs<rs<ge<rd
                         select(RoomReservationDynamicSqlSupport.roomId)
                                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                                 .where(RoomReservationDynamicSqlSupport.reserveStartTime,
