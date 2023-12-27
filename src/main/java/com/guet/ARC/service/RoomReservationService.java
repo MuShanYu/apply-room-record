@@ -231,25 +231,31 @@ public class RoomReservationService {
             Optional<User> userOptional = userRepository.findByStuNum(queryDTO.getStuNum());
             userOptional.ifPresent(user -> queryDTO.setApplyUserId(user.getId()));
         }
+
+        List<RoomReservationAdminVo> filteredList = new ArrayList<>();
         List<RoomReservationAdminVo> roomReservationAdminVos =
                 roomReservationQueryRepository.selectRoomReservationsAdminVo(roomReservationQuery.queryRoomReserveToBeReviewedSql(queryDTO, currentUserId));
         long now = System.currentTimeMillis();
         for (RoomReservationAdminVo roomReservationAdminVo : roomReservationAdminVos) {
             Optional<User> optionalUser = userRepository.findById(roomReservationAdminVo.getUserId());
-            if (optionalUser.isPresent()) {
-                User user = optionalUser.get();
+            optionalUser.ifPresent(user -> {
                 roomReservationAdminVo.setName(user.getName());
-            }
+                roomReservationAdminVo.setStuNum(user.getStuNum());
+            });
             // fix:问题：只要现在的时间大于结束时间就会被认为超时未处理，应该要加上是否已经被处理，未被处理的才要判断是否超时
             if (now > roomReservationAdminVo.getReserveEndTime()
                     && roomReservationAdminVo.getState().equals(ReservationState.ROOM_RESERVE_TO_BE_REVIEWED)) {
                 handleTimeOutReservationAdmin(roomReservationAdminVo);
+                // 被设置超时的房间预约信息，从列表中去除
+                continue;
             }
+            filteredList.add(roomReservationAdminVo);
         }
+        // 移除超市
         PageInfo<RoomReservationAdminVo> roomReservationPageInfo = new PageInfo<>();
         roomReservationPageInfo.setPage(queryDTO.getPage());
         roomReservationPageInfo.setTotalSize(queryPageData.getTotal());
-        roomReservationPageInfo.setPageData(roomReservationAdminVos);
+        roomReservationPageInfo.setPageData(filteredList);
         return roomReservationPageInfo;
     }
 

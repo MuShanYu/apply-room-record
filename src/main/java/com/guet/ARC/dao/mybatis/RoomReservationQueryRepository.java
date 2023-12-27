@@ -37,7 +37,7 @@ public interface RoomReservationQueryRepository {
     BasicColumn[] roomReservationList = BasicColumn.columnList(id, roomUsage, reserveStartTime, reserveEndTime, verifyUserName,
             state, updateTime, createTime, RoomDynamicSqlSupport.school,  RoomDynamicSqlSupport.teachBuilding,
             RoomDynamicSqlSupport.category,  RoomDynamicSqlSupport.roomName,  RoomDynamicSqlSupport.equipmentInfo,
-            RoomDynamicSqlSupport.capacity, roomId, userId);
+            RoomDynamicSqlSupport.capacity, roomId, userId, remark);
 
     @SelectProvider(type=SqlProviderAdapter.class, method="select")
     @Results(id="RoomReservationResult", value = {
@@ -91,7 +91,8 @@ public interface RoomReservationQueryRepository {
             @Result(column="category", property="category", jdbcType=JdbcType.VARCHAR),
             @Result(column="room_name", property="roomName", jdbcType=JdbcType.VARCHAR),
             @Result(column="equipment_info", property="equipmentInfo", jdbcType=JdbcType.VARCHAR),
-            @Result(column="capacity", property="capacity", jdbcType=JdbcType.VARCHAR)
+            @Result(column="capacity", property="capacity", jdbcType=JdbcType.VARCHAR),
+            @Result(column="remark", property="remark", jdbcType=JdbcType.VARCHAR)
     })
     List<RoomReservationAdminVo> selectRoomReservationsAdminVo(SelectStatementProvider selectStatement);
 
