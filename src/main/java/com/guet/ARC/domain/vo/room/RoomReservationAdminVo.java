@@ -40,4 +40,8 @@ public class RoomReservationAdminVo {
     private Long updateTime;
 
     private Long createTime;
+
+    private String stuNum;
+
+    private String remark;
 }
