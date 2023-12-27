@@ -1,17 +1,20 @@
 server:
   port: 8500
-
+  ssl:
+    key-store: your keystore path
+    key-store-password: your password
+    key-store-type: PKCS12
 spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://101.42.135.147:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
+    url: jdbc:mysql://mysql:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
     username: your username
     password: your password
   redis:
-    host: 101.42.135.147
+    host: redis
     port: 6379
     timeout: 10000
     password: your password
