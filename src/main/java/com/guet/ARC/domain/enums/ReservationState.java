@@ -35,9 +35,9 @@ public enum ReservationState {
             String timeDateStr = sdf.format(new Date(roomReservation.getReserveStartTime())) + "~" + sdf2.format(new Date(roomReservation.getReserveEndTime()));
             data.put("time60", CommonUtils.createValueItem(timeDateStr));
             // 预约理由
-            String mem = roomReservation.getRoomUsage().length() > 20 ? roomReservation.getRoomId().substring(0, 20) : roomReservation.getRoomUsage();
+            String mem = roomReservation.getRoomUsage().length() > 20 ? roomReservation.getRoomUsage().substring(0, 16) + "..." : roomReservation.getRoomUsage();
             data.put("thing7", CommonUtils.createValueItem(mem));
-            log.info("ready send message to {}, message is {}", user.getName(), data);
+            log.info("ready send message, apply user is {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
                 WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_NOTICE_TEMPLATE.getId(), data);
             }
@@ -61,7 +61,7 @@ public enum ReservationState {
 
 
             data.put("thing4", CommonUtils.createValueItem("符合要求，审核通过。"));
-            log.info("ready send message to {}, message is {}", user.getName(), data);
+            log.info("ready send message, receiver is {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
                 WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_SUCCESS_NOTICE_TEMPLATE.getId(), data);
             }
@@ -81,9 +81,9 @@ public enum ReservationState {
             // 预约时间段 2022年04月15日 13:00~14:00
             SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日");
             SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
-            String timeDateStr = sdf2.format(new Date(roomReservation.getReserveStartTime())) + "-" + sdf2.format(new Date(roomReservation.getReserveEndTime()))
+            String timeDateStr = sdf2.format(new Date(roomReservation.getReserveStartTime())) + "~" + sdf2.format(new Date(roomReservation.getReserveEndTime()))
                     + "时段，" + sdf.format(new Date(roomReservation.getReserveStartTime()));
-            log.info("str length {}", timeDateStr.length());
+//            log.info("str length {}", timeDateStr.length());
             data.put("thing8", CommonUtils.createValueItem(timeDateStr));
 
             String reason = "";
@@ -92,7 +92,7 @@ public enum ReservationState {
                         roomReservation.getRemark().substring(0, 16) + "..." : roomReservation.getRemark();
             }
             data.put("thing4", CommonUtils.createValueItem(reason));
-            log.info("ready send message to {}, message is {}", user.getName(), data);
+            log.info("ready send message, cancel user is {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
                 WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.WITHDRAW_NOTICE_TEMPLATE.getId(), data);
             }
@@ -115,7 +115,7 @@ public enum ReservationState {
             String reason = roomReservation.getRemark().length() > 20 ?
                     roomReservation.getRemark().substring(0, 16) + "..." : roomReservation.getRemark();
             data.put("thing4", CommonUtils.createValueItem(reason));
-            log.info("ready send message to {}, message is {}", user.getName(), data);
+            log.info("ready send message, receiver is {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
                 WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_FAILED_NOTICE_TEMPLATE.getId(), data);
             }

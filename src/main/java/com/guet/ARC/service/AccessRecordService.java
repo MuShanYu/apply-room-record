@@ -1,6 +1,9 @@
 package com.guet.ARC.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.support.ExcelTypeEnum;
 import com.alibaba.excel.write.metadata.WriteSheet;
@@ -29,6 +32,7 @@ import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.ExcelUtil;
 import com.guet.ARC.util.RedisCacheUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
 @Service
+@Slf4j
 public class AccessRecordService {
 
     @Autowired
@@ -396,5 +401,27 @@ public class AccessRecordService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // 获取可以进行补卡申请的进出记录
+    public PageInfo<UserAccessRecordVo> queryCanApplyAccessRecordList(Integer page, Integer size, String roomName) {
+        // 除当天之外的，其他没有签退时间的数据，按照创建时间降序
+        long time = DateUtil.endOfDay(new Date()).offset(DateField.DAY_OF_MONTH, -1).getTime();
+        roomName = StrUtil.isEmpty(roomName) ? null : roomName;
+        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        SelectStatementProvider statementProvider = select(AccessRecordQueryRepository.selectVoList)
+                .from(AccessRecordDynamicSqlSupport.accessRecord)
+                .leftJoin(RoomDynamicSqlSupport.room)
+                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
+                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
+                .and(AccessRecordDynamicSqlSupport.createTime, isLessThan(time))
+                .and(AccessRecordDynamicSqlSupport.outTime, isNull())
+                .and(RoomDynamicSqlSupport.roomName, isEqualToWhenPresent(roomName))
+                .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
+                .build().render(RenderingStrategies.MYBATIS3);
+        Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
+        accessRecordQueryRepository.selectVo(statementProvider);
+        return new PageInfo<>(queryPageData);
     }
 }
