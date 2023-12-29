@@ -53,6 +53,16 @@ public class AccessRecordController {
         return accessRecordService.queryUserAccessRecordList(page, size);
     }
 
+    @GetMapping("/record/query/list/can-apply")
+    @ApiOperation(value = "查询用户记录列表")
+    public PageInfo<UserAccessRecordVo> queryCanApplyAccessRecordListApi(@Min(1)
+                                                                         @RequestParam("page") Integer page,
+                                                                         @Range(min = 1, max = 100)
+                                                                         @RequestParam("size") Integer size,
+                                                                         @RequestParam("roomName") String roomName) {
+        return accessRecordService.queryCanApplyAccessRecordList(page, size, roomName);
+    }
+
     @PostMapping("/record/query/list/byRoomId")
     @ApiOperation(value = "根据房间ID查询用户记录列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
@@ -74,8 +84,8 @@ public class AccessRecordController {
     @ApiOperation(value = "导出根据房间ID查询用户记录统计信息")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public void exportUserAccessCountDataApi(HttpServletResponse response,
-                                                  @Valid @RequestBody
-                                                  UserAccessCountDataQueryDTO userAccessCountDataQueryDTO) {
+                                             @Valid @RequestBody
+                                             UserAccessCountDataQueryDTO userAccessCountDataQueryDTO) {
         accessRecordService.exportUserAccessCountData(userAccessCountDataQueryDTO, response);
     }
 
