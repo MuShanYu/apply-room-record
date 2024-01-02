@@ -5,6 +5,7 @@ import cn.dev33.satoken.annotation.SaMode;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.domain.AccessRecord;
 import com.guet.ARC.domain.dto.record.AddRecordDTO;
 import com.guet.ARC.domain.dto.record.UserAccessCountDataQueryDTO;
 import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
@@ -117,5 +118,11 @@ public class AccessRecordController {
                                                                           @NotEmpty @RequestParam("userId")
                                                                           String userId) {
         return accessRecordService.queryUserAccessCountAdmin(page, size, userId);
+    }
+
+    @GetMapping("/record/get/{id}")
+    @ApiOperation(value = "根据id查询进出记录")
+    public AccessRecord findByIdApi(@PathVariable("id") String id) {
+        return accessRecordService.findById(id);
     }
 }

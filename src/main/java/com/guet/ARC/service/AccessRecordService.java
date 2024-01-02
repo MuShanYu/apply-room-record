@@ -12,14 +12,15 @@ import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.AccessRecordRepository;
+import com.guet.ARC.dao.ApplicationRepository;
 import com.guet.ARC.domain.AccessRecord;
 import com.guet.ARC.domain.dto.record.UserAccessCountDataQueryDTO;
 import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
+import com.guet.ARC.domain.enums.ApplicationState;
 import com.guet.ARC.domain.enums.State;
 import com.guet.ARC.domain.excel.model.UserAccessRecordCountDataExcelModel;
 import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
@@ -44,6 +45,7 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
@@ -56,6 +58,9 @@ public class AccessRecordService {
 
     @Autowired
     private AccessRecordQueryRepository accessRecordQueryRepository;
+
+    @Autowired
+    private ApplicationRepository applicationRepository;
 
     @Autowired
     private RedisCacheUtil<AccessRecord> redisCacheUtil;
@@ -403,10 +408,16 @@ public class AccessRecordService {
         }
     }
 
+    public AccessRecord findById(String id) {
+        return accessRecordRepository.findById(id).orElse(null);
+    }
+
     // 获取可以进行补卡申请的进出记录
     public PageInfo<UserAccessRecordVo> queryCanApplyAccessRecordList(Integer page, Integer size, String roomName) {
         // 除当天之外的，其他没有签退时间的数据，按照创建时间降序
+        // 只允许申请近七天内的，七天内最多只能申请三次
         long time = DateUtil.endOfDay(new Date()).offset(DateField.DAY_OF_MONTH, -1).getTime();
+        long startTime = DateUtil.beginOfWeek(new Date()).getTime();
         roomName = StrUtil.isEmpty(roomName) ? null : roomName;
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         SelectStatementProvider statementProvider = select(AccessRecordQueryRepository.selectVoList)
@@ -416,12 +427,27 @@ public class AccessRecordService {
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                 .and(AccessRecordDynamicSqlSupport.createTime, isLessThan(time))
+                .and(AccessRecordDynamicSqlSupport.createTime, isGreaterThan(startTime))
                 .and(AccessRecordDynamicSqlSupport.outTime, isNull())
                 .and(RoomDynamicSqlSupport.roomName, isEqualToWhenPresent(roomName))
                 .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
-        Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
+        Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size, false);
         accessRecordQueryRepository.selectVo(statementProvider);
-        return new PageInfo<>(queryPageData);
+        List<UserAccessRecordVo> accessRecordVos = queryPageData.getResult();
+        // 判断是否已经进行申请
+        accessRecordVos.forEach(accessRecordVo -> {
+            applicationRepository.findByMatterRecordId(accessRecordVo.getId()).ifPresent(application -> {
+                accessRecordVo.setApplicationState(application.getState());
+            });
+        });
+        List<UserAccessRecordVo> filteredList = accessRecordVos.stream()
+                .filter(accessRecordVo -> accessRecordVo.getApplicationState() == null || accessRecordVo.getApplicationState().equals(ApplicationState.FAIL))
+                .collect(Collectors.toList());
+        PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
+        pageInfo.setPage(page);
+        pageInfo.setTotalSize(Long.parseLong(filteredList.size() + ""));
+        pageInfo.setPageData(filteredList);
+        return pageInfo;
     }
 }

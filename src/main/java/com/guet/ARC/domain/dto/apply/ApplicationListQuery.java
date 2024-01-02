@@ -26,5 +26,5 @@ public class ApplicationListQuery {
 
     private String endDateStr;
 
-    private Boolean isApplying;
+    private ApplicationState applicationState;
 }

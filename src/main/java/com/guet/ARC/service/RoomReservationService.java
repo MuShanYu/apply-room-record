@@ -322,6 +322,7 @@ public class RoomReservationService {
                 }
             }
             roomReservation.setVerifyUserName(user.getName());
+            roomReservation.setUpdateTime(System.currentTimeMillis());
             roomReservationRepository.save(roomReservation);
             log.info("user - {}", user);
             // 发送订阅消息

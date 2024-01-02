@@ -1,8 +1,11 @@
 package com.guet.ARC.dao;
 
 import com.guet.ARC.domain.AccessRecord;
+import com.guet.ARC.domain.enums.RoomState;
 import com.guet.ARC.domain.enums.State;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
 
 /**
  * Author: Yulf
@@ -12,5 +15,4 @@ public interface AccessRecordRepository extends JpaRepository<AccessRecord, Stri
     long countByStateAndRoomIdAndEntryTimeNotNullAndUserId(State state, String roomId, String userId);
 
     long countByStateAndRoomIdAndOutTimeNotNullAndUserId(State state, String roomId, String userId);
-
 }

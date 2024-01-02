@@ -41,7 +41,7 @@ public interface AccessRecordQueryRepository {
 
     BasicColumn[] selectVoList = BasicColumn.columnList(id, entryTime, outTime, state, updateTime, createTime,
             userId, roomId, RoomDynamicSqlSupport.school, RoomDynamicSqlSupport.teachBuilding,
-            RoomDynamicSqlSupport.category, RoomDynamicSqlSupport.roomName, RoomDynamicSqlSupport.capacity);
+            RoomDynamicSqlSupport.category, RoomDynamicSqlSupport.roomName, RoomDynamicSqlSupport.capacity, RoomDynamicSqlSupport.chargePersonId);
 
     BasicColumn[] selectAccessRoomVoList = BasicColumn.columnList(id, entryTime, outTime, state, updateTime, createTime,
             userId, roomId, RoomDynamicSqlSupport.school, RoomDynamicSqlSupport.teachBuilding,
@@ -103,6 +103,7 @@ public interface AccessRecordQueryRepository {
             @Result(column = "category", property = "category", jdbcType = JdbcType.VARCHAR),
             @Result(column = "room_name", property = "roomName", jdbcType = JdbcType.VARCHAR),
             @Result(column = "capacity", property = "capacity", jdbcType = JdbcType.VARCHAR),
+            @Result(column = "charge_person_id", property = "chargePersonId", jdbcType = JdbcType.VARCHAR),
     })
     List<UserAccessRecordVo> selectVo(SelectStatementProvider selectStatement);
 

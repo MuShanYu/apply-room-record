@@ -47,6 +47,10 @@ public class RedisCacheUtil<T> {
         return operation.get(key);
     }
 
+    public void incrementIntegerObject(String key) {
+        redisTemplate.opsForValue().increment(key);
+    }
+
     /**
      * 删除单个对象
      *
