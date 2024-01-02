@@ -25,7 +25,8 @@ import static org.mybatis.dynamic.sql.SqlBuilder.*;
 @Service
 public class ApplicationQuery {
 
-    public SelectStatementProvider queryApplicationListSql(ApplicationListQuery query, List<ApplicationState> queryState) {
+    public SelectStatementProvider queryApplicationListSql(ApplicationListQuery query) {
+        query.setStuNum(StrUtil.isEmpty(query.getStuNum()) ? null : query.getStuNum());
         Long startTime = null;
         Long endTime = null;
         if (!StrUtil.isEmpty(query.getStartDateStr()) && !StrUtil.isEmpty(query.getEndDateStr())) {
@@ -39,7 +40,7 @@ public class ApplicationQuery {
                 .on(UserDynamicSqlSupport.id, equalTo(ApplicationDynamicSqlSupport.applyUserId))
                 .where(ApplicationDynamicSqlSupport.handleUserId, isEqualTo(userId))
                 .and(UserDynamicSqlSupport.stuNum, isEqualToWhenPresent(query.getStuNum()))
-                .and(ApplicationDynamicSqlSupport.state, isInWhenPresent(queryState))
+                .and(ApplicationDynamicSqlSupport.state, isEqualToWhenPresent(query.getApplicationState()))
                 .and(ApplicationDynamicSqlSupport.createTime, isBetweenWhenPresent(startTime).and(endTime))
                 .and(ApplicationDynamicSqlSupport.applicationType, isEqualTo(ApplicationType.CHECK_IN_RETRO))
                 .orderBy(ApplicationDynamicSqlSupport.createTime.descending())
