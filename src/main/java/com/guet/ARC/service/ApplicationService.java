@@ -14,10 +14,13 @@ import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.ApplicationRepository;
 import com.guet.ARC.dao.mybatis.ApplicationQueryRepository;
 import com.guet.ARC.dao.mybatis.query.ApplicationQuery;
+import com.guet.ARC.dao.mybatis.query.MessageQuery;
 import com.guet.ARC.domain.Application;
+import com.guet.ARC.domain.Message;
 import com.guet.ARC.domain.dto.apply.ApplicationListQuery;
 import com.guet.ARC.domain.enums.ApplicationState;
 import com.guet.ARC.domain.enums.ApplicationType;
+import com.guet.ARC.domain.enums.MessageType;
 import com.guet.ARC.domain.vo.apply.ApplicationListVo;
 import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +52,9 @@ public class ApplicationService {
     @Autowired
     private RedisCacheUtil<Integer> redisCacheUtil;
 
+    @Autowired
+    private MessageService messageService;
+
     private static final String APPLY_NUMBER_KEY = "apply_number_key:";
 
     private static final Integer MAX_APPLY_TIMES = 3;
@@ -79,6 +85,12 @@ public class ApplicationService {
         application.setState(ApplicationState.APPLYING);
         application.setUpdateTime(System.currentTimeMillis());
         application.setCreateTime(System.currentTimeMillis());
+        // 发送消息
+        Message message = new Message();
+        message.setMessageReceiverId(application.getHandleUserId());
+        message.setContent(application.getTitle());
+        message.setMessageType(MessageType.TODO);
+        messageService.sendMessage(message);
         applicationRepository.save(application);
     }
 
@@ -111,16 +123,25 @@ public class ApplicationService {
         return new PageInfo<>(pageResult);
     }
 
-    public void updateApplicationState(String applicationId, Boolean isPass) {
+    public void updateApplicationState(String applicationId, Boolean isPass, String remark) {
         Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
         if (applicationOptional.isPresent()) {
             Application application = applicationOptional.get();
+            String content = "";
             if (isPass) {
                 application.setState(ApplicationState.SUCCESS);
+                content = application.getTitle() + "，审批通过。";
             } else {
                 application.setState(ApplicationState.FAIL);
+                content = application.getTitle() + "，审批不通过。原因请在我的->申请进程查看。";
             }
             application.setUpdateTime(System.currentTimeMillis());
+            application.setRemarks(remark);
+            // 发送消息
+            Message message = new Message();
+            message.setMessageReceiverId(application.getHandleUserId());
+            message.setMessageType(MessageType.RESULT);
+            message.setContent(content);
             applicationRepository.saveAndFlush(application);
         }
     }

@@ -25,12 +25,6 @@ public class MessageController {
     @Autowired
     private MessageService messageService;
 
-    @PostMapping("/message/send")
-    @ApiOperation(value = "发送消息")
-    public void sendMessage(@RequestBody Message message) {
-        messageService.sendMessage(message);
-    }
-
     @DeleteMapping("/message/{messageId}")
     @ApiOperation(value = "删除消息")
     public void deleteMessage(@PathVariable("messageId") String messageId) {

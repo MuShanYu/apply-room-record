@@ -15,6 +15,7 @@ import com.guet.ARC.domain.enums.MessageType;
 import com.guet.ARC.domain.enums.ReadState;
 import com.guet.ARC.domain.vo.message.MessageVo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -45,7 +46,7 @@ public class MessageService {
         message.setUpdateTime(now);
         message.setCreateTime(now);
         message.setMessageSenderId(userId);
-        messageRepository.saveAndFlush(message);
+        messageRepository.save(message);
     }
 
     // 查询消息列表
