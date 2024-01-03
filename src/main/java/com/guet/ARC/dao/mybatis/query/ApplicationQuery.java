@@ -43,7 +43,7 @@ public class ApplicationQuery {
                 .and(ApplicationDynamicSqlSupport.state, isEqualToWhenPresent(query.getApplicationState()))
                 .and(ApplicationDynamicSqlSupport.createTime, isBetweenWhenPresent(startTime).and(endTime))
                 .and(ApplicationDynamicSqlSupport.applicationType, isEqualTo(ApplicationType.CHECK_IN_RETRO))
-                .orderBy(ApplicationDynamicSqlSupport.createTime.descending())
+                .orderBy(ApplicationDynamicSqlSupport.updateTime.descending())
                 .build()
                 .render(RenderingStrategies.MYBATIS3);
     }

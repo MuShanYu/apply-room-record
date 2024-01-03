@@ -13,6 +13,7 @@ import com.guet.ARC.dao.RoomReservationRepository;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.mybatis.RoomReservationQueryRepository;
 import com.guet.ARC.dao.mybatis.query.RoomReservationQuery;
+import com.guet.ARC.domain.Message;
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.RoomReservation;
 import com.guet.ARC.domain.User;
@@ -21,6 +22,7 @@ import com.guet.ARC.domain.dto.room.ApplyRoomDTO;
 import com.guet.ARC.domain.dto.room.RoomApplyDetailListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomReserveReviewedDTO;
 import com.guet.ARC.domain.dto.room.UserRoomReservationDetailQueryDTO;
+import com.guet.ARC.domain.enums.MessageType;
 import com.guet.ARC.domain.enums.ReservationState;
 import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
@@ -60,6 +62,9 @@ public class RoomReservationService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private MessageService messageService;
+
 
     public void cancelApply(String roomReservationId, String reason) {
         if (roomReservationId == null || roomReservationId.trim().isEmpty()) {
@@ -82,6 +87,16 @@ public class RoomReservationService {
                     CompletableFuture.runAsync(() -> {
                         roomReservation.getState().sendReservationNoticeMessage(room, user, roomReservation);
                     });
+                    // 发送系统消息
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
+                    String startTimeStr = sdf.format(new Date(roomReservation.getReserveStartTime()));
+                    String endTimeStr = sdf.format(new Date(roomReservation.getReserveEndTime()));
+                    Message message = new Message();
+                    message.setMessageReceiverId(room.getChargePersonId());
+                    message.setMessageType(MessageType.RESULT);
+                    message.setContent(user.getName() + "取消了房间" + room.getRoomName()
+                            + "的预约申请。预约时间：" + startTimeStr + "~" + endTimeStr + "。");
+                    messageService.sendMessage(message);
                 }
             }
         }
@@ -130,14 +145,14 @@ public class RoomReservationService {
             Optional<User> curUserOptional = userRepository.findById(userId);
             if (userOptional.isPresent() && curUserOptional.isPresent()) {
                 User user = userOptional.get();
+                String content = "";
                 // 发送审核邮件
                 if (!StrUtil.isEmpty(user.getMail())) {
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
                     String startTimeStr = sdf.format(new Date(applyRoomDTO.getStartTime()));
                     String endTimeStr = sdf.format(new Date(applyRoomDTO.getEndTime()));
-                    String content = "您收到来自" + curUserOptional.get().getName()
-                            + "的" + room.getRoomName() + "房间预约申请，预约时间" + startTimeStr + "至" + endTimeStr + "，请您及时处理。" +
-                            "<a style='color: #409EFF;' href='https://www.mushanyu.xyz/#/room/approve'>点击进入系统</a>";
+                    content = "您收到来自" + curUserOptional.get().getName()
+                            + "的" + room.getRoomName() + "房间预约申请，预约时间" + startTimeStr + "至" + endTimeStr + "，请您及时处理。";
                     // 异步发送
                     emailService.sendHtmlMail(user.getMail(), user.getName() + "房间预约申请待审核通知", content);
                 }
@@ -151,6 +166,12 @@ public class RoomReservationService {
                         roomReservation.getState().sendReservationNoticeMessage(room, user, roomReservation);
                     });
                 }
+                // 发送系统消息
+                Message message = new Message();
+                message.setMessageReceiverId(room.getChargePersonId());
+                message.setMessageType(MessageType.TODO);
+                message.setContent(content);
+                messageService.sendMessage(message);
             }
         }
         return roomReservation;
@@ -291,10 +312,11 @@ public class RoomReservationService {
             } else {
                 throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
             }
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
             String startTimeStr = sdf.format(new Date(roomReservation.getReserveStartTime()));
             String endTimeStr = sdf.format(new Date(roomReservation.getReserveEndTime()));
-            String createTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(roomReservation.getCreateTime()));
+            String createTimeStr = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss").format(new Date(roomReservation.getCreateTime()));
+            String content = "";
             if (pass) {
                 // 是否在相同时间内已经预约过了，也就是这段时间内是否有其他待审核预约、已审核预约,表示该房间已被站其他人占用，本次预约就不能再给通过了，已经是驳回状态
                 if (roomReservation.getState().equals(ReservationState.ROOM_RESERVE_TO_BE_REJECTED) &&
@@ -306,7 +328,7 @@ public class RoomReservationService {
                 // 发送通过邮件提醒
                 if (StringUtils.hasLength(toPersonMail)) {
                     // 如果有邮箱就发送通知
-                    String content = "您" + createTimeStr +
+                    content = "您" + createTimeStr +
                             "发起的" + roomName + "预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，已由审核员审核通过。";
                     emailService.sendSimpleMail(toPersonMail, roomName + "预约申请审核结果通知", content);
                 }
@@ -316,7 +338,7 @@ public class RoomReservationService {
                 // 发送通过邮件提醒
                 if (StringUtils.hasLength(toPersonMail)) {
                     // 如果有邮箱就发送通知
-                    String content = "您" + createTimeStr +
+                    content = "您" + createTimeStr +
                             "发起的" + roomName + "预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，审核不通过。原因为：" + rejectReason + "。";
                     emailService.sendSimpleMail(toPersonMail, roomName + "预约申请审核结果通知", content);
                 }
@@ -324,11 +346,16 @@ public class RoomReservationService {
             roomReservation.setVerifyUserName(user.getName());
             roomReservation.setUpdateTime(System.currentTimeMillis());
             roomReservationRepository.save(roomReservation);
-            log.info("user - {}", user);
             // 发送订阅消息
             CompletableFuture.runAsync(() -> {
                 roomReservation.getState().sendReservationNoticeMessage(roomOptional.get(), roomReservationUserOptional.get(), roomReservation);
             });
+            // 发送系统消息
+            Message message = new Message();
+            message.setMessageReceiverId(roomOptional.get().getChargePersonId());
+            message.setMessageType(MessageType.RESULT);
+            message.setContent(content);
+            messageService.sendMessage(message);
         } else {
             throw new AlertException(ResultCode.PARAM_IS_INVALID);
         }

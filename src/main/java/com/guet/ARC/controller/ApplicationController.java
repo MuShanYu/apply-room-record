@@ -48,7 +48,8 @@ public class ApplicationController {
     @PutMapping("/application")
     @ApiOperation(value = "更新申请事项状态")
     public void updateApplicationStateApi(@RequestParam("applicationId") String applicationId,
-                                          @RequestParam("isPass") Boolean isPass) {
-        applicationService.updateApplicationState(applicationId, isPass);
+                                          @RequestParam("isPass") Boolean isPass,
+                                          @RequestParam("remark") String remark) {
+        applicationService.updateApplicationState(applicationId, isPass, remark);
     }
 }
