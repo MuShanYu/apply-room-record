@@ -41,7 +41,7 @@ public class ApplicationController {
 
     @PostMapping("/application/query/list/my")
     @ApiOperation(value = "查询我的申请事项列表")
-    public PageInfo<Application> queryMyApplicationListApi(@Valid @RequestBody ApplicationListQuery query) {
+    public PageInfo<ApplicationListVo> queryMyApplicationListApi(@Valid @RequestBody ApplicationListQuery query) {
         return applicationService.queryMyApplicationList(query);
     }
 

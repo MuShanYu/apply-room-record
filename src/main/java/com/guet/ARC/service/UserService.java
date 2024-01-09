@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.cglib.CglibUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
@@ -229,16 +230,32 @@ public class UserService {
         if (userOptional.isEmpty()) {
             throw new AlertException(ResultCode.USER_NOT_EXIST);
         }
+        // 是否已经绑定其他用户了
+        Optional<User> userOptionalOpenId = userRepository.findByOpenId(openid);
+        userOptionalOpenId.ifPresent(userByOpenId -> {
+            String account = userByOpenId.getStuNum();
+            if (!account.equals(userOptional.get().getStuNum())) {
+                throw new AlertException(1000, "微信只允许绑定一个账号，您的微信已绑定账号：" + account + "。如果这不是您的账号请及时联系客服处理。");
+            }
+        });
         User user = userOptional.get();
         if (StrUtil.isEmpty(user.getOpenId())) {
             user.setUpdateTime(System.currentTimeMillis());
             user.setOpenId(openid);
             userRepository.save(user);
+        } else if (user.getOpenId().equals(openid)) {
+            // 与获取的Openid相同
         }
     }
 
-    public void unBindWx(String openId) {
-        Optional<User> userOptional = userRepository.findByOpenId(openId);
+    public void unBindWx(String code) {
+        // 获取openId
+        String openid = WxUtils.getOpenid(code);
+        // 查询用户是否已经绑定了，没有绑定则无法登录
+        if (StrUtil.isEmpty(openid)) {
+            throw new AlertException(1000, "用户标识获取失败");
+        }
+        Optional<User> userOptional = userRepository.findByOpenId(openid);
         if (userOptional.isEmpty()) {
             throw new AlertException(ResultCode.USER_NOT_EXIST);
         }
@@ -327,38 +344,28 @@ public class UserService {
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
-    public void updatePersonalInfo(UserUpdateDTO userUpdateDTO) {
-        String errorMsg = "";
-        boolean errorFlag = false;
+    public void updatePersonalInfo(Map<String, String> userInfo) {
         String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        // 我提交的邮箱是不是已经被其他人注册了
-        Optional<User> userByMailOptional = userRepository.findByMail(userUpdateDTO.getMail());
-        if (userByMailOptional.isPresent()) {
-            if (!userIdContext.equals(userByMailOptional.get().getId())) {
-                errorMsg += userUpdateDTO.getMail() + "邮箱已被注册";
-                errorFlag = true;
+        Optional<User> userOptional = userRepository.findById(userIdContext);
+        if (!StrUtil.isEmpty(userInfo.get("mail"))) {
+            // 我提交的邮箱是不是已经被其他人注册了
+            Optional<User> userByMailOptional = userRepository.findByMail(userInfo.get("mail"));
+            if (userByMailOptional.isPresent()) {
+                if (!userIdContext.equals(userByMailOptional.get().getId())) {
+                    throw new AlertException(1000, userInfo.get("mail") + "邮箱已被注册");
+                }
             }
         }
-        // 抛出异常
-        if (errorFlag) {
-            throw new AlertException(1000, errorMsg);
-        }
-        // 获取用户24小时可更新个人信息次数
-        Integer leftUpdateTimes = (Integer) redisCacheUtil.getCacheObject(userUpdateDTO.getId() + "updateInfo");
-        if (leftUpdateTimes != null) {
-            throw new AlertException(ResultCode.UPDATE_USERINFO_OUT_OF_TIMES);
-        } else {
-            redisCacheUtil.setCacheObject(userUpdateDTO.getId() + "updateInfo", 0, 24, TimeUnit.HOURS);
-        }
-        // 更新用户信息
-        User user = new User();
-        user.setId(userUpdateDTO.getId());
-        user.setStuNum(userUpdateDTO.getStuNum());
-        user.setName(userUpdateDTO.getName());
-        user.setInstitute(userUpdateDTO.getInstitute());
-        user.setNickname(userUpdateDTO.getStuNum() + user.getName());
-        user.setMail(userUpdateDTO.getMail());
-        userRepository.save(user);
+        userOptional.ifPresent(user -> {
+            // 避免修改查询后的数据，触发jpa脏检查，触发多余更新
+            User updateUserInfo = new User();
+            CglibUtil.copy(user, updateUserInfo);
+            CglibUtil.fillBean(userInfo, updateUserInfo);
+            log.info("user or:{}", user);
+            log.info("update user: {}", updateUserInfo);
+            updateUserInfo.setUpdateTime(System.currentTimeMillis());
+            userRepository.save(updateUserInfo);
+        });
     }
 
     public void changeUserRole(String userId, String[] roleIds) {

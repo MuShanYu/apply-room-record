@@ -6,6 +6,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.service.UserService;
@@ -54,10 +55,10 @@ public class UserController {
         userService.bindWx(code);
     }
 
-    @PutMapping("/user/wx/unBind/{encodeOpenId}")
+    @PutMapping("/user/wx/unBind/{code}")
     @ApiOperation(value = "用户解除绑定微信")
-    public void wxUnBindApi(@PathVariable("encodeOpenId") String encodeOpenId) {
-        userService.unBindWx(encodeOpenId);
+    public void wxUnBindApi(@PathVariable("code") String code) {
+        userService.unBindWx(code);
     }
 
     @GetMapping("/user/logout")
@@ -68,8 +69,8 @@ public class UserController {
 
     @PostMapping("/user/update/userInfo")
     @ApiOperation(value = "修改用户信息")
-    public void updateUserInfoApi(@Valid @RequestBody UserUpdateDTO userUpdateDTO) {
-        userService.updatePersonalInfo(userUpdateDTO);
+    public void updateUserInfoApi(@Valid @RequestBody Map<String, String> userInfo) {
+        userService.updatePersonalInfo(userInfo);
     }
 
     @GetMapping("/user/get/verifyCode")

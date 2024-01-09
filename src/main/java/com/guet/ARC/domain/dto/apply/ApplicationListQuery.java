@@ -1,6 +1,7 @@
 package com.guet.ARC.domain.dto.apply;
 
 import com.guet.ARC.domain.enums.ApplicationState;
+import com.guet.ARC.domain.enums.ApplicationType;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Range;
@@ -27,4 +28,6 @@ public class ApplicationListQuery {
     private String endDateStr;
 
     private ApplicationState applicationState;
+
+    private ApplicationType type;
 }

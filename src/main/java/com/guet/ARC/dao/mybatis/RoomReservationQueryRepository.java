@@ -35,9 +35,9 @@ public interface RoomReservationQueryRepository {
             state, updateTime, createTime, userId, roomId);
 
     BasicColumn[] roomReservationList = BasicColumn.columnList(id, roomUsage, reserveStartTime, reserveEndTime, verifyUserName,
-            state, updateTime, createTime, RoomDynamicSqlSupport.school,  RoomDynamicSqlSupport.teachBuilding,
+            state, updateTime, createTime,roomId, userId, remark, RoomDynamicSqlSupport.school,  RoomDynamicSqlSupport.teachBuilding,
             RoomDynamicSqlSupport.category,  RoomDynamicSqlSupport.roomName,  RoomDynamicSqlSupport.equipmentInfo,
-            RoomDynamicSqlSupport.capacity, roomId, userId, remark);
+            RoomDynamicSqlSupport.capacity);
 
     @SelectProvider(type=SqlProviderAdapter.class, method="select")
     @Results(id="RoomReservationResult", value = {

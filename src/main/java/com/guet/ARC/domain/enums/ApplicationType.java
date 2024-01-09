@@ -7,5 +7,5 @@ package com.guet.ARC.domain.enums;
 public enum ApplicationType {
 
     // 补卡申请
-    CHECK_IN_RETRO
+    CHECK_IN_RETRO;
 }
