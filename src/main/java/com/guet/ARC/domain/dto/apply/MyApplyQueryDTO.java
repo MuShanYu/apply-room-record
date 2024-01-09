@@ -1,5 +1,6 @@
 package com.guet.ARC.domain.dto.apply;
 
+import com.guet.ARC.domain.enums.ReservationState;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
@@ -17,13 +18,11 @@ public class MyApplyQueryDTO {
     @Range(min = 1, max = 100)
     private Integer size;
 
-    private String school;
-
-    private String teachBuilding;
-
-    private String category;
+    private String roomName;
 
     private Long startTime;
 
     private Long endTime;
+
+    private ReservationState state;
 }

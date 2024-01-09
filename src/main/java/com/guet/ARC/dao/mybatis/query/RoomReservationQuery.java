@@ -42,28 +42,17 @@ public class RoomReservationQuery {
     }
 
     public SelectStatementProvider queryMyApplySql(MyApplyQueryDTO myApplyQueryDTO, String userId) {
-        if (!StringUtils.hasLength(myApplyQueryDTO.getCategory())) {
-            myApplyQueryDTO.setCategory(null);
-        }
-
-        if (!StringUtils.hasLength(myApplyQueryDTO.getSchool())) {
-            myApplyQueryDTO.setSchool(null);
-        }
-
-        if (!StringUtils.hasLength(myApplyQueryDTO.getTeachBuilding())) {
-            myApplyQueryDTO.setTeachBuilding(null);
-        }
+        myApplyQueryDTO.setRoomName(StrUtil.isEmpty(myApplyQueryDTO.getRoomName()) ? null : myApplyQueryDTO.getRoomName() + "%");
         return select(RoomReservationQueryRepository.roomReservationList)
                 .from(RoomReservationDynamicSqlSupport.roomReservation)
                 .leftJoin(RoomDynamicSqlSupport.room)
                 .on(RoomReservationDynamicSqlSupport.roomId, equalTo(RoomDynamicSqlSupport.id))
                 .where(RoomReservationDynamicSqlSupport.userId, isEqualTo(userId))
-                .and(RoomDynamicSqlSupport.school, isEqualToWhenPresent(myApplyQueryDTO.getSchool()))
-                .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(myApplyQueryDTO.getCategory()))
-                .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(myApplyQueryDTO.getTeachBuilding()))
+                .and(RoomDynamicSqlSupport.roomName, isLikeWhenPresent(myApplyQueryDTO.getRoomName()))
+                .and(RoomReservationDynamicSqlSupport.state, isEqualTo(myApplyQueryDTO.getState()))
                 .and(RoomReservationDynamicSqlSupport.reserveStartTime, isGreaterThanOrEqualToWhenPresent(myApplyQueryDTO.getStartTime()))
                 .and(RoomReservationDynamicSqlSupport.reserveEndTime, isLessThanOrEqualToWhenPresent(myApplyQueryDTO.getEndTime()))
-                .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
+                .orderBy(RoomReservationDynamicSqlSupport.updateTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
     }
 

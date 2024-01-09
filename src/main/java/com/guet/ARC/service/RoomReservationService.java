@@ -225,11 +225,7 @@ public class RoomReservationService {
         List<RoomReservationVo> roomReservationVos = roomReservationQueryRepository.selectRoomReservationsVo(
                 roomReservationQuery.queryMyApplySql(myApplyQueryDTO, userId)
         );
-        PageInfo<RoomReservationVo> roomReservationPageInfo = new PageInfo<>();
-        roomReservationPageInfo.setPage(myApplyQueryDTO.getPage());
-        roomReservationPageInfo.setTotalSize(queryPageData.getTotal());
-        roomReservationPageInfo.setPageData(roomReservationVos);
-        return roomReservationPageInfo;
+        return new PageInfo<>(queryPageData);
     }
 
     public PageInfo<RoomReservationVo> queryUserReserveRecord(UserRoomReservationDetailQueryDTO queryDTO) {

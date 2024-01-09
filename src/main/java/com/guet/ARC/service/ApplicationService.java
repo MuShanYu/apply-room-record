@@ -7,11 +7,13 @@ import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.cglib.CglibUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.ApplicationRepository;
+import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.mybatis.ApplicationQueryRepository;
 import com.guet.ARC.dao.mybatis.query.ApplicationQuery;
 import com.guet.ARC.dao.mybatis.query.MessageQuery;
@@ -48,6 +50,9 @@ public class ApplicationService {
 
     @Autowired
     private ApplicationQueryRepository applicationQueryRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private RedisCacheUtil<Integer> redisCacheUtil;
@@ -102,12 +107,13 @@ public class ApplicationService {
     }
 
     // 查询我的申请列表
-    public PageInfo<Application> queryMyApplicationList(ApplicationListQuery listQuery) {
+    public PageInfo<ApplicationListVo> queryMyApplicationList(ApplicationListQuery listQuery) {
         String userId = StpUtil.getSession().getString("userId");
         org.springframework.data.domain.Page<Application> pageResult = applicationRepository.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("applyUserId"), userId));
-            predicates.add(cb.equal(root.get("applicationType"), ApplicationType.CHECK_IN_RETRO));
+            predicates.add(cb.equal(root.get("applicationType"), listQuery.getType()));
+            predicates.add(cb.equal(root.get("state"), listQuery.getApplicationState()));
             if (!StrUtil.isEmpty(listQuery.getStartDateStr()) && !StrUtil.isEmpty(listQuery.getEndDateStr())) {
                 long startTime = DateUtil.beginOfDay(DateUtil.parse(listQuery.getStartDateStr())).getTime();
                 long endTime = DateUtil.endOfDay(DateUtil.parse(listQuery.getEndDateStr())).getTime();
@@ -116,11 +122,22 @@ public class ApplicationService {
             if (CollectionUtil.isEmpty(predicates)) {
                 return cb.conjunction();
             }
-            query.orderBy(cb.desc(root.get("createTime")));
+            query.orderBy(cb.desc(root.get("updateTime")));
             return cb.and(predicates.toArray(Predicate[]::new));
         }, PageRequest.of(listQuery.getPage() - 1, listQuery.getSize()));
-        // 全部结果即可
-        return new PageInfo<>(pageResult);
+        List<ApplicationListVo> applicationListVos = new ArrayList<>();
+        pageResult.getContent().forEach(item -> {
+            userRepository.findById(item.getHandleUserId()).ifPresent(user -> {
+                ApplicationListVo vo = CglibUtil.copy(item, ApplicationListVo.class);
+                vo.setName(user.getName());
+                applicationListVos.add(vo);
+            });
+        });
+        PageInfo<ApplicationListVo> applicationListVoPageInfo = new PageInfo<>();
+        applicationListVoPageInfo.setPage(listQuery.getPage());
+        applicationListVoPageInfo.setTotalSize(pageResult.getTotalElements());
+        applicationListVoPageInfo.setPageData(applicationListVos);
+        return applicationListVoPageInfo;
     }
 
     public void updateApplicationState(String applicationId, Boolean isPass, String remark) {
