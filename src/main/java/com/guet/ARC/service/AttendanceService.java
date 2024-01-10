@@ -29,7 +29,8 @@ public class AttendanceService {
     public PageInfo<AttendanceCountListVo> queryAttendanceCountList(AttendanceListQueryDTO queryDTO) {
         // 查询符合条件的所有人， 按照userId分组
         Page<AttendanceCountListVo> pageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
-        List<AttendanceCountListVo> attendanceCountListVos = accessRecordQueryRepository.selectAttendanceCountList(attendanceQuery.queryCountListVoSql(queryDTO));
+        List<AttendanceCountListVo> attendanceCountListVos = accessRecordQueryRepository
+                .selectAttendanceCountList(attendanceQuery.queryCountListVoSql(queryDTO));
         attendanceCountListVos = attendanceCountListVos.stream()
                 .peek(item -> item.setValidAttendanceHours(getUserAttendanceTimeInHour(queryDTO, item.getUserId()))).collect(Collectors.toList());
         PageInfo<AttendanceCountListVo> pageInfo = new PageInfo<>();
@@ -43,7 +44,8 @@ public class AttendanceService {
     public PageInfo<AttendanceDetailListVo> queryAttendanceDetailList(AttendanceDetailListDTO queryDTO) {
         BigDecimal oneHourSeconds = new BigDecimal("3600");
         Page<AttendanceDetailListVo> page = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
-        List<AttendanceDetailListVo> attendanceCountListVos = accessRecordQueryRepository.selectAttendanceCountDetailList(attendanceQuery.queryDetailListVoSql(queryDTO));
+        List<AttendanceDetailListVo> attendanceCountListVos = accessRecordQueryRepository
+                .selectAttendanceCountDetailList(attendanceQuery.queryDetailListVoSql(queryDTO));
         // 处理有效签到时长
         attendanceCountListVos = attendanceCountListVos.stream()
                 .peek(attendanceDetailListVo -> {

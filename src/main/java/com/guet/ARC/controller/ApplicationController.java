@@ -52,4 +52,11 @@ public class ApplicationController {
                                           @RequestParam("remark") String remark) {
         applicationService.updateApplicationState(applicationId, isPass, remark);
     }
+
+    @PutMapping("/application/cancel/{applicationId}")
+    @ApiOperation(value = "取消申请")
+    public void cancelApplicationApi(@PathVariable("applicationId") String applicationId,
+                                     @RequestParam("remark") String remark) {
+        applicationService.cancelApplication(applicationId, remark);
+    }
 }

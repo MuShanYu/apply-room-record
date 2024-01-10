@@ -93,7 +93,7 @@ public class ApplicationService {
         // 发送消息
         Message message = new Message();
         message.setMessageReceiverId(application.getHandleUserId());
-        message.setContent(application.getTitle());
+        message.setContent("您收到" + application.getTitle());
         message.setMessageType(MessageType.TODO);
         messageService.sendMessage(message);
         applicationRepository.save(application);
@@ -159,10 +159,29 @@ public class ApplicationService {
             message.setMessageReceiverId(application.getHandleUserId());
             message.setMessageType(MessageType.RESULT);
             message.setContent(content);
-            applicationRepository.saveAndFlush(application);
+            applicationRepository.save(application);
+            messageService.sendMessage(message);
         }
     }
 
-
+    // 取消申请
+    public void cancelApplication(String applicationId, String remark) {
+        Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
+        applicationOptional.ifPresent(application -> {
+            if (application.getState().equals(ApplicationState.SUCCESS) || application.getState().equals(ApplicationState.FAIL)) {
+                throw new AlertException(1000, "该申请已经处理，无法取消");
+            }
+            application.setState(ApplicationState.CANCEL);
+            application.setRemarks(remark);
+            application.setUpdateTime(System.currentTimeMillis());
+            applicationRepository.save(application);
+            // 发送消息
+            Message message = new Message();
+            message.setMessageReceiverId(application.getHandleUserId());
+            message.setMessageType(MessageType.RESULT);
+            message.setContent(application.getTitle() + "。已取消。");
+            messageService.sendMessage(message);
+        });
+    }
 
 }
