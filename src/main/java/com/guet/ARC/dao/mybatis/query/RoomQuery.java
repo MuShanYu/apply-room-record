@@ -1,8 +1,10 @@
 package com.guet.ARC.dao.mybatis.query;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.mybatis.RoomQueryRepository;
+import com.guet.ARC.dao.mybatis.support.AccessRecordDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.support.RoomReservationDynamicSqlSupport;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
@@ -96,4 +98,17 @@ public class RoomQuery {
                 .and(RoomDynamicSqlSupport.teachBuilding, isEqualToWhenPresent(roomQueryDTO.getTeachBuilding()))
                 .build().render(RenderingStrategies.MYBATIS3);
     }
+
+    // 查询进出过的房间列表
+    public SelectStatementProvider queryAccessRecordRoomListSql() {
+        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        return selectDistinct(RoomQueryRepository.selectList)
+                .from(RoomDynamicSqlSupport.room)
+                .leftJoin(AccessRecordDynamicSqlSupport.accessRecord)
+                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
+                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
+                .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
+                .build().render(RenderingStrategies.MYBATIS3);
+    }
+
 }

@@ -8,5 +8,6 @@ public enum ApplicationState {
     // 状态：0：代表申请中，1：代表申请成功，2：代表申请失败
     APPLYING,
     SUCCESS,
-    FAIL
+    FAIL,
+    CANCEL;
 }

@@ -450,4 +450,9 @@ public class AccessRecordService {
         pageInfo.setPageData(filteredList);
         return pageInfo;
     }
+
+    // 查询用户进出的房间列表
+    public void queryUserAccessRecordRoomList() {
+
+    }
 }

@@ -17,15 +17,9 @@ import com.guet.ARC.domain.dto.room.RoomAddUpdateDTO;
 import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
 import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
-import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.RoomQueryRepository;
-import com.guet.ARC.dao.mybatis.support.RoomReservationDynamicSqlSupport;
-import com.guet.ARC.domain.enums.ReservationState;
 import com.guet.ARC.domain.enums.RoomState;
 import com.guet.ARC.util.CommonUtils;
-import org.mybatis.dynamic.sql.render.RenderingStrategies;
-import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
-import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.data.domain.PageRequest;
@@ -36,8 +30,6 @@ import javax.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
 @Service
 public class RoomService {
@@ -246,5 +238,10 @@ public class RoomService {
         } else {
             throw new AlertException(1000, "要禁用预约的房间不存在");
         }
+    }
+
+    // 查询用户进出过的房间列表
+    public List<Room> queryAccessRecordRoomList() {
+        return roomQueryRepository.selectMany(roomQuery.queryAccessRecordRoomListSql());
     }
 }

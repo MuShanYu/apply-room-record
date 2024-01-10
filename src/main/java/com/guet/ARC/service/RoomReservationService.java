@@ -88,15 +88,17 @@ public class RoomReservationService {
                         roomReservation.getState().sendReservationNoticeMessage(room, user, roomReservation);
                     });
                     // 发送系统消息
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
-                    String startTimeStr = sdf.format(new Date(roomReservation.getReserveStartTime()));
-                    String endTimeStr = sdf.format(new Date(roomReservation.getReserveEndTime()));
-                    Message message = new Message();
-                    message.setMessageReceiverId(room.getChargePersonId());
-                    message.setMessageType(MessageType.RESULT);
-                    message.setContent(user.getName() + "取消了房间" + room.getRoomName()
-                            + "的预约申请。预约时间：" + startTimeStr + "~" + endTimeStr + "。");
-                    messageService.sendMessage(message);
+                    userRepository.findById(roomReservation.getUserId()).ifPresent(curUser -> {
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
+                        String startTimeStr = sdf.format(new Date(roomReservation.getReserveStartTime()));
+                        String endTimeStr = sdf.format(new Date(roomReservation.getReserveEndTime()));
+                        Message message = new Message();
+                        message.setMessageReceiverId(room.getChargePersonId());
+                        message.setMessageType(MessageType.RESULT);
+                        message.setContent(curUser.getName() + "取消了房间" + room.getRoomName()
+                                + "的预约申请。预约时间：" + startTimeStr + "~" + endTimeStr + "。");
+                        messageService.sendMessage(message);
+                    });
                 }
             }
         }
