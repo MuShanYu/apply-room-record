@@ -79,8 +79,8 @@ public class RoomReservationController {
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public void passOrRejectReserveApi(@NotEmpty @RequestParam("reserveId") String reserveId,
                                        @NotNull @RequestParam("passed") boolean passed,
-                                       @RequestParam(value = "rejectReason", required = false) String rejectReason) {
-        roomReservationService.passOrRejectReserve(reserveId, passed, rejectReason);
+                                       @RequestParam(value = "reason", required = false) String reason) {
+        roomReservationService.passOrRejectReserve(reserveId, passed, reason);
     }
 
     @GetMapping("/roomReservation/del/record")
