@@ -6,7 +6,6 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
-import com.guet.ARC.common.enmu.WxMessageTemplateId;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.RoomRepository;
 import com.guet.ARC.dao.RoomReservationRepository;
@@ -28,7 +27,6 @@ import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
 import com.guet.ARC.util.CommonUtils;
-import com.guet.ARC.util.WxUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
@@ -279,9 +277,9 @@ public class RoomReservationService {
     }
 
     // 通过或者驳回预约
-    public void passOrRejectReserve(String reserveId, boolean pass, String rejectReason) {
-        if (!StringUtils.hasLength(rejectReason)) {
-            rejectReason = "";
+    public void passOrRejectReserve(String reserveId, boolean pass, String reason) {
+        if (!StringUtils.hasLength(reason)) {
+            reason = "";
         }
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         Optional<RoomReservation> roomReservationOptional = roomReservationRepository.findById(reserveId);
@@ -321,7 +319,7 @@ public class RoomReservationService {
                         checkSameTimeReservationWithStatus(reserveId)) {
                     throw new AlertException(1000, "用户在相同时间再次进行预约，无法从驳回进行通过操作");
                 }
-                roomReservation.setRemark("符合要求，审核通过。");
+                roomReservation.setRemark(reason);
                 roomReservation.setState(ReservationState.ROOM_RESERVE_ALREADY_REVIEWED);
                 // 发送通过邮件提醒
                 if (StringUtils.hasLength(toPersonMail)) {
@@ -331,13 +329,13 @@ public class RoomReservationService {
                     emailService.sendSimpleMail(toPersonMail, roomName + "预约申请审核结果通知", content);
                 }
             } else {
-                roomReservation.setRemark(rejectReason);
+                roomReservation.setRemark(reason);
                 roomReservation.setState(ReservationState.ROOM_RESERVE_TO_BE_REJECTED);
                 // 发送通过邮件提醒
                 if (StringUtils.hasLength(toPersonMail)) {
                     // 如果有邮箱就发送通知
                     content = "您" + createTimeStr +
-                            "发起的" + roomName + "预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，审核不通过。原因为：" + rejectReason + "。";
+                            "发起的" + roomName + "预约申请，预约时间为" + startTimeStr + "至" + endTimeStr + "，审核不通过。原因为：" + reason + "。";
                     emailService.sendSimpleMail(toPersonMail, roomName + "预约申请审核结果通知", content);
                 }
             }
