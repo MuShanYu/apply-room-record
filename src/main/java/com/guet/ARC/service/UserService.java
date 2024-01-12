@@ -71,6 +71,16 @@ public class UserService {
         if (userRepository.existsByMail(userRegisterDTO.getMail())) {
             throw new AlertException(1000, "邮箱" + userRegisterDTO.getMail() + "已被注册");
         }
+        // 校验code
+        Integer code = (Integer) redisCacheUtil.getCacheObject(userRegisterDTO.getStuNum());
+        if (null == code) {
+            // 不存在
+            throw new AlertException(1000, "验证码不存在");
+        }
+        // 验证验证码
+        if (!code.equals(userRegisterDTO.getCode())) {
+            throw new AlertException(1000, "验证码错误");
+        }
         User user = buildUser(userRegisterDTO, System.currentTimeMillis());
         userRepository.saveAndFlush(user);
         userRoleService.setRole(user.getId(), CommonConstant.ROLE_USER_ID);
@@ -130,6 +140,7 @@ public class UserService {
         user.setStuNum(userRegisterDTO.getStuNum());
         user.setInstitute(userRegisterDTO.getInstitute());
         user.setNickname(userRegisterDTO.getName());
+        user.setMail(userRegisterDTO.getMail());
         user.setPwd(SaSecureUtil.md5(userRegisterDTO.getStuNum()));
         user.setId(IdUtil.fastSimpleUUID());
         return user;
@@ -297,9 +308,9 @@ public class UserService {
     }
 
     // 获取邮箱验证码
-    public void sendVerifyCode(String stuNum) {
+    public void sendVerifyCode(String stuNum, String mail) {
         Optional<User> userOptional = userRepository.findByStuNum(stuNum);
-        Map<String, Object> res = new HashMap<>();
+        Integer code = RandomUtil.randomInt(1000, 9999);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             if (user.getState().equals(State.NEGATIVE)) {
@@ -309,7 +320,7 @@ public class UserService {
             if (StrUtil.isEmpty(user.getMail())) {
                 throw new AlertException(1000, "账户" + stuNum + "未绑定邮箱");
             }
-            Integer code = RandomUtil.randomInt(1000, 9999);
+
             // 发送验证码并缓存，有效时间未5分钟
             String message = "您的验证码为：" + code + "。有效期为5分钟。请勿将该验证码泄露给任何人！";
             // 缓存code
@@ -317,7 +328,15 @@ public class UserService {
             // 发送短信
             emailService.sendSimpleMail(user.getMail(), "房间预约与流动统计App,邮箱验证码", message);
         } else {
-            throw new AlertException(1000, stuNum + "用户不存在");
+            // 新注册用户
+            if (!StrUtil.isEmpty(mail)) {
+                // 发送验证码并缓存，有效时间未5分钟
+                String message = "您的验证码为：" + code + "。有效期为5分钟。请勿将该验证码泄露给任何人！";
+                // 缓存code
+                redisCacheUtil.setCacheObject(stuNum, code, 5, TimeUnit.MINUTES);
+                // 发送短信
+                emailService.sendSimpleMail(mail, "房间预约与流动统计App,邮箱验证码", message);
+            }
         }
     }
 

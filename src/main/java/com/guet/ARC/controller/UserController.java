@@ -75,8 +75,9 @@ public class UserController {
 
     @GetMapping("/user/get/verifyCode")
     @ApiOperation(value = "获取4位验证码")
-    public void getVerifyCodeApi(@RequestParam("stuNum") String stuNum) {
-        userService.sendVerifyCode(stuNum);
+    public void getVerifyCodeApi(@RequestParam("stuNum") String stuNum,
+                                 @RequestParam(value = "mail", required = false) String mail) {
+        userService.sendVerifyCode(stuNum, mail);
     }
 
     @PostMapping("/user/update/pwd")

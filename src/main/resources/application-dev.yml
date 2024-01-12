@@ -7,9 +7,9 @@ spring:
       matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
-    username: root
-    password: root
+    url: jdbc:mysql://bj-cynosdbmysql-grp-p3xwvp32.sql.tencentcdb.com:22004/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
+    username: apr_user
+    password: Zyxbsjwslx@66
   redis:
     host: 127.0.0.1
     port: 6379

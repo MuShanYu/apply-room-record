@@ -13,4 +13,6 @@ public class UserRegisterDTO {
     private String institute;
 
     private String mail;
+
+    private Integer code;
 }
