@@ -12,6 +12,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.dao.AccessRecordRepository;
 import com.guet.ARC.dao.ApplicationRepository;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.mybatis.ApplicationQueryRepository;
@@ -50,6 +51,9 @@ public class ApplicationService {
 
     @Autowired
     private ApplicationQueryRepository applicationQueryRepository;
+
+    @Autowired
+    private AccessRecordRepository accessRecordRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -101,6 +105,7 @@ public class ApplicationService {
         userRepository.findById(application.getHandleUserId()).ifPresent(user -> {
             userRepository.findById(application.getApplyUserId()).ifPresent(applyUser -> {
                 user.setName(applyUser.getName());
+                log.info("user:{}", user);
                 application.getState().sendApplicationMessage(user, application);
             });
         });
@@ -156,6 +161,7 @@ public class ApplicationService {
             if (isPass) {
                 application.setState(ApplicationState.SUCCESS);
                 content = application.getTitle() + "，审批通过。";
+                application.getApplicationType().handleCheckInRetroApplication(application, accessRecordRepository);
             } else {
                 application.setState(ApplicationState.FAIL);
                 content = application.getTitle() + "，审批不通过。原因请在我的->申请进程查看。";
