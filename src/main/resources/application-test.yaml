@@ -13,6 +13,9 @@ spring:
     url: jdbc:mysql://10.0.8.17:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
     username: apr_user
     password: Zyxbsjwslx@66
+    hikari:
+      maximum-pool-size: 10
+      max-lifetime: 180000
   redis:
     host: redis
     port: 6379
