@@ -105,8 +105,8 @@ public class RoomReservationQuery {
                 .and(RoomDynamicSqlSupport.chargePersonId, isEqualTo(userId))
                 .and(RoomReservationDynamicSqlSupport.userId, isEqualToWhenPresent(queryDTO.getApplyUserId()))
                 .and(RoomReservationDynamicSqlSupport.state, isEqualTo(ReservationState.valueOf(queryDTO.getState())))
-                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isLessThanOrEqualToWhenPresent(queryDTO.getEndTime()))
-                .and(RoomReservationDynamicSqlSupport.reserveStartTime, isGreaterThanOrEqualToWhenPresent(queryDTO.getStartTime()))
+                .and(RoomReservationDynamicSqlSupport.reserveStartTime,
+                        isBetweenWhenPresent(queryDTO.getStartTime()).and(queryDTO.getEndTime()))
                 .orderBy(RoomReservationDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
     }

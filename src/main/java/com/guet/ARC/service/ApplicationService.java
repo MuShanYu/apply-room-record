@@ -96,6 +96,14 @@ public class ApplicationService {
         message.setContent("您收到" + application.getTitle());
         message.setMessageType(MessageType.TODO);
         messageService.sendMessage(message);
+        // 发送订阅消息
+        // 获取审核人信息
+        userRepository.findById(application.getHandleUserId()).ifPresent(user -> {
+            userRepository.findById(application.getApplyUserId()).ifPresent(applyUser -> {
+                user.setName(applyUser.getName());
+                application.getState().sendApplicationMessage(user, application);
+            });
+        });
         applicationRepository.save(application);
     }
 
@@ -161,6 +169,10 @@ public class ApplicationService {
             message.setContent(content);
             applicationRepository.save(application);
             messageService.sendMessage(message);
+            // 发送订阅消息
+            userRepository.findById(application.getApplyUserId()).ifPresent(user -> {
+                application.getState().sendApplicationMessage(user, application);
+            });
         }
     }
 
