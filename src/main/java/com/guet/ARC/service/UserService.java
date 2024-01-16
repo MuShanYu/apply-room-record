@@ -380,8 +380,8 @@ public class UserService {
             User updateUserInfo = new User();
             CglibUtil.copy(user, updateUserInfo);
             CglibUtil.fillBean(userInfo, updateUserInfo);
-            log.info("user or:{}", user);
-            log.info("update user: {}", updateUserInfo);
+//            log.info("user or:{}", user);
+//            log.info("update user: {}", updateUserInfo);
             updateUserInfo.setUpdateTime(System.currentTimeMillis());
             userRepository.save(updateUserInfo);
         });
@@ -406,6 +406,10 @@ public class UserService {
             // 是否可用
             if (user.getState().equals(State.NEGATIVE)) {
                 throw new AlertException(1000, name + "负责人账户处于不可用状态");
+            }
+            // 姓名是否对应
+            if (!user.getName().equals(name)) {
+                throw new AlertException(1000, "学号/工号与注册姓名不匹配");
             }
             // 判断权限
             List<Role> roles = userRoleService.queryRoleByUserId(user.getId());

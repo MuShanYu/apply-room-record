@@ -1,11 +1,13 @@
 package com.guet.ARC.common.enmu;
 
 import lombok.Data;
+import lombok.Getter;
 
 /**
  * Author: Yulf
  * Date: 2023/12/15
  */
+@Getter
 public enum WxMessageTemplateId {
 
     APPLY_NOTICE_TEMPLATE("Y12YmCT2wYbtSI38JGcuOmPQcFysZEfEiMnzYCfuJgI"),
@@ -16,9 +18,9 @@ public enum WxMessageTemplateId {
 
     APPLY_FAILED_NOTICE_TEMPLATE("1S8cwxpW5OqEb_iUwZfk1NpO8rxcWJgFirAQWdYd-Ro"),
 
-    NEW_APPLICATION_NOTICE_TEMPLATE("RUkh4a-qXYLB89EtnzuoNfyvZjyMf2zqugk8JJgOuTE"),
+    NEW_APPLICATION_NOTICE_TEMPLATE("RUkh4a-qXYLB89EtnzuoNa4VmOskGqDkTth7sPWPs24"),
 
-    APPLICATION_RESULT_NOTICE_TEMPLATE("tYamJXEa6H100qxCznqug4d6FJPgfSfxyWyo0XE4jqg");
+    APPLICATION_RESULT_NOTICE_TEMPLATE("KDq-tcXy2GiJAE37geDtN838iz7YfsG9ctnwj0hZkUw");
 
     private final String id;
 
@@ -26,7 +28,4 @@ public enum WxMessageTemplateId {
         this.id = id;
     }
 
-    public String getId() {
-        return id;
-    }
 }
