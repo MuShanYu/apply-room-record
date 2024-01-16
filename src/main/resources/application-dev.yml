@@ -10,6 +10,9 @@ spring:
     url: jdbc:mysql://bj-cynosdbmysql-grp-p3xwvp32.sql.tencentcdb.com:22004/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
     username: your username
     password: your password
+    hikari:
+      maximum-pool-size: 10
+      max-lifetime: 180000
   redis:
     host: 127.0.0.1
     port: 6379

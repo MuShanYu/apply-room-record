@@ -79,7 +79,7 @@ public class AccessRecordService {
             // 如果点击的不是入场，而是出场，必须先入场
             if (type != 1) {
                 if (type == 2) {
-                    throw new AlertException(1000, "12小时内未查询到您的入场记录，请先入场");
+                    throw new AlertException(1000, "12小时内未查询到您的进入记录，请先进行进入操作");
                 } else {
                     throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
                 }
@@ -106,7 +106,7 @@ public class AccessRecordService {
                         redisCacheUtil.setCacheObject(key, accessRecord, 12, TimeUnit.HOURS);
                     } else {
                         // 距离上一次入场记录没有超过2个小时，不允许再次进场
-                        throw new AlertException(1000, "2小时内已有您的入场记录，请先出场");
+                        throw new AlertException(1000, "2小时内已有您的进入记录，请进行离开操作");
                     }
                 } else {
                     throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
@@ -124,7 +124,7 @@ public class AccessRecordService {
                     accessRecordRepository.save(accessRecordCache);
                 } else {
                     // 小于10分钟间隔，频繁操作，不允许入场
-                    throw new AlertException(1000, "入场时间未超过10分钟，不允许出场操作");
+                    throw new AlertException(1000, "进入时间未超过10分钟，不允许进行离开操作");
                 }
             }
         }
@@ -451,8 +451,14 @@ public class AccessRecordService {
         return pageInfo;
     }
 
-    // 查询用户进出的房间列表
-    public void queryUserAccessRecordRoomList() {
-
+    // 获取当前房间用户签到情况
+    public Object queryRoomAccessRecordNow(String roomId) {
+        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String key = roomId + userId;
+        Object cacheObject = redisCacheUtil.getCacheObject(key);
+        Map<String, Object> res = new HashMap<>();
+        res.put("record", cacheObject);
+        // 返回存储的签到状态信息
+        return res;
     }
 }
