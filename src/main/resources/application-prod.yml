@@ -1,7 +1,7 @@
 server:
   port: 8500
   ssl:
-    key-store: classpath:www.mushanyu.xyz.pfx
+    key-store: your keystore path
     key-store-password: your password
     key-store-type: PKCS12
 spring:
@@ -10,13 +10,17 @@ spring:
       matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
+    url: jdbc:mysql://10.0.8.17:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
     username: your username
     password: your password
+    hikari:
+      maximum-pool-size: 10
+      max-lifetime: 180000
   redis:
-    host: 127.0.0.1
+    host: redis
     port: 6379
     timeout: 10000
+    password: your password
     lettuce:
       pool:
         max-active: 250
@@ -48,17 +52,35 @@ spring:
 
   documentation:
     swagger-ui:
-      enabled: false
+      enabled: true
+  jpa:
+    show-sql: false
+    open-in-view: false
+    generate-ddl: false
+  data:
+    redis:
+      repositories:
+        enabled: false
 
 # Sa-Token 配置
 sa-token:
+  # token名称 (同时也是cookie名称)
   token-name: token
-  timeout: 2592000 # 七天 604800
+  # token有效期，单位s 默认30天, -1代表永不过期
+  timeout: 36000 # 30天 2592000
+  # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
   activity-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
   is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
   is-share: true
+  # token风格
   token-style: tik
-  is-log: false
-
+  # 是否输出操作日志
+  is-log: true
+#logging:
+#  level:
+#    com.guet.ARC.mapper.UserMapper: debug
 mybatis:
-  mapper-locations: classpath:com/guet/ARC/dao/mybatis/*.xml
+  configuration:
+    default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
