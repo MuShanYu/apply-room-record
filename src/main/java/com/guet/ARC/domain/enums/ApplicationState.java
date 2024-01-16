@@ -1,5 +1,6 @@
 package com.guet.ARC.domain.enums;
 
+import cn.hutool.core.util.StrUtil;
 import com.guet.ARC.common.enmu.WxMessageTemplateId;
 import com.guet.ARC.domain.Application;
 import com.guet.ARC.domain.User;
@@ -20,6 +21,7 @@ public enum ApplicationState {
     APPLYING {
         @Override
         public void sendApplicationMessage(User user, Application application) {
+
             Map<String, Map<String, Object>> data = new HashMap<>();
             String name = user.getName().length() > 5 ? user.getName().substring(0, 5) : user.getName();
             data.put("name1", CommonUtils.createValueItem(name));
@@ -36,6 +38,9 @@ public enum ApplicationState {
     SUCCESS {
         @Override
         public void sendApplicationMessage(User user, Application application) {
+            if (StrUtil.isEmpty(user.getOpenId())) {
+                return;
+            }
             Map<String, Map<String, Object>> data = new HashMap<>();
             String title = application.getTitle().length() > 20 ? application.getTitle().substring(0, 16) + "..." : application.getTitle();
             data.put("thing9", CommonUtils.createValueItem(title));
@@ -49,6 +54,9 @@ public enum ApplicationState {
     FAIL {
         @Override
         public void sendApplicationMessage(User user, Application application) {
+            if (StrUtil.isEmpty(user.getOpenId())) {
+                return;
+            }
             Map<String, Map<String, Object>> data = new HashMap<>();
             String title = application.getTitle().length() > 20 ? application.getTitle().substring(0, 16) + "..." : application.getTitle();
             data.put("thing9", CommonUtils.createValueItem(title));

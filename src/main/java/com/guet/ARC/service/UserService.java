@@ -139,7 +139,7 @@ public class UserService {
         user.setName(userRegisterDTO.getName());
         user.setStuNum(userRegisterDTO.getStuNum());
         user.setInstitute(userRegisterDTO.getInstitute());
-        user.setNickname(userRegisterDTO.getName());
+        user.setName(userRegisterDTO.getName());
         user.setMail(userRegisterDTO.getMail());
         user.setPwd(SaSecureUtil.md5(userRegisterDTO.getStuNum()));
         user.setId(IdUtil.fastSimpleUUID());

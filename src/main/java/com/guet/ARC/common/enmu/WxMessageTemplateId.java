@@ -20,7 +20,7 @@ public enum WxMessageTemplateId {
 
     NEW_APPLICATION_NOTICE_TEMPLATE("RUkh4a-qXYLB89EtnzuoNa4VmOskGqDkTth7sPWPs24"),
 
-    APPLICATION_RESULT_NOTICE_TEMPLATE("KDq-tcXy2GiJAE37geDtN838iz7YfsG9ctnwj0hZkUw");
+    APPLICATION_RESULT_NOTICE_TEMPLATE("KDq-tcXy2GiJAE37geDtN5Ta-G5wJ2szj0U_4dgHSro");
 
     private final String id;
 
