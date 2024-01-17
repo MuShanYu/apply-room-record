@@ -1,9 +1,9 @@
 server:
   port: 8500
-#  ssl:
-#    key-store: your keystore path
-#    key-store-password: your password
-#    key-store-type: PKCS12
+  ssl:
+    key-store: your keystore path
+    key-store-password: your password
+    key-store-type: PKCS12
 spring:
   mvc:
     pathmatch:
