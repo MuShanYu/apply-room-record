@@ -52,7 +52,7 @@ spring:
 
   documentation:
     swagger-ui:
-      enabled: true
+      enabled: false
   jpa:
     show-sql: false
     open-in-view: false

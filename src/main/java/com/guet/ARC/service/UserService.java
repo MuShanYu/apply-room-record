@@ -198,7 +198,7 @@ public class UserService {
             throw new AlertException(1000, "用户标识获取失败");
         }
         // 判断是否已经绑定
-        log.info("openId:{}", openid);
+//        log.info("openId:{}", openid);
         Optional<User> userOptional = userRepository.findByOpenId(openid);
         Map<String, Object> map = new HashMap<>();
         ;
