@@ -1,9 +1,9 @@
 server:
   port: 8500
-#  ssl:
-#    key-store: classpath:mushanyu.top.pfx
-#    key-store-password: 5dthp6uw112a7f0
-#    key-store-type: PKCS12
+  ssl:
+    key-store: classpath:mushanyu.top.pfx
+    key-store-password: 5dthp6uw112a7f0
+    key-store-type: PKCS12
 spring:
   mvc:
     pathmatch:
