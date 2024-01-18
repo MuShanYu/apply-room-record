@@ -129,7 +129,7 @@ public class AccessRecordController {
     // 查询当前用户房间签到信息
     @GetMapping("/record/query/room/sign")
     @ApiOperation(value = "查询当前用户房间签到信息")
-    public Object queryRoomAccessRecordNowApi(@RequestParam("roomId") String roomId) {
-        return accessRecordService.queryRoomAccessRecordNow(roomId);
+    public Object queryRoomAccessRecordNowApi() {
+        return accessRecordService.queryRoomAccessRecordNow();
     }
 }
