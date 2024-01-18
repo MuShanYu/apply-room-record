@@ -17,6 +17,7 @@ import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.AccessRecordRepository;
 import com.guet.ARC.dao.ApplicationRepository;
+import com.guet.ARC.dao.RoomRepository;
 import com.guet.ARC.domain.AccessRecord;
 import com.guet.ARC.domain.dto.record.UserAccessCountDataQueryDTO;
 import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
@@ -43,6 +44,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -60,10 +63,15 @@ public class AccessRecordService {
     private AccessRecordQueryRepository accessRecordQueryRepository;
 
     @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
     private ApplicationRepository applicationRepository;
 
     @Autowired
     private RedisCacheUtil<AccessRecord> redisCacheUtil;
+
+    private static final String ACCESS_RECORD_KEY = "access_record_key:user_id:";
 
 
     @Transactional(rollbackFor = RuntimeException.class)
@@ -71,61 +79,55 @@ public class AccessRecordService {
         // type为1代表进入，type为2代表出
         long now = System.currentTimeMillis();
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        String key = roomId + userId;
+        String key = ACCESS_RECORD_KEY + userId;
         // 用户的进入状态保存12个小时
-        AccessRecord accessRecordCache = redisCacheUtil.getCacheObject(key);
-        if (accessRecordCache == null) {
-            // 没有记录，点击的可能时出场也有可能时入场
-            // 如果点击的不是入场，而是出场，必须先入场
-            if (type != 1) {
+        if (redisCacheUtil.hasKey(key)) {
+            // 查询有没有这个房间的进出记录
+            List<AccessRecord> cachedList = redisCacheUtil.getCachedAccessRecordList(key);
+            Optional<AccessRecord> accessRecordOptional = cachedList.stream()
+                    .filter(accessRecord -> accessRecord.getRoomId().equals(roomId))
+                    .findFirst();
+            if (accessRecordOptional.isPresent()) {
+                AccessRecord accessRecordCache = accessRecordOptional.get();
+                // 这条记录存在，这里只能进行出场操作
                 if (type == 2) {
-                    throw new AlertException(1000, "12小时内未查询到您的进入记录，请先进行进入操作");
+                    // 是否有十分钟了
+//                    if (now - accessRecordCache.getEntryTime() < 10 * 60 * 1000) {
+//                        throw new AlertException(1000, "进入时间不足十分钟，无法进行当前操作");
+//                    }
+                    accessRecordCache.setOutTime(System.currentTimeMillis());
+                    accessRecordCache.setUpdateTime(System.currentTimeMillis());
+                    accessRecordRepository.save(accessRecordCache);
+                    // 更新缓存
+                    redisCacheUtil.removeAccessRecordFromList(key, accessRecordCache);
+                } else if (type == 1) {
+                  // 重复进入操作
+                  throw new AlertException(1000, "12小时内已有该房间的进入记录，请勿重复操作");
                 } else {
                     throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
                 }
             } else {
+                // 这条记录不存在，添加这个记录到列表中，刷新列表过期时间，参数必须是入场
+                if (type == 1) {
+                    AccessRecord accessRecord = saveAccessRecord(userId, roomId, now);
+                    redisCacheUtil.pushDataToCacheList(key, accessRecord, 12, ChronoUnit.HOURS);
+                    redisCacheUtil.resetExpiration(key, 12, TimeUnit.HOURS);
+                } else {
+                    throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
+                }
+            }
+        } else {
+            // 没有任何记录
+            // 如果不是入场，而是出场，必须先入场
+            if (type == 1) {
                 // 点击的是入场
                 AccessRecord accessRecord = saveAccessRecord(userId, roomId, now);
                 // 添加进入状态缓存记录
-                redisCacheUtil.setCacheObject(key, accessRecord, 12, TimeUnit.HOURS);
-            }
-        } else {
-            // 已经有记录，可能时点击的出场也有可能是点击的入场
-            if (type != 2) {
-                // 如果点击的是入场
-                if (type == 1) {
-                    // 判断保存的进入记录距离现在是否已经超过，2个小时，如果超过两个小时，说明可以进行再次入场操作，否则需要进行出场操作
-                    // 再次入场需要删除保存旧的状态并添加新的状态
-                    long towHoursMillisecond = 7200000;
-                    long subTimeMillisecond = now - accessRecordCache.getEntryTime();
-                    if (subTimeMillisecond >= towHoursMillisecond) {
-                        AccessRecord accessRecord = saveAccessRecord(userId, roomId, now);
-                        // 删除旧的缓存记录
-                        redisCacheUtil.deleteObject(key);
-                        // 添加新的入场状态缓存记录
-                        redisCacheUtil.setCacheObject(key, accessRecord, 12, TimeUnit.HOURS);
-                    } else {
-                        // 距离上一次入场记录没有超过2个小时，不允许再次进场
-                        throw new AlertException(1000, "2小时内已有您的进入记录，请进行离开操作");
-                    }
-                } else {
-                    throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
-                }
+                redisCacheUtil.pushDataToCacheList(key, accessRecord, 12, ChronoUnit.HOURS);
+                // 更新列表过期时间
+                redisCacheUtil.resetExpiration(key, 12, TimeUnit.HOURS);
             } else {
-                // 如果点击的是出场
-                // 如果点击的出场与入场的时间间隔小于10分钟则判断为频繁操作，需10分钟后操作
-                long tenMinutesMillisecond = 600000;
-                long subTimeMillisecond = now - accessRecordCache.getEntryTime();
-                if (subTimeMillisecond >= tenMinutesMillisecond) {
-                    // 大于10分钟间隔，允许出场
-                    accessRecordCache.setOutTime(now);
-                    accessRecordCache.setUpdateTime(System.currentTimeMillis());
-                    redisCacheUtil.deleteObject(key);
-                    accessRecordRepository.save(accessRecordCache);
-                } else {
-                    // 小于10分钟间隔，频繁操作，不允许入场
-                    throw new AlertException(1000, "进入时间未超过10分钟，不允许进行离开操作");
-                }
+                throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
             }
         }
     }
@@ -452,12 +454,18 @@ public class AccessRecordService {
     }
 
     // 获取当前房间用户签到情况
-    public Object queryRoomAccessRecordNow(String roomId) {
+    public Object queryRoomAccessRecordNow() {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        String key = roomId + userId;
-        Object cacheObject = redisCacheUtil.getCacheObject(key);
-        Map<String, Object> res = new HashMap<>();
-        res.put("record", cacheObject);
+        String key = ACCESS_RECORD_KEY + userId;
+        List<Map<String, Object>> res = new ArrayList<>();
+        if (redisCacheUtil.hasKey(key)) {
+            redisCacheUtil.getCachedAccessRecordList(key).forEach(accessRecord -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("record", accessRecord);
+                map.put("room", roomRepository.findById(accessRecord.getRoomId()));
+                res.add(map);
+            });
+        }
         // 返回存储的签到状态信息
         return res;
     }

@@ -1,34 +1,23 @@
 package com.guet.ARC.util;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.guet.ARC.domain.AccessRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Component;
+import springfox.documentation.spring.web.json.Json;
 
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author wenjie
- * @create 2017-06-15 19:09
- **/
 @Component
 public class RedisCacheUtil<T> {
 
     @Autowired
     public RedisTemplate redisTemplate;
-
-    /**
-     * 缓存基本的对象，Integer、String、实体类等
-     *
-     * @param key   缓存的键值
-     * @param value 缓存的值
-     * @return 缓存的对象
-     */
-    public <T> ValueOperations<String, T> setCacheObject(String key, T value) {
-        ValueOperations<String, T> operation = redisTemplate.opsForValue();
-        operation.set(key, value);
-        return operation;
-    }
 
     public <T> ValueOperations<String, T> setCacheObject(String key, T value, Integer timeout, TimeUnit timeUnit) {
         ValueOperations<String, T> operation = redisTemplate.opsForValue();
@@ -60,32 +49,36 @@ public class RedisCacheUtil<T> {
         redisTemplate.delete(key);
     }
 
-    /**
-     * 删除集合对象
-     *
-     * @param collection
-     */
-    public void deleteObject(Collection collection) {
-        redisTemplate.delete(collection);
+    public void pushDataToCacheList(String key, T data, long timeout, TemporalUnit timeUnit) {
+        String valueWithExpiration = "{\"data\":" + JSON.toJSON(data) + ",\"expire\":"
+                + (System.currentTimeMillis() + Duration.of(timeout, timeUnit).toMillis()) + "}";
+        redisTemplate.opsForList().leftPush(key, valueWithExpiration);
     }
 
-    /**
-     * 缓存List数据
-     *
-     * @param key      缓存的键值
-     * @param dataList 待缓存的List数据
-     * @return 缓存的对象
-     */
-    public <T> ListOperations<String, T> setCacheList(String key, List<T> dataList) {
-        ListOperations listOperation = redisTemplate.opsForList();
-        if (null != dataList) {
-            int size = dataList.size();
-            for (int i = 0; i < size; i++) {
-                listOperation.leftPush(key, dataList.get(i));
+    public void resetExpiration(String key, long timeout, TimeUnit timeUnit) {
+        // 重置 key 的过期时间
+        redisTemplate.expire(key, timeout, timeUnit);
+    }
+
+    public Boolean hasKey(String key) {
+       return redisTemplate.hasKey(key);
+    }
+
+    public void removeAccessRecordFromList(String key, AccessRecord accessRecord) {
+        ListOperations<String, String> listOperation = redisTemplate.opsForList();
+        for (int i = 0; i < Integer.parseInt(listOperation.size(key) + ""); i++) {
+            String jsonData = listOperation.index(key, i);
+            JSONObject jsonObject = JSON.parseObject(jsonData);
+            if (Objects.nonNull(jsonObject)) {
+                AccessRecord record = jsonObject.getObject("data", AccessRecord.class);
+                if (accessRecord.getId().equals(record.getId())) {
+                    listOperation.remove(key, 0, jsonData);
+                    break;
+                }
             }
         }
-        return listOperation;
     }
+
 
     /**
      * 获得缓存的list对象
@@ -93,13 +86,24 @@ public class RedisCacheUtil<T> {
      * @param key 缓存的键值
      * @return 缓存键值对应的数据
      */
-    public <T> List<T> getCacheList(String key) {
-        List<T> dataList = new ArrayList<T>();
-        ListOperations<String, T> listOperation = redisTemplate.opsForList();
-        Long size = listOperation.size(key);
+    public List<AccessRecord> getCachedAccessRecordList(String key) {
+        List<AccessRecord> dataList = new ArrayList<>();
+        Long now = System.currentTimeMillis();
+        ListOperations<String, String> listOperation = redisTemplate.opsForList();
+        for (int i = 0; i < Integer.parseInt(listOperation.size(key) + ""); i++) {
+            String jsonData = listOperation.index(key, i);
+            JSONObject jsonObject = JSON.parseObject(jsonData);
+            if (Objects.nonNull(jsonObject)) {
+                AccessRecord accessRecord = jsonObject.getObject("data", AccessRecord.class);
+                Long timeoutTimeStamp = jsonObject.getLong("expire");
+                if (now.compareTo(timeoutTimeStamp) < 0) {
+                    dataList.add(accessRecord);
+                } else {
+                    // 超时的数据从列表中删除
+                    listOperation.remove(key, 0, jsonData);
+                }
+            }
 
-        for (int i = 0; i < size; i++) {
-            dataList.add(listOperation.index(key, i));
         }
         return dataList;
     }
