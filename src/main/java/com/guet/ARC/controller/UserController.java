@@ -109,7 +109,7 @@ public class UserController {
     @PostMapping("/admin/batchInsert/users")
     @ApiOperation(value = "批量导入用户信息")
     @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
-    public Map<String, Object> batchInsertUsersApi(@RequestBody List<UserRegisterDTO> registerDTOS) {
+    public Map<String, Object> batchInsertUsersApi(@RequestBody @Valid List<UserRegisterDTO> registerDTOS) {
         Map<String, Object> res = new HashMap<>();
         List<String> errorMsg = new ArrayList<>();
         res.put("errorData", userService.batchRegister(registerDTOS, errorMsg));

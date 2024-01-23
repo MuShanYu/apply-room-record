@@ -203,7 +203,7 @@ public class RoomService {
         User user;
         // 因为前端是循环调用，所以这里必须是线程安全的
         synchronized (this) {
-            user = userService.userBeCurrentRoomCharger(roomAddUpdateDTO.getStuNum(), roomAddUpdateDTO.getChargePerson());
+            user = userService.userCanBeCurrentRoomCharger(roomAddUpdateDTO.getStuNum(), roomAddUpdateDTO.getChargePerson());
             long now = System.currentTimeMillis();
             String id = CommonUtils.generateUUID();
             room.setId(id);
