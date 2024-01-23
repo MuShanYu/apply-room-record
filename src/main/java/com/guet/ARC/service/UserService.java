@@ -103,28 +103,34 @@ public class UserService {
         List<User> errorData = new ArrayList<>();
         List<User> successData = new ArrayList<>();
         List<UserRole> userRoles = new ArrayList<>();
-        for (UserRegisterDTO userRegisterDTO : userRegisterDTOS) {
-            // 初始化信息
-            User user = buildUser(userRegisterDTO, now);
-            UserRole userRole = new UserRole();
-            userRole.setId(IdUtil.fastSimpleUUID());
-            userRole.setUserId(user.getId());
-            userRole.setRoleId(CommonConstant.ROLE_USER_ID);
-            userRole.setState(State.ACTIVE);
-            userRole.setUpdateTime(now);
-            userRole.setCreateTime(now);
-            if (user.getStuNum().isEmpty() || user.getInstitute().isEmpty() || user.getName().isEmpty()) {
-                errorData.add(user);
-                continue;
+        User user = null;
+        try {
+            for (UserRegisterDTO userRegisterDTO : userRegisterDTOS) {
+                // 初始化信息
+                user = buildUser(userRegisterDTO, now);
+                UserRole userRole = new UserRole();
+                userRole.setId(IdUtil.fastSimpleUUID());
+                userRole.setUserId(user.getId());
+                userRole.setRoleId(CommonConstant.ROLE_USER_ID);
+                userRole.setState(State.ACTIVE);
+                userRole.setUpdateTime(now);
+                userRole.setCreateTime(now);
+                if (user.getStuNum().isEmpty() || user.getInstitute().isEmpty() || user.getName().isEmpty()) {
+                    errorData.add(user);
+                    continue;
+                }
+                // 检验账号是否已经被注册
+                if (!StrUtil.isEmpty(user.getStuNum()) && userRepository.existsByStuNumAndState(user.getStuNum(), State.ACTIVE)) {
+                    errorData.add(user);
+                    errorMsg.add(user.getStuNum() + "该学号已经被注册");
+                } else {
+                    successData.add(user);
+                    userRoles.add(userRole);
+                }
             }
-            // 检验账号是否已经被注册
-            if (userRepository.existsByStuNumAndState(user.getStuNum(), State.ACTIVE)) {
-                errorData.add(user);
-                errorMsg.add(user.getStuNum() + "该学号已经被注册");
-            } else {
-                successData.add(user);
-                userRoles.add(userRole);
-            }
+        } catch (Exception e) {
+            errorData.add(user);
+            errorMsg.add(e.getMessage());
         }
         userRepository.saveAllAndFlush(successData);
         userRoleRepository.saveAllAndFlush(userRoles);
@@ -139,7 +145,7 @@ public class UserService {
         user.setName(userRegisterDTO.getName());
         user.setStuNum(userRegisterDTO.getStuNum());
         user.setInstitute(userRegisterDTO.getInstitute());
-        user.setName(userRegisterDTO.getName());
+        user.setNickname(userRegisterDTO.getName());
         user.setMail(userRegisterDTO.getMail());
         user.setPwd(SaSecureUtil.md5(userRegisterDTO.getStuNum()));
         user.setId(IdUtil.fastSimpleUUID());
