@@ -2,28 +2,32 @@ package com.guet.ARC.service;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.cglib.CglibUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.dao.UserRepository;
+import com.guet.ARC.dao.UserRoleRepository;
+import com.guet.ARC.dao.mybatis.UserQueryRepository;
+import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.domain.Role;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.UserRole;
 import com.guet.ARC.domain.dto.user.*;
+import com.guet.ARC.domain.enums.State;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
-import com.guet.ARC.mapper.UserDynamicSqlSupport;
-import com.guet.ARC.mapper.UserMapper;
-import com.guet.ARC.mapper.UserRoleDynamicSqlSupport;
-import com.guet.ARC.mapper.UserRoleMapper;
 import com.guet.ARC.util.CommonUtils;
-import com.guet.ARC.util.RSAUtils;
 import com.guet.ARC.util.RedisCacheUtil;
-import org.mybatis.dynamic.sql.insert.render.BatchInsert;
+import com.guet.ARC.util.WxUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
-import org.mybatis.dynamic.sql.update.render.UpdateStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.stereotype.Service;
@@ -33,13 +37,21 @@ import org.springframework.util.StringUtils;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.mybatis.dynamic.sql.SqlBuilder.*;
+import static org.mybatis.dynamic.sql.SqlBuilder.isLikeWhenPresent;
+import static org.mybatis.dynamic.sql.SqlBuilder.select;
 
 @Service
+@Slf4j
 public class UserService {
 
     @Autowired
-    private UserMapper userMapper;
+    private UserRepository userRepository;
+
+    @Autowired
+    private UserRoleRepository userRoleRepository;
+
+    @Autowired
+    private UserQueryRepository userQueryRepository;
 
     @Autowired
     private RedisCacheUtil<String> redisCacheUtil;
@@ -48,63 +60,30 @@ public class UserService {
     private UserRoleService userRoleService;
 
     @Autowired
-    private UserRoleMapper userRoleMapper;
-
-    public Map<String, String> getPublicKey(Long currentTimeMillis) {
-        /*Map<String, String> keyPair = null;
-        try {
-            keyPair = RSAUtils.genKeyPair();
-            String privateKey = keyPair.get("private");
-            String publicKey = keyPair.get("public");
-            redisCacheUtil.setCacheObject(String.valueOf(currentTimeMillis), privateKey, 30, TimeUnit.SECONDS);
-
-        } catch (Exception e) {
-            throw new RuntimeException("私钥，密钥生成失败");
-        }*/
-        Map<String, String> map = new HashMap<>();
-        map.put("public", "public key");
-        return map;
-    }
+    private EmailService emailService;
 
     @Transactional(rollbackFor = RuntimeException.class)
     public Map<String, Object> register(UserRegisterDTO userRegisterDTO) {
         // 检验账号是否已经被注册
-        SelectStatementProvider statement = select(count())
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.stuNum, isEqualTo(userRegisterDTO.getStuNum()))
-                .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        SelectStatementProvider telStatement = select(count())
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.tel, isEqualTo(userRegisterDTO.getTel()))
-                .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        if (userMapper.count(statement) > 0) {
+        if (userRepository.existsByStuNumAndState(userRegisterDTO.getStuNum(), State.ACTIVE)) {
             throw new AlertException(1000, "学号" + userRegisterDTO.getStuNum() + "已被注册");
         }
-        if (userMapper.count(telStatement) > 0) {
-            throw new AlertException(1000, "手机号" + userRegisterDTO.getTel() + "已被注册");
+        if (userRepository.existsByMail(userRegisterDTO.getMail())) {
+            throw new AlertException(1000, "邮箱" + userRegisterDTO.getMail() + "已被注册");
         }
-        User user = new User();
-        long now = System.currentTimeMillis();
-        user.setState(CommonConstant.STATE_ACTIVE);
-        user.setCreateTime(now);
-        user.setUpdateTime(now);
-        String userId = CommonUtils.generateUUID();
-        String name = userRegisterDTO.getName();
-        String stuNum = userRegisterDTO.getStuNum();
-        String institute = userRegisterDTO.getInstitute();
-        String tel = userRegisterDTO.getTel();
-        String pwd = SaSecureUtil.md5(tel);
-        user.setTel(tel);
-        user.setName(name);
-        user.setStuNum(stuNum);
-        user.setInstitute(institute);
-        user.setNickname(name);
-        user.setPwd(pwd);
-        user.setId(userId);
-        userMapper.insertSelective(user);
-        userRoleService.setRole(userId, CommonConstant.ROLE_USER_ID);
+        // 校验code
+        Integer code = (Integer) redisCacheUtil.getCacheObject(userRegisterDTO.getStuNum());
+        if (null == code) {
+            // 不存在
+            throw new AlertException(1000, "验证码不存在");
+        }
+        // 验证验证码
+        if (!code.equals(userRegisterDTO.getCode())) {
+            throw new AlertException(1000, "验证码错误");
+        }
+        User user = buildUser(userRegisterDTO, System.currentTimeMillis());
+        userRepository.saveAndFlush(user);
+        userRoleService.setRole(user.getId(), CommonConstant.ROLE_USER_ID);
         // 返回信息
         Map<String, Object> map = new HashMap<>();
         // 用户登录
@@ -120,119 +99,70 @@ public class UserService {
     }
 
     public List<User> batchRegister(List<UserRegisterDTO> userRegisterDTOS, List<String> errorMsg) {
-        SelectStatementProvider statement = null;
-        SelectStatementProvider telStatement = null;
         long now = System.currentTimeMillis();
         List<User> errorData = new ArrayList<>();
         List<User> successData = new ArrayList<>();
         List<UserRole> userRoles = new ArrayList<>();
-        for (UserRegisterDTO userRegisterDTO : userRegisterDTOS) {
-            // 初始化信息
-            User user = new User();
-            user.setState(CommonConstant.STATE_ACTIVE);
-            user.setCreateTime(now);
-            user.setUpdateTime(now);
-            String userId = CommonUtils.generateUUID();
-            String name = userRegisterDTO.getName();
-            String stuNum = userRegisterDTO.getStuNum();
-            String institute = userRegisterDTO.getInstitute();
-            String tel = userRegisterDTO.getTel();
-            String pwd = SaSecureUtil.md5(tel);
-            user.setTel(tel);
-            user.setName(name);
-            user.setStuNum(stuNum);
-            user.setInstitute(institute);
-            user.setNickname(name);
-            user.setPwd(pwd);
-            user.setId(userId);
-            UserRole userRole = new UserRole();
-            userRole.setId(CommonUtils.generateUUID());
-            userRole.setUserId(userId);
-            userRole.setRoleId(CommonConstant.ROLE_USER_ID);
-            userRole.setState(CommonConstant.STATE_ACTIVE);
-            userRole.setUpdateTime(now);
-            userRole.setCreateTime(now);
-            if (stuNum.equals("") || institute.equals("") || tel.equals("") || name.equals("")) {
-                errorData.add(user);
-                continue;
-            }
-            // 检验账号是否已经被注册
-            statement = select(count())
-                    .from(UserDynamicSqlSupport.user)
-                    .where(UserDynamicSqlSupport.stuNum, isEqualTo(userRegisterDTO.getStuNum()))
-                    .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                    .build().render(RenderingStrategies.MYBATIS3);
-            telStatement = select(count())
-                    .from(UserDynamicSqlSupport.user)
-                    .where(UserDynamicSqlSupport.tel, isEqualTo(userRegisterDTO.getTel()))
-                    .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                    .build().render(RenderingStrategies.MYBATIS3);
-            long userStuNumCount = userMapper.count(statement);
-            long userTelCount = userMapper.count(telStatement);
-            if (userStuNumCount > 0 || userTelCount > 0) {
-                errorData.add(user);
-                if (userStuNumCount > 0) {
-                    errorMsg.add(stuNum + "该学号已经被注册");
+        User user = null;
+        try {
+            for (UserRegisterDTO userRegisterDTO : userRegisterDTOS) {
+                // 初始化信息
+                user = buildUser(userRegisterDTO, now);
+                UserRole userRole = new UserRole();
+                userRole.setId(IdUtil.fastSimpleUUID());
+                userRole.setUserId(user.getId());
+                userRole.setRoleId(CommonConstant.ROLE_USER_ID);
+                userRole.setState(State.ACTIVE);
+                userRole.setUpdateTime(now);
+                userRole.setCreateTime(now);
+                if (user.getStuNum().isEmpty() || user.getInstitute().isEmpty() || user.getName().isEmpty()) {
+                    errorData.add(user);
+                    continue;
                 }
-                if (userTelCount > 0) {
-                    errorMsg.add(tel + "该手机号已经被注册");
+                // 检验账号是否已经被注册
+                if (!StrUtil.isEmpty(user.getStuNum()) && userRepository.existsByStuNumAndState(user.getStuNum(), State.ACTIVE)) {
+                    errorData.add(user);
+                    errorMsg.add(user.getStuNum() + "该学号已经被注册");
+                } else {
+                    successData.add(user);
+                    userRoles.add(userRole);
                 }
-            } else {
-                successData.add(user);
-                userRoles.add(userRole);
             }
+        } catch (Exception e) {
+            errorData.add(user);
+            errorMsg.add(e.getMessage());
         }
-        BatchInsert<User> userBatchInsert = insertBatch(successData)
-                .into(UserDynamicSqlSupport.user)
-                .map(UserDynamicSqlSupport.id).toProperty("id")
-                .map(UserDynamicSqlSupport.nickname).toProperty("nickname")
-                .map(UserDynamicSqlSupport.pwd).toProperty("pwd")
-                .map(UserDynamicSqlSupport.stuNum).toProperty("stuNum")
-                .map(UserDynamicSqlSupport.name).toProperty("name")
-                .map(UserDynamicSqlSupport.tel).toProperty("tel")
-                .map(UserDynamicSqlSupport.institute).toProperty("institute")
-                .map(UserDynamicSqlSupport.state).toProperty("state")
-                .map(UserDynamicSqlSupport.updateTime).toProperty("updateTime")
-                .map(UserDynamicSqlSupport.createTime).toProperty("createTime")
-                .build().render(RenderingStrategies.MYBATIS3);
-        BatchInsert<UserRole> userRoleBatchInsert = insertBatch(userRoles)
-                .into(UserRoleDynamicSqlSupport.userRole)
-                .map(UserRoleDynamicSqlSupport.id).toProperty("id")
-                .map(UserRoleDynamicSqlSupport.userId).toProperty("userId")
-                .map(UserRoleDynamicSqlSupport.roleId).toProperty("roleId")
-                .map(UserRoleDynamicSqlSupport.state).toProperty("state")
-                .map(UserRoleDynamicSqlSupport.updateTime).toProperty("updateTime")
-                .map(UserRoleDynamicSqlSupport.createTime).toProperty("createTime")
-                .build().render(RenderingStrategies.MYBATIS3);
-        userBatchInsert.insertStatements().forEach(userMapper::insert);
-        userRoleBatchInsert.insertStatements().forEach(userRoleMapper::insert);
+        userRepository.saveAllAndFlush(successData);
+        userRoleRepository.saveAllAndFlush(userRoles);
         return errorData;
+    }
+
+    private User buildUser(UserRegisterDTO userRegisterDTO, long now) {
+        User user = new User();
+        user.setState(State.ACTIVE);
+        user.setCreateTime(now);
+        user.setUpdateTime(now);
+        user.setName(userRegisterDTO.getName());
+        user.setStuNum(userRegisterDTO.getStuNum());
+        user.setInstitute(userRegisterDTO.getInstitute());
+        user.setNickname(userRegisterDTO.getName());
+        user.setMail(userRegisterDTO.getMail());
+        user.setPwd(SaSecureUtil.md5(userRegisterDTO.getStuNum()));
+        user.setId(IdUtil.fastSimpleUUID());
+        return user;
     }
 
     // 使用https连接，无需进行密码加密
     public Map<String, Object> login(UserLoginDTO userLoginDTO) {
         String pwd = SaSecureUtil.md5(userLoginDTO.getPwd());
-        SelectStatementProvider queryStatement = select(UserMapper.selectList)
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.tel, isEqualTo(userLoginDTO.getTel()))
-                .and(UserDynamicSqlSupport.pwd, isEqualTo(pwd))
-                .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        Optional<User> userOptional = userMapper.selectOne(queryStatement);
-        User user = null;
-        Map<String, Object> map = null;
+        Optional<User> userOptional = userRepository.findByStuNumAndPwdAndState(userLoginDTO.getStuNum(), pwd, State.ACTIVE);
+        User user;
+        Map<String, Object> map;
         if (userOptional.isPresent()) {
             user = userOptional.get();
             map = new HashMap<>();
-            // 用户登录
-            StpUtil.login(user.getId());
-            // 获取登录token
-            String token = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
-            // 后台存储用户信息
-            StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", user.getId());
-            // 返回结果
-            map.put("user", user);
-            map.put("token", token);
+            login(map, user);
+            map.put("roles", StpUtil.getRoleList());
         } else {
             throw new AlertException(1000, "账号或者密码错误");
         }
@@ -241,27 +171,13 @@ public class UserService {
 
     public Map<String, Object> adminLogin(UserLoginDTO userLoginDTO) {
         String pwd = SaSecureUtil.md5(userLoginDTO.getPwd());
-        SelectStatementProvider queryStatement = select(UserMapper.selectList)
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.tel, isEqualTo(userLoginDTO.getTel()))
-                .and(UserDynamicSqlSupport.pwd, isEqualTo(pwd))
-                .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        Optional<User> userOptional = userMapper.selectOne(queryStatement);
-        User user = null;
-        Map<String, Object> map = null;
+        Optional<User> userOptional = userRepository.findByStuNumAndPwdAndState(userLoginDTO.getStuNum(), pwd, State.ACTIVE);
+        User user;
+        Map<String, Object> map;
         if (userOptional.isPresent()) {
             user = userOptional.get();
             map = new HashMap<>();
-            // 用户登录
-            StpUtil.login(user.getId());
-            // 获取登录token
-            String token = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
-            // 后台存储用户信息
-            StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", user.getId());
-            // 返回结果
-            map.put("user", user);
-            map.put("token", token);
+            login(map, user);
             // 获取权限列表
             List<String> roleList = StpUtil.getRoleList();
             if (roleList.contains(CommonConstant.ADMIN_ROLE) || roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
@@ -272,12 +188,99 @@ public class UserService {
                 StpUtil.logout();
                 throw new AlertException(1000, "您不是管理员，没有权限登录后台管理");
             }
-        }else {
+        } else {
             throw new AlertException(1000, "账号或者密码错误");
         }
         return map;
     }
 
+    // 微信登录
+    public Map<String, Object> wxLogin(String code) {
+        // 获取openId
+        String openid = WxUtils.getOpenid(code);
+
+        // 查询用户是否已经绑定了，没有绑定则无法登录
+        if (StrUtil.isEmpty(openid)) {
+            throw new AlertException(1000, "用户标识获取失败");
+        }
+        // 判断是否已经绑定
+//        log.info("openId:{}", openid);
+        Optional<User> userOptional = userRepository.findByOpenId(openid);
+        Map<String, Object> map = new HashMap<>();
+        ;
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            map.put("canWxLogin", true);
+            login(map, user);
+            map.put("roles", StpUtil.getRoleList());
+        } else {
+            map.put("canWxLogin", false);
+        }
+        return map;
+    }
+
+    private void login(Map<String, Object> map, User user) {
+        // 用户登录
+        StpUtil.login(user.getId());
+        // 获取登录token
+        String token = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
+        // 后台存储用户信息
+        StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", user.getId());
+        // 返回结果
+        map.put("user", user);
+        map.put("token", token);
+        map.put("isBindWx", !StrUtil.isEmpty(user.getOpenId()));
+        user.setPwd("");
+        user.setOpenId("");
+    }
+
+    // 绑定微信
+    public void bindWx(String code) {
+        // 获取openId
+        String openid = WxUtils.getOpenid(code);
+        // 查询用户是否已经绑定了，没有绑定则无法登录
+        if (StrUtil.isEmpty(openid)) {
+            throw new AlertException(1000, "用户标识获取失败");
+        }
+        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            throw new AlertException(ResultCode.USER_NOT_EXIST);
+        }
+        // 是否已经绑定其他用户了
+        Optional<User> userOptionalOpenId = userRepository.findByOpenId(openid);
+        userOptionalOpenId.ifPresent(userByOpenId -> {
+            String account = userByOpenId.getStuNum();
+            if (!account.equals(userOptional.get().getStuNum())) {
+                throw new AlertException(1000, "微信只允许绑定一个账号，您的微信已绑定账号：" + account + "。如果这不是您的账号请及时联系客服处理。");
+            }
+        });
+        User user = userOptional.get();
+        if (StrUtil.isEmpty(user.getOpenId())) {
+            user.setUpdateTime(System.currentTimeMillis());
+            user.setOpenId(openid);
+            userRepository.save(user);
+        } else if (user.getOpenId().equals(openid)) {
+            // 与获取的Openid相同
+        }
+    }
+
+    public void unBindWx(String code) {
+        // 获取openId
+        String openid = WxUtils.getOpenid(code);
+        // 查询用户是否已经绑定了，没有绑定则无法登录
+        if (StrUtil.isEmpty(openid)) {
+            throw new AlertException(1000, "用户标识获取失败");
+        }
+        Optional<User> userOptional = userRepository.findByOpenId(openid);
+        if (userOptional.isEmpty()) {
+            throw new AlertException(ResultCode.USER_NOT_EXIST);
+        }
+        User user = userOptional.get();
+        user.setOpenId("");
+        user.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(user);
+    }
 
     public PageInfo<UserRoleVo> queryUserList(UserListQueryDTO userListQueryDTO) {
         Integer page = userListQueryDTO.getPage();
@@ -286,14 +289,14 @@ public class UserService {
         String institute = userListQueryDTO.getInstitute();
         name = StringUtils.hasLength(name) ? name + "%" : null;
         institute = StringUtils.hasLength(institute) ? institute + "%" : null;
-        SelectStatementProvider queryStatement = select(UserMapper.selectList)
+        SelectStatementProvider queryStatement = select(UserQueryRepository.selectList)
                 .from(UserDynamicSqlSupport.user)
                 .where(UserDynamicSqlSupport.name, isLikeWhenPresent(name))
                 .and(UserDynamicSqlSupport.institute, isLikeWhenPresent(institute))
                 .orderBy(UserDynamicSqlSupport.createTime.descending())
                 .build().render(RenderingStrategies.MYBATIS3);
         Page<User> queryDataPage = PageHelper.startPage(page, size);
-        List<User> users = userMapper.selectMany(queryStatement);
+        List<User> users = userQueryRepository.selectMany(queryStatement);
         List<UserRoleVo> userRoleVos = new ArrayList<>();
         BeanCopier userCopier = BeanCopier.create(User.class, UserRoleVo.class, false);
         for (User user : users) {
@@ -301,7 +304,6 @@ public class UserService {
             userCopier.copy(user, userRoleVo, null);
             userRoleVo.setRoleList(userRoleService.queryRoleByUserId(user.getId()));
             userRoleVo.setName(CommonUtils.encodeName(userRoleVo.getName()));
-            userRoleVo.setTel(CommonUtils.encodeTel(userRoleVo.getTel()));
             userRoleVos.add(userRoleVo);
         }
         PageInfo<UserRoleVo> pageInfo = new PageInfo<>();
@@ -311,111 +313,84 @@ public class UserService {
         return pageInfo;
     }
 
-    /**
-     * 获取验证码
-     *
-     * @param tel 手机号
-     * @return 验证码
-     */
-    public Map<String, String> getVerifyCode(String tel) {
-        // 是否已经生成验证码
-        String keyCache = (String) redisCacheUtil.getCacheObject(tel);
-        Map<String, String> map = new HashMap<>();
-        if (StringUtils.hasLength(keyCache)) {
-            // 已经生成验证码，重复获取，抛出错误
-            Long expire = redisCacheUtil.getExpire(tel);
-            throw new AlertException(1000, "验证码已经生成,重复获取,请" + expire + "s后重新获取");
+    // 获取邮箱验证码
+    public void sendVerifyCode(String stuNum, String mail) {
+        Optional<User> userOptional = userRepository.findByStuNum(stuNum);
+        Integer code = RandomUtil.randomInt(1000, 9999);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (user.getState().equals(State.NEGATIVE)) {
+                throw new AlertException(1000, "抱歉，账户" + stuNum + "处于不可用状态,无法操作");
+            }
+            // 判断邮箱绑定是否一致
+            if (StrUtil.isEmpty(user.getMail())) {
+                throw new AlertException(1000, "账户" + stuNum + "未绑定邮箱");
+            }
+
+            // 发送验证码并缓存，有效时间未5分钟
+            String message = "您的验证码为：" + code + "。有效期为5分钟。请勿将该验证码泄露给任何人！";
+            // 缓存code
+            redisCacheUtil.setCacheObject(stuNum, code, 5, TimeUnit.MINUTES);
+            // 发送短信
+            emailService.sendSimpleMail(user.getMail(), "房间预约与流动统计App,邮箱验证码", message);
+        } else {
+            // 新注册用户
+            if (!StrUtil.isEmpty(mail)) {
+                // 发送验证码并缓存，有效时间未5分钟
+                String message = "您的验证码为：" + code + "。有效期为5分钟。请勿将该验证码泄露给任何人！";
+                // 缓存code
+                redisCacheUtil.setCacheObject(stuNum, code, 5, TimeUnit.MINUTES);
+                // 发送短信
+                emailService.sendSimpleMail(mail, "房间预约与流动统计App,邮箱验证码", message);
+            }
         }
-        // 验证是否有该用户，检验手机号
-        SelectStatementProvider statementProvider = select(UserMapper.selectList)
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
-                .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        List<User> users = userMapper.selectMany(statementProvider);
-        if (users.size() != 1) {
-            throw new AlertException(ResultCode.USER_NOT_EXIST);
-        }
-        // 生成验证码并返回
-        // 随机四位验证码
-        String code = String.valueOf((new Random().nextInt(8999) + 1000));
-        redisCacheUtil.setCacheObject(tel, code, 120, TimeUnit.SECONDS);
-        map.put("code", code);
-        return map;
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
-    public void updatePwd(UserUpdatePwdDTO userUpdatePwdDTO) {
-        String pwd = userUpdatePwdDTO.getPwd();
-        // 验证验证码
-        String code = redisCacheUtil.getCacheObject(userUpdatePwdDTO.getTel());
-        if (!StringUtils.hasLength(code)) {
-            throw new AlertException(1000, "请重新获取验证码");
+    public void updatePwd(UserUpdatePwdDTO dto) {
+        // 获取code
+        Integer code = (Integer) redisCacheUtil.getCacheObject(dto.getStuNum());
+        if (null == code) {
+            // 不存在
+            throw new AlertException(1000, dto.getStuNum() + "未获取验证码或验证码已过期");
         }
-        if (!code.equals(userUpdatePwdDTO.getCode())) {
+        // 验证验证码
+        if (!code.equals(dto.getCode())) {
             throw new AlertException(1000, "验证码错误");
         }
-        // 验证手机号
-        // 验证是否有该用户，检验手机号
-        SelectStatementProvider statementProvider = select(UserMapper.selectList)
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.tel, isEqualTo(userUpdatePwdDTO.getTel()))
-                .and(UserDynamicSqlSupport.state, isEqualTo(CommonConstant.STATE_ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        List<User> users = userMapper.selectMany(statementProvider);
-        if (users.size() != 1) {
-            throw new AlertException(ResultCode.USER_NOT_EXIST);
+        // 更新密码
+        Optional<User> userOptional = userRepository.findByStuNum(dto.getStuNum());
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setUpdateTime(System.currentTimeMillis());
+            user.setPwd(SaSecureUtil.md5(dto.getPwd()));
+            redisCacheUtil.deleteObject(dto.getStuNum());
+            userRepository.save(user);
         }
-        // 清除存储的code
-        redisCacheUtil.deleteObject(userUpdatePwdDTO.getTel());
-        // 修改密码
-        User user = users.get(0);
-        user.setPwd(SaSecureUtil.md5(pwd));
-        int update = userMapper.updateByPrimaryKeySelective(user);
-        if (update == 0) {
-            throw new AlertException(ResultCode.SYSTEM_ERROR);
-        }
-
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
-    public void updatePersonalInfo(UserUpdateDTO userUpdateDTO) {
-        String errorMsg = "";
-        boolean errorFlag = false;
+    public void updatePersonalInfo(Map<String, String> userInfo) {
         String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        // 我提交的手机号是不是已经被其他人注册了
-        if (StringUtils.hasLength(userMapper.isTelExisted(userUpdateDTO.getTel(), userIdContext))) {
-            errorMsg += userUpdateDTO.getTel() + "手机号已被注册,";
-            errorFlag = true;
+        Optional<User> userOptional = userRepository.findById(userIdContext);
+        if (!StrUtil.isEmpty(userInfo.get("mail"))) {
+            // 我提交的邮箱是不是已经被其他人注册了
+            Optional<User> userByMailOptional = userRepository.findByMail(userInfo.get("mail"));
+            if (userByMailOptional.isPresent()) {
+                if (!userIdContext.equals(userByMailOptional.get().getId())) {
+                    throw new AlertException(1000, userInfo.get("mail") + "邮箱已被注册");
+                }
+            }
         }
-        // 我提交的邮箱是不是已经被其他人注册了
-        if (StringUtils.hasLength(userMapper.isMailExisted(userUpdateDTO.getMail(), userIdContext))) {
-            errorMsg += userUpdateDTO.getMail() + "邮箱已被注册";
-            errorFlag = true;
-        }
-        if (errorFlag) {
-            throw new AlertException(1000, errorMsg);
-        }
-        // 获取用户24小时可更新个人信息次数
-        Integer leftUpdateTimes = (Integer) redisCacheUtil.getCacheObject(userUpdateDTO.getId() + "updateInfo");
-        if (leftUpdateTimes != null) {
-            throw new AlertException(ResultCode.UPDATE_USERINFO_OUT_OF_TIMES);
-        } else {
-            redisCacheUtil.setCacheObject(userUpdateDTO.getId() + "updateInfo", 0, 24, TimeUnit.HOURS);
-        }
-        // 更新用户信息
-        User user = new User();
-        user.setId(userUpdateDTO.getId());
-        user.setStuNum(userUpdateDTO.getStuNum());
-        user.setName(userUpdateDTO.getName());
-        user.setInstitute(userUpdateDTO.getInstitute());
-        user.setNickname(userUpdateDTO.getStuNum() + user.getName());
-        user.setMail(userUpdateDTO.getMail());
-        user.setTel(userUpdateDTO.getTel());
-        int update = userMapper.updateByPrimaryKeySelective(user);
-        if (update == 0) {
-            throw new AlertException(ResultCode.SYSTEM_ERROR);
-        }
+        userOptional.ifPresent(user -> {
+            // 避免修改查询后的数据，触发jpa脏检查，触发多余更新
+            User updateUserInfo = new User();
+            CglibUtil.copy(user, updateUserInfo);
+            CglibUtil.fillBean(userInfo, updateUserInfo);
+//            log.info("user or:{}", user);
+//            log.info("update user: {}", updateUserInfo);
+            updateUserInfo.setUpdateTime(System.currentTimeMillis());
+            userRepository.save(updateUserInfo);
+        });
     }
 
     public void changeUserRole(String userId, String[] roleIds) {
@@ -429,22 +404,18 @@ public class UserService {
         userRoleService.changeRole(userId, roleIds);
     }
 
-    public User userCanBeCurrentRoomCharger(String tel, String name) {
-        SelectStatementProvider statement = select(UserMapper.selectList)
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
-                .build().render(RenderingStrategies.MYBATIS3);
-        Optional<User> userOptional = userMapper.selectOne(statement);
-        User user = null;
+    public User userCanBeCurrentRoomCharger(String stuNum, String name) {
+        Optional<User> userOptional = userRepository.findByStuNum(stuNum);
+        User user;
         if (userOptional.isPresent()) {
             user = userOptional.get();
             // 是否可用
-            if (user.getState().equals(CommonConstant.STATE_NEGATIVE)) {
+            if (user.getState().equals(State.NEGATIVE)) {
                 throw new AlertException(1000, name + "负责人账户处于不可用状态");
             }
-            // 是否对应
+            // 姓名是否对应
             if (!user.getName().equals(name)) {
-                throw new AlertException(999, "负责人" + name + "的手机号:" + tel + ",与注册的手机号:" + user.getTel() + "不符");
+                throw new AlertException(1000, "学号/工号与注册姓名不匹配");
             }
             // 判断权限
             List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
@@ -456,38 +427,19 @@ public class UserService {
                 throw new AlertException(1000, name + "不是管理员，无法设置成负责人");
             }
         } else {
-            // 相同姓名用户是否已经存在
-            SelectStatementProvider statementProvider = select(UserMapper.selectList)
-                    .from(UserDynamicSqlSupport.user)
-                    .where(UserDynamicSqlSupport.name, isEqualTo(name))
-                    .build().render(RenderingStrategies.MYBATIS3);
-            Optional<User> oldUserOptional = userMapper.selectOne(statementProvider);
-            if (oldUserOptional.isPresent()) {
-                // 已经存在重名用户，所以手机号可能有问题
-                throw new AlertException(1000, name + "已经注册" + ",请检查ta的手机号"+ tel +"是否正确");
-            } else {
-                throw new AlertException(1000, name + "负责人的账号" + tel + "未注册");
-            }
+            throw new AlertException(1000, "学号/工号错误，或者负责人" + stuNum + name + "未注册");
         }
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
-    public User userBeCurrentRoomCharger(String tel, String name) {
-        SelectStatementProvider statement = select(UserMapper.selectList)
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.tel, isEqualTo(tel))
-                .build().render(RenderingStrategies.MYBATIS3);
-        Optional<User> userOptional = userMapper.selectOne(statement);
-        User user = null;
+    public User userBeCurrentRoomCharger(String stuNum, String name) {
+        Optional<User> userOptional = userRepository.findByStuNum(stuNum);
+        User user;
         if (userOptional.isPresent()) {
             user = userOptional.get();
             // 是否可用
-            if (user.getState().equals(CommonConstant.STATE_NEGATIVE)) {
+            if (user.getState().equals(State.NEGATIVE)) {
                 throw new AlertException(999, name + "负责人账户处于不可用状态");
-            }
-            // 是否对应
-            if (!user.getName().equals(name)) {
-                throw new AlertException(999, "负责人" + name + "的手机号:" + tel + ",与注册的手机号:" + user.getTel() + "不符");
             }
             // 判断权限
             List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
@@ -498,78 +450,52 @@ public class UserService {
                 userRoleService.setRole(user.getId(), CommonConstant.ROLE_ADMIN_ID);
             }
         } else {
-            // 相同姓名用户是否已经存在
-            SelectStatementProvider statementProvider = select(UserMapper.selectList)
-                    .from(UserDynamicSqlSupport.user)
-                    .where(UserDynamicSqlSupport.name, isEqualTo(name))
-                    .build().render(RenderingStrategies.MYBATIS3);
-            Optional<User> oldUserOptional = userMapper.selectOne(statementProvider);
-            if (oldUserOptional.isPresent()) {
-                // 已经存在重名用户，所以手机号可能有问题
-                User oldUser = oldUserOptional.get();
-                throw new AlertException(999, name + "已经注册手机号:" + oldUser.getTel() + ",请检查手机号:"+ tel +"是否正确");
-            } else {
-                // 给用户注册并设置为管理员
-                // 初始化信息
-                long now = System.currentTimeMillis();
-                User newUser = new User();
-                newUser.setState(CommonConstant.STATE_ACTIVE);
-                newUser.setCreateTime(now);
-                newUser.setUpdateTime(now);
-                String pwd = SaSecureUtil.md5(tel);
-                newUser.setTel(tel);
-                newUser.setName(name);
-                newUser.setNickname(name);
-                newUser.setStuNum(tel);
-                newUser.setInstitute("计算机与信息安全学院");
-                newUser.setPwd(pwd);
-                newUser.setId(CommonUtils.generateUUID());
-                userMapper.insertSelective(newUser);
-                // 设置权限
-                userRoleService.setRole(newUser.getId(), CommonConstant.ROLE_USER_ID);
-                userRoleService.setRole(newUser.getId(), CommonConstant.ROLE_ADMIN_ID);
-                return newUser;
-            }
+            // 要设置的负责人未注册
+            throw new AlertException(1000, "学号/工号错误，或者负责人" + stuNum + name + "未注册");
         }
         return user;
     }
 
-    public void updateUserTel(UserUpdateTelDTO userUpdateTelDTO) {
-        // 我提交的手机号是不是已经被其他人注册了
-        String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        if (StringUtils.hasLength(userMapper.isTelExisted(userUpdateTelDTO.getTel(), userIdContext))) {
-            throw new AlertException(1000, userUpdateTelDTO.getTel() + "手机号已被注册");
-        }
-        UpdateStatementProvider update = update(UserDynamicSqlSupport.user)
-                .set(UserDynamicSqlSupport.tel).equalTo(userUpdateTelDTO.getTel())
-                .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
-                .where(UserDynamicSqlSupport.id, isEqualTo(userUpdateTelDTO.getUserId()))
-                .build().render(RenderingStrategies.MYBATIS3);
-        if (userMapper.update(update) == 0) {
-            throw new AlertException(ResultCode.UPDATE_ERROR);
-        }
-    }
-
     public void updateUserName(UserUpdateNameDTO userUpdateNameDTO) {
-        UpdateStatementProvider update = update(UserDynamicSqlSupport.user)
-                .set(UserDynamicSqlSupport.name).equalTo(userUpdateNameDTO.getName())
-                .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
-                .where(UserDynamicSqlSupport.id, isEqualTo(userUpdateNameDTO.getUserId()))
-                .build().render(RenderingStrategies.MYBATIS3);
-        if (userMapper.update(update) == 0) {
-            throw new AlertException(ResultCode.UPDATE_ERROR);
-        }
+        User user = new User();
+        user.setName(userUpdateNameDTO.getName());
+        user.setId(userUpdateNameDTO.getUserId());
+        user.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(user);
     }
 
     public void updateUserNickname(UserUpdateNicknameDTO userUpdateNicknameDTO) {
-        UpdateStatementProvider update = update(UserDynamicSqlSupport.user)
-                .set(UserDynamicSqlSupport.nickname).equalTo(userUpdateNicknameDTO.getNickname())
-                .set(UserDynamicSqlSupport.updateTime).equalTo(System.currentTimeMillis())
-                .where(UserDynamicSqlSupport.id, isEqualTo(userUpdateNicknameDTO.getUserId()))
-                .build().render(RenderingStrategies.MYBATIS3);
-        if (userMapper.update(update) == 0) {
-            throw new AlertException(ResultCode.UPDATE_ERROR);
+        User user = new User();
+        user.setNickname(userUpdateNicknameDTO.getNickname());
+        user.setId(userUpdateNicknameDTO.getUserId());
+        user.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(user);
+    }
+
+    public Map<String, Object> refreshToken(String userId, String token) {
+        // 用的redis存储，时间一到token就会被清楚，变为未登录，所以直接判定当前会话有没有登录即可
+        // 判定当前会话是否登录
+        Map<String, Object> res = new HashMap<>();
+        if (StpUtil.getLoginIdDefaultNull() == null) {
+            // 会话过期，进行续期
+            // 用户是否存在
+            if (!userRepository.existsById(userId)) {
+                throw new AlertException(ResultCode.USER_NOT_EXIST);
+            }
+            // 用户登录
+            StpUtil.login(userId);
+            // 获取登录token
+            String loginToken = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
+            // 后台存储用户信息
+            StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", userId);
+            // 返回结果
+            res.put("token", loginToken);
+            res.put("isNeedRefresh", Boolean.TRUE);
+        } else {
+            res.put("token", "");
+            res.put("isNeedRefresh", Boolean.FALSE);
         }
+        return res;
     }
 
 }

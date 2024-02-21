@@ -4,12 +4,15 @@ server:
 spring:
   mvc:
     pathmatch:
-      matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题.
+      matching-strategy: ant_path_matcher # 解决swagger与spirng2.6+版本问题
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
     username: your username
     password: your password
+    hikari:
+      maximum-pool-size: 10
+      max-lifetime: 180000
   redis:
     host: 127.0.0.1
     port: 6379
@@ -46,22 +49,17 @@ spring:
   documentation:
     swagger-ui:
       enabled: true
-  flyway:
-    # 禁止清理数据库表
-    clean-disabled: true
-    # 如果数据库不是空表，需要设置成 true
-    baseline-on-migrate: true
-    # 与 baseline-on-migrate: true 搭配使用
-    baseline-version: 0
-    locations:
-      - classpath:flyway/mysql
+  jpa:
+    show-sql: false
+    open-in-view: false
+    generate-ddl: false
 
 # Sa-Token 配置
 sa-token:
   # token名称 (同时也是cookie名称)
   token-name: token
   # token有效期，单位s 默认30天, -1代表永不过期
-  timeout: 3600 # 30天 2592000
+  timeout: 36000 # 30天 2592000
   # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
   activity-timeout: -1
   # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
@@ -72,7 +70,9 @@ sa-token:
   token-style: tik
   # 是否输出操作日志
   is-log: true
-
 #logging:
 #  level:
-#    com.guet.ARC.mapper.UserMapper: debug
+#    com.guet.ARC.dao: debug
+mybatis:
+  configuration:
+    default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler

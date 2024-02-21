@@ -21,7 +21,7 @@ public class RoomAddUpdateDTO {
 
     private String chargePerson;
 
-    private String chargePersonTel;
-
     private String chargePersonId;
+
+    private String stuNum;
 }

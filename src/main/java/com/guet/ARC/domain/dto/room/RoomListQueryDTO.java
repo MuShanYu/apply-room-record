@@ -1,12 +1,14 @@
 package com.guet.ARC.domain.dto.room;
 
 import lombok.Data;
+import lombok.ToString;
 import org.hibernate.validator.constraints.Range;
 
 import javax.validation.constraints.Min;
 
 
 @Data
+@ToString
 public class RoomListQueryDTO {
     @Min(1)
     private Integer page;
@@ -22,5 +24,5 @@ public class RoomListQueryDTO {
 
     private String roomName;
 
-    private String chargeUserId;
+    private String chargePersonId;
 }

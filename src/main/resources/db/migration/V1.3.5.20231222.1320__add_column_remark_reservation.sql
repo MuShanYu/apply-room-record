@@ -1,0 +1,1 @@
+alter table tbl_room_reservation add column remark varchar(256) default '' comment '备注，用于记录审核拒绝or通过原因';

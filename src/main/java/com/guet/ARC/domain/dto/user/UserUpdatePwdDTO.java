@@ -6,9 +6,9 @@ import lombok.ToString;
 @Data
 @ToString
 public class UserUpdatePwdDTO {
-    private String tel;
+    private String stuNum;
 
-    private String code;
+    private Integer code;
 
     private String pwd;
 }

@@ -21,9 +21,6 @@ public class UserUpdateDTO {
     @Length(min = 2, max = 62)
     private String institute;
 
-    @Length(min = 11)
-    private String tel;
-
     @Length(min = 2, max = 62)
     private String mail;
 }
