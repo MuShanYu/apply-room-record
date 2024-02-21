@@ -1,12 +1,14 @@
 package com.guet.ARC.domain.vo.room;
 
-import com.guet.ARC.domain.Room;
+import com.guet.ARC.domain.enums.ReservationState;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class RoomReservationAdminVo extends Room {
+@ToString
+public class RoomReservationAdminVo {
+
+    private String id;
     private String name;
 
     private String roomUsage;
@@ -20,4 +22,26 @@ public class RoomReservationAdminVo extends Room {
     private String roomId;
 
     private String userId;
+
+    private String school;
+
+    private String teachBuilding;
+
+    private String category;
+
+    private String roomName;
+
+    private String equipmentInfo;
+
+    private String capacity;
+
+    private ReservationState state;
+
+    private Long updateTime;
+
+    private Long createTime;
+
+    private String stuNum;
+
+    private String remark;
 }

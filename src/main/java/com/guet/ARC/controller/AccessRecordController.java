@@ -5,6 +5,7 @@ import cn.dev33.satoken.annotation.SaMode;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.domain.AccessRecord;
 import com.guet.ARC.domain.dto.record.AddRecordDTO;
 import com.guet.ARC.domain.dto.record.UserAccessCountDataQueryDTO;
 import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
@@ -53,6 +54,16 @@ public class AccessRecordController {
         return accessRecordService.queryUserAccessRecordList(page, size);
     }
 
+    @GetMapping("/record/query/list/can-apply")
+    @ApiOperation(value = "查询用户记录列表")
+    public PageInfo<UserAccessRecordVo> queryCanApplyAccessRecordListApi(@Min(1)
+                                                                         @RequestParam("page") Integer page,
+                                                                         @Range(min = 1, max = 100)
+                                                                         @RequestParam("size") Integer size,
+                                                                         @RequestParam("roomName") String roomName) {
+        return accessRecordService.queryCanApplyAccessRecordList(page, size, roomName);
+    }
+
     @PostMapping("/record/query/list/byRoomId")
     @ApiOperation(value = "根据房间ID查询用户记录列表")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
@@ -74,8 +85,8 @@ public class AccessRecordController {
     @ApiOperation(value = "导出根据房间ID查询用户记录统计信息")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public void exportUserAccessCountDataApi(HttpServletResponse response,
-                                                  @Valid @RequestBody
-                                                  UserAccessCountDataQueryDTO userAccessCountDataQueryDTO) {
+                                             @Valid @RequestBody
+                                             UserAccessCountDataQueryDTO userAccessCountDataQueryDTO) {
         accessRecordService.exportUserAccessCountData(userAccessCountDataQueryDTO, response);
     }
 
@@ -107,5 +118,18 @@ public class AccessRecordController {
                                                                           @NotEmpty @RequestParam("userId")
                                                                           String userId) {
         return accessRecordService.queryUserAccessCountAdmin(page, size, userId);
+    }
+
+    @GetMapping("/record/get/{id}")
+    @ApiOperation(value = "根据id查询进出记录")
+    public AccessRecord findByIdApi(@PathVariable("id") String id) {
+        return accessRecordService.findById(id);
+    }
+
+    // 查询当前用户房间签到信息
+    @GetMapping("/record/query/room/sign")
+    @ApiOperation(value = "查询当前用户房间签到信息")
+    public Object queryRoomAccessRecordNowApi() {
+        return accessRecordService.queryRoomAccessRecordNow();
     }
 }

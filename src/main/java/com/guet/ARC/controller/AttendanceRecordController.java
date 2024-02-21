@@ -39,7 +39,6 @@ public class AttendanceRecordController {
 
     @PostMapping("/attendance/query/detail/list")
     @ApiOperation(value = "查询签到详情列表")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public PageInfo<AttendanceDetailListVo> queryAttendanceCountDetailList(@Valid @RequestBody AttendanceDetailListDTO queryDTO) {
         return attendanceService.queryAttendanceDetailList(queryDTO);
     }

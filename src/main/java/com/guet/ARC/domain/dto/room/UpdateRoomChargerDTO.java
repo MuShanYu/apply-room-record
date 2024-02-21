@@ -13,7 +13,7 @@ public class UpdateRoomChargerDTO {
 
     private String chargePerson;
 
-    private String chargePersonTel;
+    private String chargePersonStNum;
 
     private String originChargePersonId;
 }

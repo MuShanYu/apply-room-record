@@ -16,7 +16,7 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.OAS_30)
                 .apiInfo(apiInfo())
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("com.guet.ARC.controller"))	// 为当前包路径
+                .apis(RequestHandlerSelectors.basePackage("com.guet.ARC"))	// 为当前包路径
                 .paths(PathSelectors.any())
                 .build();
     }

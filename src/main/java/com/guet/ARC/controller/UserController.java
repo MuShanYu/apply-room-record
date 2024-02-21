@@ -6,6 +6,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.service.UserService;
@@ -42,6 +43,24 @@ public class UserController {
         return userService.login(userLoginDTO);
     }
 
+    @PostMapping("/user/wx/login/{code}")
+    @ApiOperation(value = "用户微信登录")
+    public Map<String, Object> wxLoginApi(@PathVariable("code") String code) {
+        return userService.wxLogin(code);
+    }
+
+    @PutMapping("/user/wx/bind/{code}")
+    @ApiOperation(value = "用户绑定微信")
+    public void wxBindApi(@PathVariable("code") String code) {
+        userService.bindWx(code);
+    }
+
+    @PutMapping("/user/wx/unBind/{code}")
+    @ApiOperation(value = "用户解除绑定微信")
+    public void wxUnBindApi(@PathVariable("code") String code) {
+        userService.unBindWx(code);
+    }
+
     @GetMapping("/user/logout")
     @ApiOperation(value = "用户退出登录")
     public void logoutApi() {
@@ -50,14 +69,15 @@ public class UserController {
 
     @PostMapping("/user/update/userInfo")
     @ApiOperation(value = "修改用户信息")
-    public void updateUserInfoApi(@Valid @RequestBody UserUpdateDTO userUpdateDTO) {
-        userService.updatePersonalInfo(userUpdateDTO);
+    public void updateUserInfoApi(@Valid @RequestBody Map<String, String> userInfo) {
+        userService.updatePersonalInfo(userInfo);
     }
 
     @GetMapping("/user/get/verifyCode")
-    @ApiOperation(value = "获取六位验证码")
-    public Map<String, String> getVerifyCodeApi(@RequestParam("tel") String tel) {
-        return userService.getVerifyCode(tel);
+    @ApiOperation(value = "获取4位验证码")
+    public void getVerifyCodeApi(@RequestParam("stuNum") String stuNum,
+                                 @RequestParam(value = "mail", required = false) String mail) {
+        userService.sendVerifyCode(stuNum, mail);
     }
 
     @PostMapping("/user/update/pwd")
@@ -89,19 +109,12 @@ public class UserController {
     @PostMapping("/admin/batchInsert/users")
     @ApiOperation(value = "批量导入用户信息")
     @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
-    public Map<String, Object> batchInsertUsersApi(@RequestBody List<UserRegisterDTO> registerDTOS) {
+    public Map<String, Object> batchInsertUsersApi(@RequestBody @Valid List<UserRegisterDTO> registerDTOS) {
         Map<String, Object> res = new HashMap<>();
         List<String> errorMsg = new ArrayList<>();
         res.put("errorData", userService.batchRegister(registerDTOS, errorMsg));
         res.put("errorMsg", errorMsg);
         return res;
-    }
-
-    @PostMapping("/admin/update/user/tel")
-    @ApiOperation(value = "更改用户的手机号")
-    @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
-    public void updateUserTelApi(@Valid @RequestBody UserUpdateTelDTO userUpdateTelDTO) {
-        userService.updateUserTel(userUpdateTelDTO);
     }
 
     @PostMapping("/admin/update/user/name")
@@ -116,4 +129,12 @@ public class UserController {
     public void updateUserTelApi(@Valid @RequestBody UserUpdateNicknameDTO userUpdateNicknameDTO) {
         userService.updateUserNickname(userUpdateNicknameDTO);
     }
+
+
+    @GetMapping("/user/refresh/token")
+    @ApiOperation(value = "根据旧token获取新token，会话续期")
+    public Map<String, Object> refreshTokenApi(@RequestParam("userId") String userId, @RequestParam("token") String token) {
+        return userService.refreshToken(userId, token);
+    }
+
 }

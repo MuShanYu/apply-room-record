@@ -28,10 +28,12 @@ public class SaTokenConfig implements WebMvcConfigurer {
         loginExcludePathPatterns.add("/user/refreshToken");
         loginExcludePathPatterns.add("/user/logout");
         loginExcludePathPatterns.add("/admin/login");
+        loginExcludePathPatterns.add("/user/wx/login/**");
         loginExcludePathPatterns.add("/user/update/pwd");
         loginExcludePathPatterns.add("/user/get/verifyCode");
         loginExcludePathPatterns.add("/user/get/classify/room");
         loginExcludePathPatterns.add("/config/get/by/**");
+        loginExcludePathPatterns.add("/user/refresh/token");
         // swagger
         loginExcludePathPatterns.add("/v3/**");
         loginExcludePathPatterns.add("/swagger-ui/**");
@@ -77,7 +79,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                             // 允许指定域访问跨域资源
                             .setHeader("Access-Control-Allow-Origin", "*")
                             // 允许所有请求方式
-                            .setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
+                            .setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE")
                             // 有效时间
                             .setHeader("Access-Control-Max-Age", "3600")
                             // 允许的header参数

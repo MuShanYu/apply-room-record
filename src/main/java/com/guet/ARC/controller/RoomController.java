@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import java.util.List;
 
 @RestController
 @ResponseBodyResult
@@ -87,5 +88,12 @@ public class RoomController {
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public void disableReserveRoomApi(@RequestParam("roomId") String roomId) {
         roomService.disableReserveRoom(roomId);
+    }
+
+    // 查询用户进出房间列表
+    @GetMapping("/room/access/list")
+    @ApiOperation(value = "查询用户进出房间列表")
+    public List<Room> queryAccessRecordRoomListApi() {
+        return roomService.queryAccessRecordRoomList();
     }
 }

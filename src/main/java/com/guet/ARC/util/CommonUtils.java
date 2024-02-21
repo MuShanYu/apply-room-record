@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class CommonUtils {
@@ -97,9 +99,8 @@ public class CommonUtils {
     // 获取起始日期的00:00，获取结束日期的11:59:59
 
     /**
-     *
      * @param startTime 起始日期
-     * @param endTime 结束日期
+     * @param endTime   结束日期
      * @return 返回标准起始日期和结束日期00:00:00 ~ 23:59:59，第一个值为起始第二个值为结束
      */
     public static Long[] getStandardStartTimeAndEndTime(Long startTime, Long endTime) {
@@ -121,5 +122,11 @@ public class CommonUtils {
         // startTime的00:00:00
         long webAppDateStart = startTimeCalendar.getTimeInMillis();
         return new Long[]{webAppDateStart, webAppDateEnd};
+    }
+
+    public static Map<String, Object> createValueItem(String value) {
+        HashMap<String, Object> objectHashMap = new HashMap<>(1);
+        objectHashMap.put("value", value);
+        return objectHashMap;
     }
 }
