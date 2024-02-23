@@ -18,6 +18,7 @@ import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.AccessRecordRepository;
 import com.guet.ARC.dao.ApplicationRepository;
 import com.guet.ARC.dao.RoomRepository;
+import com.guet.ARC.dao.mybatis.query.AccessRecordQuery;
 import com.guet.ARC.domain.AccessRecord;
 import com.guet.ARC.domain.dto.record.UserAccessCountDataQueryDTO;
 import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
@@ -27,30 +28,27 @@ import com.guet.ARC.domain.excel.model.UserAccessRecordCountDataExcelModel;
 import com.guet.ARC.domain.vo.record.UserAccessRecordCountVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordRoomVo;
 import com.guet.ARC.domain.vo.record.UserAccessRecordVo;
-import com.guet.ARC.dao.mybatis.support.AccessRecordDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.AccessRecordQueryRepository;
-import com.guet.ARC.dao.mybatis.support.RoomDynamicSqlSupport;
-import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.ExcelUtil;
 import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.mybatis.dynamic.sql.render.RenderingStrategies;
+import org.jetbrains.annotations.NotNull;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
 @Service
 @Slf4j
@@ -70,6 +68,9 @@ public class AccessRecordService {
 
     @Autowired
     private RedisCacheUtil<AccessRecord> redisCacheUtil;
+
+    @Autowired
+    private AccessRecordQuery accessRecordQuery;
 
     private static final String ACCESS_RECORD_KEY = "access_record_key:user_id:";
 
@@ -101,8 +102,8 @@ public class AccessRecordService {
                     // 更新缓存
                     redisCacheUtil.removeAccessRecordFromList(key, accessRecordCache);
                 } else if (type == 1) {
-                  // 重复进入操作
-                  throw new AlertException(1000, "12小时内已有该房间的进入记录，请勿重复操作");
+                    // 重复进入操作
+                    throw new AlertException(1000, "12小时内已有该房间的进入记录，请勿重复操作");
                 } else {
                     throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
                 }
@@ -168,16 +169,10 @@ public class AccessRecordService {
     // 查询用户进出信息列表
     public PageInfo<UserAccessRecordVo> queryUserAccessRecordList(Integer page, Integer size) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider statementProvider = select(AccessRecordQueryRepository.selectVoList)
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
-                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
-                .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
-                .build().render(RenderingStrategies.MYBATIS3);
         Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordVo> userAccessRecordVos = accessRecordQueryRepository.selectVo(statementProvider);
+        List<UserAccessRecordVo> userAccessRecordVos = accessRecordQueryRepository.selectVo(
+                accessRecordQuery.queryUserAccessRecordListSql(userId)
+        );
         PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
         pageInfo.setPageData(userAccessRecordVos);
         pageInfo.setTotalSize(queryPageData.getTotal());
@@ -187,15 +182,10 @@ public class AccessRecordService {
 
     // 管理员查询用户进出信息列表
     public PageInfo<UserAccessRecordVo> queryUserAccessRecordListAdmin(Integer page, Integer size, String userId) {
-        SelectStatementProvider statementProvider = select(AccessRecordQueryRepository.selectVoList)
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
-                .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
-                .build().render(RenderingStrategies.MYBATIS3);
         Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordVo> userAccessRecordVos = accessRecordQueryRepository.selectVo(statementProvider);
+        List<UserAccessRecordVo> userAccessRecordVos = accessRecordQueryRepository.selectVo(
+                accessRecordQuery.queryUserAccessRecordListAdminSql(userId)
+        );
         PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
         pageInfo.setPageData(userAccessRecordVos);
         pageInfo.setTotalSize(queryPageData.getTotal());
@@ -206,39 +196,18 @@ public class AccessRecordService {
     // 查询用户进出房间的次数
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCount(Integer page, Integer size) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider statementProvider = selectDistinct(AccessRecordQueryRepository.selectCountVoList)
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
-                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
-        Page<UserAccessRecordCountVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordQueryRepository.selectCountVo(statementProvider);
-        for (UserAccessRecordCountVo userAccessRecordCountVo : userAccessRecordCountVos) {
-            // 统计数量
-            userAccessRecordCountVo.setEntryTimes(accessRecordRepository
-                    .countByStateAndRoomIdAndEntryTimeNotNullAndUserId(State.ACTIVE, userAccessRecordCountVo.getRoomId(), userId));
-            userAccessRecordCountVo.setOutTimes(accessRecordRepository
-                    .countByStateAndRoomIdAndOutTimeNotNullAndUserId(State.ACTIVE, userAccessRecordCountVo.getRoomId(), userId));
-        }
-        PageInfo<UserAccessRecordCountVo> pageInfo = new PageInfo<>();
-        pageInfo.setPage(page);
-        pageInfo.setPageData(userAccessRecordCountVos);
-        pageInfo.setTotalSize(queryPageData.getTotal());
-        return pageInfo;
+        return queryAccessCount(page, size, userId);
     }
 
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCountAdmin(Integer page, Integer size, String userId) {
-        SelectStatementProvider statementProvider = selectDistinct(AccessRecordQueryRepository.selectCountVoList)
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
-                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
-                .build().render(RenderingStrategies.MYBATIS3);
+        return queryAccessCount(page, size, userId);
+    }
+
+    private PageInfo<UserAccessRecordCountVo> queryAccessCount(Integer page, Integer size, String userId) {
         Page<UserAccessRecordCountVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordQueryRepository.selectCountVo(statementProvider);
+        List<UserAccessRecordCountVo> userAccessRecordCountVos = accessRecordQueryRepository.selectCountVo(
+                accessRecordQuery.queryUserAccessCountSql(userId)
+        );
         for (UserAccessRecordCountVo userAccessRecordCountVo : userAccessRecordCountVos) {
             // 统计数量
             userAccessRecordCountVo.setEntryTimes(accessRecordRepository
@@ -255,9 +224,7 @@ public class AccessRecordService {
 
     // 查询用户在某个房间的出入情况
     public PageInfo<UserAccessRecordRoomVo> queryUserAccessRecordByRoomId(UserAccessQueryDTO userAccessQueryDTO) {
-        Long startTime = userAccessQueryDTO.getStartTime();
-        Long endTime = userAccessQueryDTO.getEndTime();
-        Long[] standardTime = CommonUtils.getStandardStartTimeAndEndTime(startTime, endTime);
+        Long[] standardTime = CommonUtils.getStandardStartTimeAndEndTime(userAccessQueryDTO.getStartTime(), userAccessQueryDTO.getEndTime());
         // 获取startTime的凌晨00：00
         long webAppDateStart = standardTime[0];
         // 获取这endTime 23:59:59的毫秒值
@@ -266,20 +233,10 @@ public class AccessRecordService {
         if (webAppDateEnd - webAppDateStart <= 0) {
             throw new AlertException(1000, "结束时间不能小于等于开始时间");
         }
-        SelectStatementProvider statementProvider = select(AccessRecordQueryRepository.selectAccessRoomVoList)
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .leftJoin(UserDynamicSqlSupport.user)
-                .on(UserDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.userId))
-                .where(AccessRecordDynamicSqlSupport.roomId, isEqualTo(userAccessQueryDTO.getRoomId()))
-                .and(AccessRecordDynamicSqlSupport.createTime, isBetweenWhenPresent(webAppDateStart)
-                        .and(webAppDateEnd))
-                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
-                .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
-                .build().render(RenderingStrategies.MYBATIS3);
         Page<UserAccessRecordRoomVo> queryPageData = PageHelper.startPage(userAccessQueryDTO.getPage(), userAccessQueryDTO.getSize());
-        List<UserAccessRecordRoomVo> userAccessRecordVos = accessRecordQueryRepository.selectUserAccessRoomVo(statementProvider);
+        List<UserAccessRecordRoomVo> userAccessRecordVos = accessRecordQueryRepository.selectUserAccessRoomVo(
+                accessRecordQuery.queryUserAccessRecordByRoomIdSql(userAccessQueryDTO.getRoomId(), webAppDateStart, webAppDateEnd)
+        );
         PageInfo<UserAccessRecordRoomVo> pageInfo = new PageInfo<>();
         pageInfo.setPageData(userAccessRecordVos);
         pageInfo.setTotalSize(queryPageData.getTotal());
@@ -303,30 +260,63 @@ public class AccessRecordService {
             response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
             response.setCharacterEncoding("utf8");
             WriteCellStyle writeCellStyle = ExcelUtil.buildHeadCellStyle();
-            HorizontalCellStyleStrategy horizontalCellStyleStrategy = new HorizontalCellStyleStrategy(writeCellStyle,
-                    new ArrayList<>());
-            WriteWorkbook writeWorkbook = new WriteWorkbook();
-            writeWorkbook.setAutoCloseStream(false);
-            writeWorkbook.setExcelType(ExcelTypeEnum.XLSX);
-            writeWorkbook.setOutputStream(response.getOutputStream());
-            writeWorkbook.setAutoTrim(true);
-            writeWorkbook.setUseDefaultStyle(true);
-            writeWorkbook.setClazz(UserAccessRecordRoomVo.class);
-            writeWorkbook.setCustomWriteHandlerList(Collections.singletonList(horizontalCellStyleStrategy));
+            WriteWorkbook writeWorkbook = getWriteWorkbook(response, writeCellStyle);
             WriteSheet writeSheet = new WriteSheet();
             writeSheet.setSheetName("进出数据");
             writeSheet.setSheetNo(0);
-            ExcelWriter excelWriter = new ExcelWriter(writeWorkbook);
-            List<UserAccessRecordRoomVo> pageData = queryUserAccessRecordByRoomId(userAccessQueryDTO).getPageData();
-            while (pageData.size() != 0) {
-                excelWriter.write(pageData, writeSheet);
-                userAccessQueryDTO.setPage(userAccessQueryDTO.getPage() + 1);
-                pageData = queryUserAccessRecordByRoomId(userAccessQueryDTO).getPageData();
+            try (ExcelWriter excelWriter = new ExcelWriter(writeWorkbook)) {
+                List<UserAccessRecordRoomVo> pageData = queryUserAccessRecordByRoomId(userAccessQueryDTO).getPageData();
+                while (!pageData.isEmpty()) {
+                    excelWriter.write(pageData, writeSheet);
+                    userAccessQueryDTO.setPage(userAccessQueryDTO.getPage() + 1);
+                    pageData = queryUserAccessRecordByRoomId(userAccessQueryDTO).getPageData();
+                }
+                excelWriter.finish();
             }
-            excelWriter.finish();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("文件导出失败。", e);
         }
+    }
+
+    public void exportUserAccessCountData(UserAccessCountDataQueryDTO userAccessCountDataQueryDTO, HttpServletResponse response) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日");
+            String startDateStr = sdf.format(new Date(userAccessCountDataQueryDTO.getStartTime()));
+            String endDateStr = sdf.format(new Date(userAccessCountDataQueryDTO.getEndTime()));
+            String fileName = URLEncoder.encode(startDateStr + "_" + endDateStr + "_房间足迹人员统计数据", StandardCharsets.UTF_8);
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("utf-8");
+            response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
+            response.addHeader("Pragma", "No-cache");
+            response.addHeader("Cache-Control", "No-cache");
+            response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
+            response.setCharacterEncoding("utf8");
+            WriteCellStyle writeCellStyle = ExcelUtil.buildHeadCellStyle();
+            WriteWorkbook writeWorkbook = getWriteWorkbook(response, writeCellStyle);
+            WriteSheet writeSheet = new WriteSheet();
+            writeSheet.setSheetName("进出统计数据");
+            writeSheet.setSheetNo(0);
+            try (ExcelWriter excelWriter = new ExcelWriter(writeWorkbook)) {
+                excelWriter.write(userAccessCountDataQuery(userAccessCountDataQueryDTO), writeSheet).finish();
+            }
+        } catch (Exception e) {
+            log.error("文件导出失败。", e);
+        }
+    }
+
+    @NotNull
+    private static WriteWorkbook getWriteWorkbook(HttpServletResponse response, WriteCellStyle writeCellStyle) throws IOException {
+        HorizontalCellStyleStrategy horizontalCellStyleStrategy = new HorizontalCellStyleStrategy(writeCellStyle,
+                new ArrayList<>());
+        WriteWorkbook writeWorkbook = new WriteWorkbook();
+        writeWorkbook.setAutoCloseStream(false);
+        writeWorkbook.setExcelType(ExcelTypeEnum.XLSX);
+        writeWorkbook.setOutputStream(response.getOutputStream());
+        writeWorkbook.setAutoTrim(true);
+        writeWorkbook.setUseDefaultStyle(true);
+        writeWorkbook.setClazz(UserAccessRecordCountDataExcelModel.class);
+        writeWorkbook.setCustomWriteHandlerList(Collections.singletonList(horizontalCellStyleStrategy));
+        return writeWorkbook;
     }
 
     public List<UserAccessRecordCountDataExcelModel> userAccessCountDataQuery(UserAccessCountDataQueryDTO userAccessCountDataQueryDTO) {
@@ -349,65 +339,20 @@ public class AccessRecordService {
         // TODO:加上时间范围限制，否则会查询到所有用户
         List<UserAccessRecordCountDataExcelModel> userAccessRecordExcelModels = accessRecordQueryRepository.selectUserIdAndNameByRoomId(roomId, webAppDateStart, webAppDateEnd);
         for (UserAccessRecordCountDataExcelModel excelModel : userAccessRecordExcelModels) {
+            // 处理数据
             // 查询每个用户具体的数量
             // 统计扫码进入的次数,进入时间不为空
-            countEntryTimesStatement = select(count())
-                    .from(AccessRecordDynamicSqlSupport.accessRecord)
-                    .where(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
-                            .and(webAppDateEnd))
-                    .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
-                    .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(excelModel.getUserId()))
-                    .build().render(RenderingStrategies.MYBATIS3);
+            excelModel.setScanEntryTimes(
+                    accessRecordRepository.countByRoomIdAndUserIdAndEntryTimeIsBetween(
+                            roomId, excelModel.getUserId(), webAppDateStart, webAppDateEnd)
+            );
             // 统计扫码出去的次数，出去的时间不为空，闭环扫码的次数就是出去的时间不为空的次数
-            countOutTimesStatement = select(count())
-                    .from(AccessRecordDynamicSqlSupport.accessRecord)
-                    .where(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
-                            .and(webAppDateEnd))
-                    .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
-                    .and(AccessRecordDynamicSqlSupport.userId, isEqualTo(excelModel.getUserId()))
-                    .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
-                    .build().render(RenderingStrategies.MYBATIS3);
-            // 处理数据
-            excelModel.setScanEntryTimes(accessRecordQueryRepository.count(countEntryTimesStatement));
-            long outTimes = accessRecordQueryRepository.count(countOutTimesStatement);
+            long outTimes = accessRecordRepository.countByRoomIdAndUserIdAndEntryTimeIsBetweenAndOutTimeIsNotNull(
+                    roomId, excelModel.getUserId(), webAppDateStart, webAppDateEnd);
             excelModel.setScanOutTimes(outTimes);
             excelModel.setCloseLoopScanTimes(outTimes);
         }
         return userAccessRecordExcelModels;
-    }
-
-    public void exportUserAccessCountData(UserAccessCountDataQueryDTO userAccessCountDataQueryDTO, HttpServletResponse response) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日");
-            String startDateStr = sdf.format(new Date(userAccessCountDataQueryDTO.getStartTime()));
-            String endDateStr = sdf.format(new Date(userAccessCountDataQueryDTO.getEndTime()));
-            String fileName = URLEncoder.encode(startDateStr + "_" + endDateStr + "_房间足迹人员统计数据", "utf-8");
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setCharacterEncoding("utf-8");
-            response.setHeader("Access-Control-Expose-Headers", "Content-disposition");
-            response.addHeader("Pragma", "No-cache");
-            response.addHeader("Cache-Control", "No-cache");
-            response.setHeader("Content-disposition", "attachment;filename*=" + fileName + ".xlsx");
-            response.setCharacterEncoding("utf8");
-            WriteCellStyle writeCellStyle = ExcelUtil.buildHeadCellStyle();
-            HorizontalCellStyleStrategy horizontalCellStyleStrategy = new HorizontalCellStyleStrategy(writeCellStyle,
-                    new ArrayList<>());
-            WriteWorkbook writeWorkbook = new WriteWorkbook();
-            writeWorkbook.setAutoCloseStream(false);
-            writeWorkbook.setExcelType(ExcelTypeEnum.XLSX);
-            writeWorkbook.setOutputStream(response.getOutputStream());
-            writeWorkbook.setAutoTrim(true);
-            writeWorkbook.setUseDefaultStyle(true);
-            writeWorkbook.setClazz(UserAccessRecordCountDataExcelModel.class);
-            writeWorkbook.setCustomWriteHandlerList(Collections.singletonList(horizontalCellStyleStrategy));
-            WriteSheet writeSheet = new WriteSheet();
-            writeSheet.setSheetName("进出统计数据");
-            writeSheet.setSheetNo(0);
-            ExcelWriter excelWriter = new ExcelWriter(writeWorkbook);
-            excelWriter.write(userAccessCountDataQuery(userAccessCountDataQueryDTO), writeSheet).finish();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public AccessRecord findById(String id) {
@@ -418,25 +363,14 @@ public class AccessRecordService {
     public PageInfo<UserAccessRecordVo> queryCanApplyAccessRecordList(Integer page, Integer size, String roomName) {
         // 除当天之外的，其他没有签退时间的数据，按照创建时间降序
         // 只允许申请近七天内的，七天内最多只能申请三次
-        long time = DateUtil.endOfDay(new Date()).offset(DateField.DAY_OF_MONTH, -1).getTime();
+        long endTime = DateUtil.endOfDay(new Date()).offset(DateField.DAY_OF_MONTH, -1).getTime();
         long startTime = DateUtil.beginOfWeek(new Date()).getTime();
         roomName = StrUtil.isEmpty(roomName) ? null : roomName;
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        SelectStatementProvider statementProvider = select(AccessRecordQueryRepository.selectVoList)
-                .from(AccessRecordDynamicSqlSupport.accessRecord)
-                .leftJoin(RoomDynamicSqlSupport.room)
-                .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
-                .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
-                .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
-                .and(AccessRecordDynamicSqlSupport.createTime, isLessThanOrEqualTo(time))
-                .and(AccessRecordDynamicSqlSupport.createTime, isGreaterThanOrEqualTo(startTime))
-                .and(AccessRecordDynamicSqlSupport.outTime, isNull())
-                .and(RoomDynamicSqlSupport.roomName, isEqualToWhenPresent(roomName))
-                .orderBy(AccessRecordDynamicSqlSupport.createTime.descending())
-                .build().render(RenderingStrategies.MYBATIS3);
-        Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size, false);
-        accessRecordQueryRepository.selectVo(statementProvider);
-        List<UserAccessRecordVo> accessRecordVos = queryPageData.getResult();
+        PageHelper.startPage(page, size, false);
+        List<UserAccessRecordVo> accessRecordVos = accessRecordQueryRepository.selectVo(
+                accessRecordQuery.queryCanApplyAccessRecordListSql(userId, startTime, endTime, roomName)
+        );
         // 判断是否已经进行申请
         accessRecordVos.forEach(accessRecordVo -> {
             applicationRepository.findByMatterRecordId(accessRecordVo.getId()).ifPresent(application -> {

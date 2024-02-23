@@ -11,6 +11,7 @@ import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
+import com.guet.ARC.common.enmu.Device;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.UserRoleRepository;
@@ -154,6 +155,7 @@ public class UserService {
 
     // 使用https连接，无需进行密码加密
     public Map<String, Object> login(UserLoginDTO userLoginDTO) {
+        log.info("userLoginDTO:{}", userLoginDTO);
         String pwd = SaSecureUtil.md5(userLoginDTO.getPwd());
         Optional<User> userOptional = userRepository.findByStuNumAndPwdAndState(userLoginDTO.getStuNum(), pwd, State.ACTIVE);
         User user;
@@ -161,7 +163,7 @@ public class UserService {
         if (userOptional.isPresent()) {
             user = userOptional.get();
             map = new HashMap<>();
-            login(map, user);
+            login(map, user, userLoginDTO.getDevice());
             map.put("roles", StpUtil.getRoleList());
         } else {
             throw new AlertException(1000, "账号或者密码错误");
@@ -177,7 +179,7 @@ public class UserService {
         if (userOptional.isPresent()) {
             user = userOptional.get();
             map = new HashMap<>();
-            login(map, user);
+            login(map, user, userLoginDTO.getDevice());
             // 获取权限列表
             List<String> roleList = StpUtil.getRoleList();
             if (roleList.contains(CommonConstant.ADMIN_ROLE) || roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
@@ -211,7 +213,7 @@ public class UserService {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             map.put("canWxLogin", true);
-            login(map, user);
+            login(map, user, Device.WECHAT.getDevice());
             map.put("roles", StpUtil.getRoleList());
         } else {
             map.put("canWxLogin", false);
@@ -219,9 +221,9 @@ public class UserService {
         return map;
     }
 
-    private void login(Map<String, Object> map, User user) {
+    private void login(Map<String, Object> map, User user, String device) {
         // 用户登录
-        StpUtil.login(user.getId());
+        StpUtil.login(user.getId(), device);
         // 获取登录token
         String token = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
         // 后台存储用户信息
@@ -472,29 +474,26 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public Map<String, Object> refreshToken(String userId, String token) {
+    public Map<String, Object> refreshToken(String userId, String device) {
         // 用的redis存储，时间一到token就会被清楚，变为未登录，所以直接判定当前会话有没有登录即可
         // 判定当前会话是否登录
         Map<String, Object> res = new HashMap<>();
-        if (StpUtil.getLoginIdDefaultNull() == null) {
-            // 会话过期，进行续期
-            // 用户是否存在
-            if (!userRepository.existsById(userId)) {
-                throw new AlertException(ResultCode.USER_NOT_EXIST);
-            }
-            // 用户登录
-            StpUtil.login(userId);
-            // 获取登录token
-            String loginToken = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
-            // 后台存储用户信息
-            StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", userId);
-            // 返回结果
-            res.put("token", loginToken);
-            res.put("isNeedRefresh", Boolean.TRUE);
-        } else {
-            res.put("token", "");
-            res.put("isNeedRefresh", Boolean.FALSE);
+        // 旧的退出登录
+        StpUtil.logout();
+        // 刷新登录信息
+        // 用户是否存在，id是否正确
+        if (!userRepository.existsById(userId)) {
+            throw new AlertException(ResultCode.USER_NOT_EXIST);
         }
+        // 用户登录
+        StpUtil.login(userId, device);
+        // 获取登录token
+        String loginToken = StpUtil.getTokenValueByLoginId(StpUtil.getLoginId());
+        // 后台存储用户信息
+        StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", userId);
+        // 返回结果
+        res.put("token", loginToken);
+        res.put("isNeedRefresh", Boolean.TRUE);
         return res;
     }
 

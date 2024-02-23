@@ -8,11 +8,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 /**
- * Author: Yulf
+ * @author Yulf
  * Date: 2023/11/24
  */
 public interface AccessRecordRepository extends JpaRepository<AccessRecord, String> {
     long countByStateAndRoomIdAndEntryTimeNotNullAndUserId(State state, String roomId, String userId);
 
     long countByStateAndRoomIdAndOutTimeNotNullAndUserId(State state, String roomId, String userId);
+
+    long countByRoomIdAndUserIdAndEntryTimeIsBetween(String roomId, String userId, long startTime, long endTime);
+    long countByRoomIdAndUserIdAndEntryTimeIsBetweenAndOutTimeIsNotNull(String roomId, String userId, long startTime, long endTime);
 }
