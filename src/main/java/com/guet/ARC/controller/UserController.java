@@ -133,8 +133,8 @@ public class UserController {
 
     @GetMapping("/user/refresh/token")
     @ApiOperation(value = "根据旧token获取新token，会话续期")
-    public Map<String, Object> refreshTokenApi(@RequestParam("userId") String userId, @RequestParam("token") String token) {
-        return userService.refreshToken(userId, token);
+    public Map<String, Object> refreshTokenApi(@RequestParam("userId") String userId, @RequestParam("device") String device) {
+        return userService.refreshToken(userId, device);
     }
 
 }

@@ -73,7 +73,11 @@ sa-token:
   # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
   is-concurrent: true
   # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
-  is-share: true
+  is-share: false
+  # 同一账号的最大登录账号数量
+  maxLoginCount: 6
+  # 每次获取登录状态是否检查已经登录，有些情况可能是前端导致登录信息丢失，后端登录状态任然在保存
+  tokenSessionCheckLogin: false
   # token风格
   token-style: tik
   # 是否输出操作日志
