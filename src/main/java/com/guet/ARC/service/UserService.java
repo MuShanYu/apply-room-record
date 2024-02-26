@@ -155,7 +155,6 @@ public class UserService {
 
     // 使用https连接，无需进行密码加密
     public Map<String, Object> login(UserLoginDTO userLoginDTO) {
-        log.info("userLoginDTO:{}", userLoginDTO);
         String pwd = SaSecureUtil.md5(userLoginDTO.getPwd());
         Optional<User> userOptional = userRepository.findByStuNumAndPwdAndState(userLoginDTO.getStuNum(), pwd, State.ACTIVE);
         User user;
