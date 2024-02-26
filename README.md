@@ -30,7 +30,7 @@
 - 管理端：[apply-room-record-admin](https://github.com/MuShanYu/apply-room-record-admin) 
 - 后端：[apply-room-record](https://github.com/MuShanYu/apply-room-record) 
 
-## 安装说明
+## 本地运行说明
 
 ### 1. 后端
 
@@ -54,6 +54,10 @@
 
 - 将代码clone到本地。
 - `npm install`
+
+## 部署说明
+
+后端项目提供完整dockerfile构建应用镜像
 
 ## 开源协议
 
