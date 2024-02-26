@@ -4,15 +4,15 @@
 
 预览：
 
-<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/1.png" style="zoom:50%;" />
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/1.png" style="zoom:30%;" />
 
-<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/2.png" alt="2" style="zoom:50%;" />
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/2.png" alt="2" style="zoom:30%;" />
 
-<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/3.png" alt="3" style="zoom:50%;" />
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/3.png" alt="3" style="zoom:30%;" />
 
-<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/4.png" alt="4" style="zoom:50%;" />
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/4.png" alt="4" style="zoom:30%;" />
 
-<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/5.png" alt="5" style="zoom:50%;" />
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/5.png" alt="5" style="zoom:30%;" />
 
 ![image-20240226140745638](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226140745638.png)
 
