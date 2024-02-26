@@ -65,7 +65,8 @@
 
 ## 联系方式
 
-微信交流群
+QQ交流群
 
-![image-20240226131311395](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226131311395.png)
+![image-20240226155137983](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226155137983.png)
 
+@MuShanYu：wx：wxid_f5ayc9d2mken22
