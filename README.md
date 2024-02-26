@@ -2,6 +2,20 @@
 
 小程序、后端、管理端演示版开发中，后续会进行更新。
 
+预览：
+
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/1.png" style="zoom:50%;" />
+
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/2.png" alt="2" style="zoom:50%;" />
+
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/3.png" alt="3" style="zoom:50%;" />
+
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/4.png" alt="4" style="zoom:50%;" />
+
+<img src="https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/5.png" alt="5" style="zoom:50%;" />
+
+![image-20240226140745638](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226140745638.png)
+
 ## 项目描述
 
 本项目为**房间预约与流动统计**，应用功能不局限于预约与流动统计，主要功能包含消息通知、公告、房间预约、通用申请处理、房间签到签出、人员人数与人次统计、签到时长统计、报表统计、基础功能等。
