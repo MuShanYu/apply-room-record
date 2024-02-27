@@ -12,8 +12,8 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://10.0.8.17:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
-    username: your username
-    password: your password
+    username: apr_user
+    password: pwd
     hikari:
       maximum-pool-size: 10
       max-lifetime: 180000
@@ -21,7 +21,7 @@ spring:
     host: redis
     port: 6379
     timeout: 10000
-    password: your password
+    password: 123456
     lettuce:
       pool:
         max-active: 250
@@ -37,7 +37,7 @@ spring:
   mail:
     host: smtp.qq.com
     port: 465
-    username: your username
+    username: your email
     password: your password
     default-encoding: UTF-8
     protocol: smtp
