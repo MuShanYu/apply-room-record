@@ -37,8 +37,8 @@ public enum ReservationState {
             // 预约理由
             String mem = roomReservation.getRoomUsage().length() > 20 ? roomReservation.getRoomUsage().substring(0, 16) + "..." : roomReservation.getRoomUsage();
             data.put("thing7", CommonUtils.createValueItem(mem));
-            log.info("ready send message, apply user is {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
+                log.info("ready send message, apply user is {}, message is {}", user.getName(), data);
                 WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_NOTICE_TEMPLATE.getId(), data);
             }
         }
@@ -61,8 +61,8 @@ public enum ReservationState {
 
 
             data.put("thing4", CommonUtils.createValueItem("符合要求，审核通过。"));
-            log.info("ready send message, receiver is {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
+                log.info("ready send message, receiver is {}, message is {}", user.getName(), data);
                 WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_SUCCESS_NOTICE_TEMPLATE.getId(), data);
             }
         }
@@ -92,8 +92,8 @@ public enum ReservationState {
                         roomReservation.getRemark().substring(0, 16) + "..." : roomReservation.getRemark();
             }
             data.put("thing4", CommonUtils.createValueItem(reason));
-            log.info("ready send message, cancel user is {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
+                log.info("ready send message, cancel user is {}, message is {}", user.getName(), data);
                 WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.WITHDRAW_NOTICE_TEMPLATE.getId(), data);
             }
         }
@@ -115,8 +115,8 @@ public enum ReservationState {
             String reason = roomReservation.getRemark().length() > 20 ?
                     roomReservation.getRemark().substring(0, 16) + "..." : roomReservation.getRemark();
             data.put("thing4", CommonUtils.createValueItem(reason));
-            log.info("ready send message, receiver is {}, message is {}", user.getName(), data);
             if (!StrUtil.isEmpty(user.getOpenId())) {
+                log.info("ready send message, receiver is {}, message is {}", user.getName(), data);
                 WxUtils.sendSubscriptionMessage(user.getOpenId(), WxMessageTemplateId.APPLY_FAILED_NOTICE_TEMPLATE.getId(), data);
             }
         }

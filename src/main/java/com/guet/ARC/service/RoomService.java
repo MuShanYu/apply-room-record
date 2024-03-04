@@ -191,7 +191,7 @@ public class RoomService {
     }
 
     // 导入房间数据
-    public Room insertRoomAndRegisterAdminUser(RoomAddUpdateDTO roomAddUpdateDTO) {
+    public synchronized Room insertRoomAndRegisterAdminUser(RoomAddUpdateDTO roomAddUpdateDTO) {
         // 判断房间是否已经被添加过了
         if (roomRepository.countByRoomName(roomAddUpdateDTO.getRoomName()) > 0) {
             throw new AlertException(999, roomAddUpdateDTO.getRoomName() + "房间已经创建");
@@ -202,17 +202,15 @@ public class RoomService {
         // 验证阶段，判断用户的基本信息，是否存在，是否是管理员
         User user;
         // 因为前端是循环调用，所以这里必须是线程安全的
-        synchronized (this) {
-            user = userService.userCanBeCurrentRoomCharger(roomAddUpdateDTO.getStuNum(), roomAddUpdateDTO.getChargePerson());
-            long now = System.currentTimeMillis();
-            String id = CommonUtils.generateUUID();
-            room.setId(id);
-            room.setCreateTime(now);
-            room.setUpdateTime(now);
-            room.setState(RoomState.ROOM_ACTIVE);
-            room.setChargePersonId(user.getId());
-            roomRepository.save(room);
-        }
+        user = userService.userCanBeCurrentRoomCharger(roomAddUpdateDTO.getStuNum(), roomAddUpdateDTO.getChargePerson());
+        long now = System.currentTimeMillis();
+        String id = CommonUtils.generateUUID();
+        room.setId(id);
+        room.setCreateTime(now);
+        room.setUpdateTime(now);
+        room.setState(RoomState.ROOM_ACTIVE);
+        room.setChargePersonId(user.getId());
+        roomRepository.save(room);
         return room;
     }
 

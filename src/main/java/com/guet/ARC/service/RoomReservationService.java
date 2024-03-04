@@ -85,7 +85,7 @@ public class RoomReservationService {
                     CompletableFuture.runAsync(() -> {
                         roomReservation.getState().sendReservationNoticeMessage(room, user, roomReservation);
                     });
-                    // 发送系统消息
+                    // 发送消息
                     userRepository.findById(roomReservation.getUserId()).ifPresent(curUser -> {
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
                         String startTimeStr = sdf.format(new Date(roomReservation.getReserveStartTime()));
@@ -96,6 +96,13 @@ public class RoomReservationService {
                         message.setContent(curUser.getName() + "取消了房间" + room.getRoomName()
                                 + "的预约申请。预约时间：" + startTimeStr + "~" + endTimeStr + "。");
                         messageService.sendMessage(message);
+                        // 发送邮件提醒，发给房间负责人
+                        if (!StrUtil.isEmpty(user.getMail())) {
+                            String content = "您收到来自" + curUser.getName() + "的" + room.getRoomName()
+                                    + "房间预约申请取消通知，预约时间" + startTimeStr + "至" + endTimeStr + "。"
+                                    + "取消理由：" + reason + "。";
+                            emailService.sendSimpleMail(user.getMail(), curUser.getName() + "的" + room.getRoomName() + "预约申请取消通知", content);
+                        }
                     });
                 }
             }
@@ -154,7 +161,7 @@ public class RoomReservationService {
                     content = "您收到来自" + curUserOptional.get().getName()
                             + "的" + room.getRoomName() + "房间预约申请，预约时间" + startTimeStr + "至" + endTimeStr + "，请您及时处理。";
                     // 异步发送
-                    emailService.sendHtmlMail(user.getMail(), user.getName() + "房间预约申请待审核通知", content);
+                    emailService.sendHtmlMail(user.getMail(), curUserOptional.get().getName() + "房间预约申请待审核通知", content);
                 }
                 // 发送订阅消息
                 if (!StrUtil.isEmpty(user.getOpenId())) {
