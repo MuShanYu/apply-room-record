@@ -24,6 +24,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @ResponseBodyResult
@@ -129,7 +131,7 @@ public class AccessRecordController {
     // 查询当前用户房间签到信息
     @GetMapping("/record/query/room/sign")
     @ApiOperation(value = "查询当前用户房间签到信息")
-    public Object queryRoomAccessRecordNowApi() {
+    public List<Map<String, Object>> queryRoomAccessRecordNowApi() {
         return accessRecordService.queryRoomAccessRecordNow();
     }
 }

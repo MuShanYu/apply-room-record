@@ -74,6 +74,9 @@ public class AccessRecordService {
 
     private static final String ACCESS_RECORD_KEY = "access_record_key:user_id:";
 
+    // 放弃签到状态持续时间
+    private static final int ROOM_ACCESS_SIGN_IN_LAST_TIME = 15;
+
 
     @Transactional(rollbackFor = RuntimeException.class)
     public void addAccessRecord(String roomId, short type) {
@@ -103,7 +106,7 @@ public class AccessRecordService {
                     redisCacheUtil.removeAccessRecordFromList(key, accessRecordCache);
                 } else if (type == 1) {
                     // 重复进入操作
-                    throw new AlertException(1000, "12小时内已有该房间的进入记录，请勿重复操作");
+                    throw new AlertException(1000, "16小时内已有该房间的进入记录，请勿重复操作");
                 } else {
                     throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
                 }
@@ -111,8 +114,8 @@ public class AccessRecordService {
                 // 这条记录不存在，添加这个记录到列表中，刷新列表过期时间，参数必须是入场
                 if (type == 1) {
                     AccessRecord accessRecord = saveAccessRecord(userId, roomId, now);
-                    redisCacheUtil.pushDataToCacheList(key, accessRecord, 12, ChronoUnit.HOURS);
-                    redisCacheUtil.resetExpiration(key, 12, TimeUnit.HOURS);
+                    redisCacheUtil.pushDataToCacheList(key, accessRecord, ROOM_ACCESS_SIGN_IN_LAST_TIME, ChronoUnit.HOURS);
+                    redisCacheUtil.resetExpiration(key, ROOM_ACCESS_SIGN_IN_LAST_TIME, TimeUnit.HOURS);
                 } else {
                     throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
                 }
@@ -124,9 +127,9 @@ public class AccessRecordService {
                 // 点击的是入场
                 AccessRecord accessRecord = saveAccessRecord(userId, roomId, now);
                 // 添加进入状态缓存记录
-                redisCacheUtil.pushDataToCacheList(key, accessRecord, 12, ChronoUnit.HOURS);
+                redisCacheUtil.pushDataToCacheList(key, accessRecord, ROOM_ACCESS_SIGN_IN_LAST_TIME, ChronoUnit.HOURS);
                 // 更新列表过期时间
-                redisCacheUtil.resetExpiration(key, 12, TimeUnit.HOURS);
+                redisCacheUtil.resetExpiration(key, ROOM_ACCESS_SIGN_IN_LAST_TIME, TimeUnit.HOURS);
             } else {
                 throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
             }
@@ -388,7 +391,7 @@ public class AccessRecordService {
     }
 
     // 获取当前房间用户签到情况
-    public Object queryRoomAccessRecordNow() {
+    public List<Map<String, Object>> queryRoomAccessRecordNow() {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         String key = ACCESS_RECORD_KEY + userId;
         List<Map<String, Object>> res = new ArrayList<>();
