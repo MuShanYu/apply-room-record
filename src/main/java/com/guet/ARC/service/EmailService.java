@@ -32,18 +32,22 @@ public class EmailService {
      */
     @Async
     public void sendSimpleMail(String to, String subject, String content) {
-        //创建SimpleMailMessage对象
-        SimpleMailMessage message = new SimpleMailMessage();
-        //邮件发送人
-        message.setFrom(username);
-        //邮件接收人
-        message.setTo(to);
-        //邮件主题
-        message.setSubject(subject);
-        //邮件内容
-        message.setText(content);
-        //发送邮件
-        javaMailSender.send(message);
+        try {
+            //创建SimpleMailMessage对象
+            SimpleMailMessage message = new SimpleMailMessage();
+            //邮件发送人
+            message.setFrom(username);
+            //邮件接收人
+            message.setTo(to);
+            //邮件主题
+            message.setSubject(subject);
+            //邮件内容
+            message.setText(content);
+            //发送邮件
+            javaMailSender.send(message);
+        } catch (Exception e) {
+            log.error("mail send failed. the mail is {}", to);
+        }
     }
 
     /**
@@ -73,7 +77,7 @@ public class EmailService {
             javaMailSender.send(message);
         } catch (Exception e) {
             // 记录发送失败，添加发送任务重发
-            log.error("mail send failed. - ", e);
+            log.error("mail send failed. the mail is {}", to);
         }
     }
 
@@ -98,7 +102,7 @@ public class EmailService {
             helper.addAttachment(fileName, file);
             javaMailSender.send(message);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("mail send failed. the mail is {}", to);
         }
     }
 
