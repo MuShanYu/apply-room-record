@@ -13,7 +13,7 @@ import java.util.List;
  * Date: 2023/11/22
  */
 public interface RoomReservationRepository extends JpaRepository<RoomReservation, String> {
-    Page<RoomReservation> findByRoomIdAndCreateTimeBetween(String roomId, Long startTime, Long endTime,
+    Page<RoomReservation> findByRoomIdAndCreateTimeBetweenOrderByCreateTimeDesc(String roomId, Long startTime, Long endTime,
                                                            Pageable pageable);
 
     long countByReserveStartTimeAndReserveEndTimeAndRoomIdAndStateIn(Long reserveStartTime, Long reserveEndTime,
