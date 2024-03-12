@@ -226,6 +226,52 @@ public class RoomReservationService {
         return pageInfo;
     }
 
+
+    public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList2(RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
+        String roomId = roomApplyDetailListQueryDTO.getRoomId();
+        Long startTime = roomApplyDetailListQueryDTO.getStartTime();
+        Long endTime = roomApplyDetailListQueryDTO.getEndTime();
+        Long[] standardTime = CommonUtils.getStandardStartTimeAndEndTime(startTime, endTime);
+        // 获取startTime的凌晨00：00
+        long webAppDateStart = standardTime[0];
+        // 获取这endTime 23:59:59的毫秒值
+        long webAppDateEnd = standardTime[1];
+        // 检查时间跨度是否超过14天
+        if (webAppDateEnd - webAppDateStart <= 0) {
+            throw new AlertException(1000, "结束时间不能小于等于开始时间");
+        }
+        long days = (webAppDateEnd - webAppDateStart) / 1000 / 60 / 60 / 24;
+        if (days > 30) {
+            throw new AlertException(1000, "查询数据的时间跨度不允许超过30天");
+        }
+        // 查询相应房间的所有预约记录
+        PageRequest pageRequest = PageRequest.of(roomApplyDetailListQueryDTO.getPage() - 1, roomApplyDetailListQueryDTO.getSize());
+        org.springframework.data.domain.Page<RoomReservation> queryPageData =
+                roomReservationRepository.findByRoomIdAndReserveStartTime(roomId, webAppDateStart, webAppDateEnd, pageRequest);
+        List<RoomReservation> roomReservationList = queryPageData.getContent();
+        List<RoomReservationUserVo> roomReservationUserVos = new ArrayList<>();
+        BeanCopier beanCopier = BeanCopier.create(RoomReservation.class, RoomReservationUserVo.class, false);
+        // 添加每条预约记录的预约人姓名
+        for (RoomReservation roomReservation : roomReservationList) {
+            RoomReservationUserVo roomReservationUserVo = new RoomReservationUserVo();
+            beanCopier.copy(roomReservation, roomReservationUserVo, null);
+            Optional<User> optionalUser = userRepository.findById(roomReservation.getUserId());
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                roomReservationUserVo.setName(user.getName());
+            }
+            roomReservationUserVos.add(roomReservationUserVo);
+        }
+        PageInfo<RoomReservationUserVo> pageInfo = new PageInfo<>();
+        pageInfo.setPage(roomApplyDetailListQueryDTO.getPage());
+        pageInfo.setTotalSize(queryPageData.getTotalElements());
+        pageInfo.setPageData(roomReservationUserVos);
+        return pageInfo;
+    }
+
+
+
+
     public PageInfo<RoomReservationVo> queryMyApply(MyApplyQueryDTO myApplyQueryDTO) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         Page<RoomReservationVo> queryPageData = PageHelper.startPage(myApplyQueryDTO.getPage(), myApplyQueryDTO.getSize());

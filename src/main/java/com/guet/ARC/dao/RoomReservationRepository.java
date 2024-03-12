@@ -15,7 +15,8 @@ import java.util.List;
 public interface RoomReservationRepository extends JpaRepository<RoomReservation, String> {
     Page<RoomReservation> findByRoomIdAndCreateTimeBetween(String roomId, Long startTime, Long endTime,
                                                            Pageable pageable);
-
+    Page<RoomReservation> findByRoomIdAndReserveStartTime(String roomId, Long startTime, Long endTime,
+                                                           Pageable pageable);
     long countByReserveStartTimeAndReserveEndTimeAndRoomIdAndStateIn(Long reserveStartTime, Long reserveEndTime,
                                                                           String roomId, List<ReservationState> state);
 

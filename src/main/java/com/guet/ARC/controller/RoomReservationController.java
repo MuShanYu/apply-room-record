@@ -54,10 +54,17 @@ public class RoomReservationController {
     }
 
     @PostMapping("/roomReservation/queryRoomApplyDetailList")
-    @ApiOperation("查询房间预约详细信息")
+    @ApiOperation("根据房间预约创建时间，查询房间预约详细信息")
     @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
     public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(@Valid @RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
         return roomReservationService.queryRoomApplyDetailList(roomApplyDetailListQueryDTO);
+    }
+
+    @PostMapping("/roomReservation/queryRoomApplyDetailList2")
+    @ApiOperation("根据房间预约起始时间，查询房间预约详细信息")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList2(@Valid @RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
+        return roomReservationService.queryRoomApplyDetailList2(roomApplyDetailListQueryDTO);
     }
 
     @PostMapping("/roomReservation/userRecord")
