@@ -16,6 +16,9 @@ public interface RoomReservationRepository extends JpaRepository<RoomReservation
     Page<RoomReservation> findByRoomIdAndCreateTimeBetweenOrderByCreateTimeDesc(String roomId, Long startTime, Long endTime,
                                                            Pageable pageable);
 
+    Page<RoomReservation> findByRoomIdAndReserveStartTimeBetweenOrderByCreateTimeDesc(String roomId, Long startTime, Long endTime,
+                                                                                Pageable pageable);
+
     long countByReserveStartTimeAndReserveEndTimeAndRoomIdAndStateIn(Long reserveStartTime, Long reserveEndTime,
                                                                           String roomId, List<ReservationState> state);
 

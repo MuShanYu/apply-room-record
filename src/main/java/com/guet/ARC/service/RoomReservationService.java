@@ -204,7 +204,7 @@ public class RoomReservationService {
         // 查询相应房间的所有预约记录
         PageRequest pageRequest = PageRequest.of(roomApplyDetailListQueryDTO.getPage() - 1, roomApplyDetailListQueryDTO.getSize());
         org.springframework.data.domain.Page<RoomReservation> queryPageData =
-                roomReservationRepository.findByRoomIdAndCreateTimeBetweenOrderByCreateTimeDesc(roomId, webAppDateStart, webAppDateEnd, pageRequest);
+                roomReservationRepository.findByRoomIdAndReserveStartTimeBetweenOrderByCreateTimeDesc(roomId, webAppDateStart, webAppDateEnd, pageRequest);
         List<RoomReservation> roomReservationList = queryPageData.getContent();
         List<RoomReservationUserVo> roomReservationUserVos = new ArrayList<>();
         BeanCopier beanCopier = BeanCopier.create(RoomReservation.class, RoomReservationUserVo.class, false);
