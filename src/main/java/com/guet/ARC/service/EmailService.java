@@ -46,7 +46,7 @@ public class EmailService {
             //发送邮件
             javaMailSender.send(message);
         } catch (Exception e) {
-            log.error("mail send failed. the mail is {}", to);
+            log.error("mail send failed. the mail is {}, and the error is", to, e);
         }
     }
 
@@ -77,7 +77,7 @@ public class EmailService {
             javaMailSender.send(message);
         } catch (Exception e) {
             // 记录发送失败，添加发送任务重发
-            log.error("mail send failed. the mail is {}", to);
+            log.error("mail send failed. the mail is {}, and the error is", to, e);
         }
     }
 
@@ -102,7 +102,7 @@ public class EmailService {
             helper.addAttachment(fileName, file);
             javaMailSender.send(message);
         } catch (Exception e) {
-            log.error("mail send failed. the mail is {}", to);
+            log.error("mail send failed. the mail is {}, and the error is", to, e);
         }
     }
 
