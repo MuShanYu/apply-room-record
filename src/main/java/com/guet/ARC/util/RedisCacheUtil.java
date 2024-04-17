@@ -19,7 +19,7 @@ public class RedisCacheUtil<T> {
     @Autowired
     public RedisTemplate redisTemplate;
 
-    public <T> ValueOperations<String, T> setCacheObject(String key, T value, Integer timeout, TimeUnit timeUnit) {
+    public <T> ValueOperations<String, T> setCacheObject(String key, T value, long timeout, TimeUnit timeUnit) {
         ValueOperations<String, T> operation = redisTemplate.opsForValue();
         operation.set(key, value, timeout, timeUnit);
         return operation;

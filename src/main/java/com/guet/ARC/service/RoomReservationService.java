@@ -1,11 +1,14 @@
 package com.guet.ARC.service;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.date.DateUnit;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
+import com.guet.ARC.common.enmu.RedisCacheKey;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.RoomRepository;
 import com.guet.ARC.dao.RoomReservationRepository;
@@ -27,6 +30,7 @@ import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
 import com.guet.ARC.util.CommonUtils;
+import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
@@ -34,9 +38,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.transaction.Transactional;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -62,6 +68,9 @@ public class RoomReservationService {
 
     @Autowired
     private MessageService messageService;
+
+    @Autowired
+    private RedisCacheUtil<String> redisCacheUtil;
 
 
     public void cancelApply(String roomReservationId, String reason) {
@@ -110,17 +119,18 @@ public class RoomReservationService {
     }
 
     //同步方法
+    @Transactional(rollbackOn = RuntimeException.class)
     public synchronized RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
         // 检测预约起始和预约结束时间
         long subTime = applyRoomDTO.getEndTime() - applyRoomDTO.getStartTime();
-        long hour_12 = 43200000;
-        long ten_min = 600000;
+        long hour12 = 43200000;
+        long halfHour = 1800000;
         if (subTime <= 0) {
             throw new AlertException(1000, "预约起始时间不能大于等于结束时间");
-        } else if (subTime > hour_12) {
+        } else if (subTime > hour12) {
             throw new AlertException(1000, "单次房间的预约时间不能大于12小时");
-        } else if (subTime < ten_min) {
-            throw new AlertException(1000, "单次房间的预约时间不能小于10分钟");
+        } else if (subTime < halfHour) {
+            throw new AlertException(1000, "单次房间的预约时间不能小于30分钟");
         }
         // 检测是否已经预约
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
@@ -143,7 +153,7 @@ public class RoomReservationService {
         roomReservation.setUserId(userId);
         roomReservation.setRoomId(applyRoomDTO.getRoomId());
         roomReservationRepository.save(roomReservation);
-        // 发送预约房间通知给审核人
+        setRoomApplyNotifyCache(roomReservation, userId);
         Optional<Room> roomOptional = roomRepository.findById(roomReservation.getRoomId());
         if (roomOptional.isPresent()) {
             Room room = roomOptional.get();
@@ -266,8 +276,8 @@ public class RoomReservationService {
                 roomReservationAdminVo.setName(user.getName());
                 roomReservationAdminVo.setStuNum(user.getStuNum());
             });
-            // fix:问题：只要现在的时间大于结束时间就会被认为超时未处理，应该要加上是否已经被处理，未被处理的才要判断是否超时
-            if (now > roomReservationAdminVo.getReserveEndTime()
+            // fix:问题：只要现在的时间大于起始时间就会被认为超时未处理，应该要加上是否已经被处理，未被处理的才要判断是否超时
+            if (now > roomReservationAdminVo.getReserveStartTime()
                     && roomReservationAdminVo.getState().equals(ReservationState.ROOM_RESERVE_TO_BE_REVIEWED)) {
                 handleTimeOutReservationAdmin(roomReservationAdminVo);
                 // 被设置超时的房间预约信息，从列表中去除
@@ -296,8 +306,8 @@ public class RoomReservationService {
             RoomReservation roomReservation = roomReservationOptional.get();
             User user = userOptional.get();
             // 是否超出预约结束时间
-            if (System.currentTimeMillis() >= roomReservation.getReserveEndTime()) {
-                throw new AlertException(1000, "已超过预约结束时间,无法操作");
+            if (System.currentTimeMillis() >= roomReservation.getReserveStartTime()) {
+                throw new AlertException(1000, "已超过预约起始时间, 系统已自动更改申请状态，无法操作。请刷新页面。");
             }
             // 发送通知邮件信息
             // 发起请求的用户
@@ -404,5 +414,30 @@ public class RoomReservationService {
         copier.copy(roomReservationVo, roomReservation, null);
         roomReservation.setUpdateTime(System.currentTimeMillis());
         roomReservationRepository.save(roomReservation);
+    }
+
+    /**
+     * 包含两个提醒，发送时机就是key过期时，快要过期提醒审核，已过期提醒申请人超时未处理重新申请。
+     * @param roomReservation 房间预约实体
+     * @param userId 当前登陆人id
+     */
+    private void setRoomApplyNotifyCache(RoomReservation roomReservation, String userId) {
+        // 记录当前时间->房间预约起始时间，redis缓存，用于判断是否管理员超期未处理，自动更改状态，通知用户房间预约超期未处理，防止占用时间段，用户可以重新预约
+        long cacheTimeSecond = DateUtil.between(new Date(), new Date(roomReservation.getReserveStartTime()), DateUnit.SECOND);
+        String roomOccupancyApplyKey = RedisCacheKey.ROOM_OCCUPANCY_APPLY_KEY.concatKey(roomReservation.getId());
+        redisCacheUtil.setCacheObject(roomOccupancyApplyKey, userId, cacheTimeSecond, TimeUnit.SECONDS);
+        // 前一个小时提醒负责人审核。 预约间隔最少是30分钟
+        long cacheNotifyChargerSecond = cacheTimeSecond - (60 * 60);
+        // 当前时间距离预约起始时间小于一个小时
+        if (cacheTimeSecond <= 3600L && cacheTimeSecond > 1800L) {
+            // 不足一个小时，但是大于半个小时
+            cacheNotifyChargerSecond = cacheTimeSecond - (30 * 60);
+        } else if (cacheTimeSecond < 1800L) {
+            // 不设置通知审核人
+            return;
+        }
+        // 缓存
+        String notifyChargerKey = RedisCacheKey.ROOM_APPLY_TIMEOUT_NOTIFY_KEY.concatKey(roomReservation.getId());
+        redisCacheUtil.setCacheObject(notifyChargerKey, userId, cacheNotifyChargerSecond, TimeUnit.SECONDS);
     }
 }

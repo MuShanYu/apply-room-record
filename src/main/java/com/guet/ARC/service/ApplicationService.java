@@ -78,7 +78,7 @@ public class ApplicationService {
         long subMinutes = DateUtil.between(now, endOfWeek, DateUnit.MINUTE);
         if (applyTimes == null) {
             // 第一次申请
-            redisCacheUtil.setCacheObject(APPLY_NUMBER_KEY + userId, 1, Integer.parseInt("" + subMinutes), TimeUnit.MINUTES);
+            redisCacheUtil.setCacheObject(APPLY_NUMBER_KEY + userId, 1, subMinutes, TimeUnit.MINUTES);
         } else {
             // 不是第一次申请了，判断次数
             if (MAX_APPLY_TIMES <= applyTimes) {

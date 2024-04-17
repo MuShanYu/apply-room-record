@@ -331,7 +331,7 @@ public class UserService {
             // 发送验证码并缓存，有效时间未5分钟
             String message = "您的验证码为：" + code + "。有效期为5分钟。请勿将该验证码泄露给任何人！";
             // 缓存code
-            redisCacheUtil.setCacheObject(stuNum, code, 5, TimeUnit.MINUTES);
+            redisCacheUtil.setCacheObject(stuNum, code, 5L, TimeUnit.MINUTES);
             // 发送短信
             emailService.sendSimpleMail(user.getMail(), "房间预约与流动统计App,邮箱验证码", message);
         } else {
@@ -340,7 +340,7 @@ public class UserService {
                 // 发送验证码并缓存，有效时间未5分钟
                 String message = "您的验证码为：" + code + "。有效期为5分钟。请勿将该验证码泄露给任何人！";
                 // 缓存code
-                redisCacheUtil.setCacheObject(stuNum, code, 5, TimeUnit.MINUTES);
+                redisCacheUtil.setCacheObject(stuNum, code, 5L, TimeUnit.MINUTES);
                 // 发送短信
                 emailService.sendSimpleMail(mail, "房间预约与流动统计App,邮箱验证码", message);
             }
