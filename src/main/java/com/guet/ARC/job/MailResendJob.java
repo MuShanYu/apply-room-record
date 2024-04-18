@@ -36,6 +36,7 @@ public class MailResendJob {
     @Scheduled(cron = "0 */5 * ? * *")
     public void execute() {
         List<String> jsonStringData = redisCacheUtil.getPopCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey());
+        System.out.println(jsonStringData);
         if (!jsonStringData.isEmpty()) {
             for (String jsonString : jsonStringData) {
                 log.info("resend mail: {}", jsonString);
