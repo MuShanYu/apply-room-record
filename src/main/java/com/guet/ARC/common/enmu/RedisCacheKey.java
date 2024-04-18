@@ -16,7 +16,9 @@ public enum RedisCacheKey {
     /**
      * 房间申请审核即将过期通知，用于通知负责人审核
      */
-    ROOM_APPLY_TIMEOUT_NOTIFY_KEY("room:soon:timeout:notify:");
+    ROOM_APPLY_TIMEOUT_NOTIFY_KEY("room:soon:timeout:notify:"),
+
+    MAIL_RESEND_KEY("mail:resend:list");
 
     private final String key;
 

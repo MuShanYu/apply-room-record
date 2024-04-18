@@ -6,7 +6,6 @@ import com.guet.ARC.domain.AccessRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Component;
-import springfox.documentation.spring.web.json.Json;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
@@ -53,6 +52,28 @@ public class RedisCacheUtil<T> {
         String valueWithExpiration = "{\"data\":" + JSON.toJSON(data) + ",\"expire\":"
                 + (System.currentTimeMillis() + Duration.of(timeout, timeUnit).toMillis()) + "}";
         redisTemplate.opsForList().leftPush(key, valueWithExpiration);
+    }
+
+    public void pushDataToCacheList(String key, T data) {
+        redisTemplate.opsForList().leftPush(key, data);
+    }
+
+    public List<T> getPopCacheList(String key) {
+        ListOperations<String, T> listOperations = redisTemplate.opsForList();
+        List<T> result = new ArrayList<>();
+        Long size = listOperations.size(key);
+        if (Objects.isNull(size)) {
+            size = 0L;
+        }
+        for (int i = 0; i < size.intValue(); i++) {
+            result.add(listOperations.leftPop(key));
+        }
+        return result;
+    }
+
+    public T popDataFromCacheList(String key) {
+        ListOperations<String, T> listOperations = redisTemplate.opsForList();
+        return listOperations.leftPop(key);
     }
 
     public void resetExpiration(String key, long timeout, TimeUnit timeUnit) {

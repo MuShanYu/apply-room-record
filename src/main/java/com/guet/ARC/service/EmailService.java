@@ -1,10 +1,11 @@
 package com.guet.ARC.service;
 
+import com.guet.ARC.common.enmu.RedisCacheKey;
+import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -18,15 +19,20 @@ import java.io.File;
 @Service
 @Slf4j
 public class EmailService {
+
     @Autowired
     private JavaMailSender javaMailSender;
+
+    @Autowired
+    private RedisCacheUtil<String> redisCacheUtil;
 
     @Value("${spring.mail.username}")
     private String username;
 
     /**
      * 简单文本邮件
-     * @param to 收件人
+     *
+     * @param to      收件人
      * @param subject 主题
      * @param content 内容
      */
@@ -47,12 +53,15 @@ public class EmailService {
             javaMailSender.send(message);
         } catch (Exception e) {
             log.error("mail send failed. the mail is {}, and the error is", to, e);
+            // 构建重发对象
+            redisCacheUtil.pushDataToCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey(), buildSimpleMailSendJsonString(to, subject, content));
         }
     }
 
     /**
      * html邮件
-     * @param to 收件人,多个时参数形式 ："xxx@xxx.com,xxx@xxx.com,xxx@xxx.com"
+     *
+     * @param to      收件人,多个时参数形式 ："xxx@xxx.com,xxx@xxx.com,xxx@xxx.com"
      * @param subject 主题
      * @param content 内容
      */
@@ -78,14 +87,16 @@ public class EmailService {
         } catch (Exception e) {
             // 记录发送失败，添加发送任务重发
             log.error("mail send failed. the mail is {}, and the error is", to, e);
+            redisCacheUtil.pushDataToCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey(), buildSimpleMailSendJsonString(to, subject, content));
         }
     }
 
     /**
      * 带附件的邮件
-     * @param to 收件人
-     * @param subject 主题
-     * @param content 内容
+     *
+     * @param to       收件人
+     * @param subject  主题
+     * @param content  内容
      * @param filePath 附件
      */
     public void sendAttachmentsMail(String to, String subject, String content, String filePath) {
@@ -103,7 +114,19 @@ public class EmailService {
             javaMailSender.send(message);
         } catch (Exception e) {
             log.error("mail send failed. the mail is {}, and the error is", to, e);
+            redisCacheUtil.pushDataToCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey(), buildSimpleMailSendJsonString(to, subject, content));
         }
+    }
+
+    private String buildSimpleMailSendJsonString(String to, String subject, String content) {
+        return "{" +
+                "\"to\":" + "\"" +
+                to + "\"" +
+                ",\"subject\":" + "\"" +
+                subject + "\"" +
+                ",\"content\":" + "\"" +
+                content + "\"" +
+                "}";
     }
 
 }
