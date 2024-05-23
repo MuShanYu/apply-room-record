@@ -12,6 +12,7 @@ import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.enmu.Device;
+import com.guet.ARC.common.enmu.RoleType;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.UserRoleRepository;
@@ -84,7 +85,7 @@ public class UserService {
         }
         User user = buildUser(userRegisterDTO, System.currentTimeMillis());
         userRepository.saveAndFlush(user);
-        userRoleService.setRole(user.getId(), CommonConstant.ROLE_USER_ID);
+        userRoleService.setRole(user.getId(), RoleType.USER.getId());
         // 返回信息
         Map<String, Object> map = new HashMap<>();
         // 用户登录
@@ -112,7 +113,7 @@ public class UserService {
                 UserRole userRole = new UserRole();
                 userRole.setId(IdUtil.fastSimpleUUID());
                 userRole.setUserId(user.getId());
-                userRole.setRoleId(CommonConstant.ROLE_USER_ID);
+                userRole.setRoleId(RoleType.USER.getId());
                 userRole.setState(State.ACTIVE);
                 userRole.setUpdateTime(now);
                 userRole.setCreateTime(now);
@@ -448,7 +449,7 @@ public class UserService {
             roles.forEach(v -> roleNames.add(v.getRoleName()));
             if (!roleNames.contains(CommonConstant.ADMIN_ROLE)) {
                 // 修改为管理员
-                userRoleService.setRole(user.getId(), CommonConstant.ROLE_ADMIN_ID);
+                userRoleService.setRole(user.getId(), RoleType.ADMIN.getId());
             }
         } else {
             // 要设置的负责人未注册

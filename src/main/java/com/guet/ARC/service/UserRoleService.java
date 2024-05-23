@@ -1,8 +1,8 @@
 package com.guet.ARC.service;
 
 import cn.hutool.core.util.IdUtil;
-import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.ResultCode;
+import com.guet.ARC.common.enmu.RoleType;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRoleRepository;
 import com.guet.ARC.domain.Role;
@@ -52,7 +52,7 @@ public class UserRoleService {
             newRoleIdMap.put(roleId, 1);
         }
         // 不允许删除普通用户角色
-        if (!newRoleIdMap.containsKey(CommonConstant.ROLE_USER_ID)) {
+        if (!newRoleIdMap.containsKey(RoleType.USER.getId())) {
             throw new AlertException(ResultCode.UPDATE_USER_ROLE_IS_NOT_PERMITTED);
         }
         Map<String, Integer> myRoleMap = new HashMap<>();
