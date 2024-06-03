@@ -1,5 +1,6 @@
 package com.guet.ARC.dao;
 
+import com.guet.ARC.common.jpa.JpaCompatibilityRepository;
 import com.guet.ARC.domain.Application;
 import com.guet.ARC.domain.enums.ApplicationState;
 import com.guet.ARC.domain.enums.ApplicationType;
@@ -15,6 +16,7 @@ import java.util.Optional;
  * Author: Yulf
  * Date: 2023/11/13
  */
-public interface ApplicationRepository extends JpaRepository<Application, String>, JpaSpecificationExecutor<Application> {
+public interface ApplicationRepository extends JpaCompatibilityRepository<Application, String>, JpaSpecificationExecutor<Application> {
+
     Optional<Application> findByMatterRecordId(String matterRecordId);
 }
