@@ -1,6 +1,8 @@
 package com.guet.ARC.service;
 
+import cn.hutool.extra.mail.MailUtil;
 import com.guet.ARC.common.enmu.RedisCacheKey;
+import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,9 +52,11 @@ public class EmailService {
             //邮件内容
             message.setText(content);
             //发送邮件
-            javaMailSender.send(message);
+            if (CommonUtils.isValidMail(to)) {
+                javaMailSender.send(message);
+            }
         } catch (Exception e) {
-            log.error("mail send failed. the mail is {}, and the error is", to, e);
+            log.error("mail send failed. the mail is {}, and the error message is {}", to, e.getMessage());
             // 构建重发对象
             redisCacheUtil.pushDataToCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey(), buildSimpleMailSendJsonString(to, subject, content));
         }

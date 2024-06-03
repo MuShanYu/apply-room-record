@@ -3,6 +3,7 @@ package com.guet.ARC.job;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.guet.ARC.common.enmu.RedisCacheKey;
+import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,15 +39,16 @@ public class MailResendJob {
         List<String> jsonStringData = redisCacheUtil.getPopCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey());
         if (!jsonStringData.isEmpty()) {
             for (String jsonString : jsonStringData) {
-                log.info("resend mail: {}", jsonString);
                 JSONObject jsonObject = JSON.parseObject(jsonString);
                 String to = jsonObject.getString("to");
                 String subject = jsonObject.getString("subject");
                 String content = jsonObject.getString("content");
                 try {
-                    sendSimpleMail(to, subject, content);
+                    if (CommonUtils.isValidMail(to)) {
+                        sendSimpleMail(to, subject, content);
+                    }
                 } catch (Exception e) {
-                    log.error("mail resend failed. stop send. print error ", e);
+                    log.error("mail {} resend failed. sys stop send. the error message is {}.", to, e.getMessage());
                 }
             }
         }

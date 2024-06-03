@@ -1,5 +1,6 @@
 package com.guet.ARC.util;
 
+import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
@@ -7,10 +8,17 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CommonUtils {
+
+    private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
+
     public static String generateUUID() {
-        return UUID.randomUUID().toString().replace("-", "");
+        return IdUtil.fastSimpleUUID();
     }
 
     /**
@@ -128,5 +136,13 @@ public class CommonUtils {
         HashMap<String, Object> objectHashMap = new HashMap<>(1);
         objectHashMap.put("value", value);
         return objectHashMap;
+    }
+
+    public static boolean isValidMail(String mail) {
+        if (mail == null) {
+            return false;
+        }
+        Matcher matcher = EMAIL_PATTERN.matcher(mail);
+        return matcher.matches();
     }
 }
