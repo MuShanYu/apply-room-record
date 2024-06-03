@@ -17,14 +17,13 @@ import com.guet.ARC.dao.ApplicationRepository;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.mybatis.ApplicationQueryRepository;
 import com.guet.ARC.dao.mybatis.query.ApplicationQuery;
-import com.guet.ARC.dao.mybatis.query.MessageQuery;
 import com.guet.ARC.domain.Application;
 import com.guet.ARC.domain.Message;
 import com.guet.ARC.domain.dto.apply.ApplicationListQuery;
 import com.guet.ARC.domain.enums.ApplicationState;
-import com.guet.ARC.domain.enums.ApplicationType;
 import com.guet.ARC.domain.enums.MessageType;
 import com.guet.ARC.domain.vo.apply.ApplicationListVo;
+import com.guet.ARC.util.AsyncRunUtil;
 import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,22 +93,18 @@ public class ApplicationService {
         application.setState(ApplicationState.APPLYING);
         application.setUpdateTime(System.currentTimeMillis());
         application.setCreateTime(System.currentTimeMillis());
+        applicationRepository.save(application);
         // 发送消息
-        Message message = new Message();
-        message.setMessageReceiverId(application.getHandleUserId());
-        message.setContent("您收到" + application.getTitle());
-        message.setMessageType(MessageType.TODO);
-        messageService.sendMessage(message);
+        sendMessage(application.getHandleUserId(), MessageType.TODO, "您收到" + application.getTitle());
         // 发送订阅消息
         // 获取审核人信息
         userRepository.findById(application.getHandleUserId()).ifPresent(user -> {
             userRepository.findById(application.getApplyUserId()).ifPresent(applyUser -> {
                 user.setName(applyUser.getName());
-                log.info("user:{}", user);
-                application.getState().sendApplicationMessage(user, application);
+                AsyncRunUtil.getInstance().submit(() -> application.getState().sendApplicationMessage(user, application));
             });
         });
-        applicationRepository.save(application);
+
     }
 
     // 查询需要处理的申请列表,待审批，需要当前登录的管理员处理的
@@ -154,52 +149,54 @@ public class ApplicationService {
     }
 
     public void updateApplicationState(String applicationId, Boolean isPass, String remark) {
-        Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
-        if (applicationOptional.isPresent()) {
-            Application application = applicationOptional.get();
-            String content = "";
-            if (isPass) {
-                application.setState(ApplicationState.SUCCESS);
-                content = application.getTitle() + "，审批通过。";
-                application.getApplicationType().handleCheckInRetroApplication(application, accessRecordRepository);
-            } else {
-                application.setState(ApplicationState.FAIL);
-                content = application.getTitle() + "，审批不通过。原因请在我的->申请进程查看。";
-            }
-            application.setUpdateTime(System.currentTimeMillis());
-            application.setRemarks(remark);
-            // 发送消息
-            Message message = new Message();
-            message.setMessageReceiverId(application.getHandleUserId());
-            message.setMessageType(MessageType.RESULT);
-            message.setContent(content);
-            applicationRepository.save(application);
-            messageService.sendMessage(message);
-            // 发送订阅消息
-            userRepository.findById(application.getApplyUserId()).ifPresent(user -> {
-                application.getState().sendApplicationMessage(user, application);
-            });
+        Application application = applicationRepository.findByIdOrElseNull(applicationId);
+        String content = "";
+        if (isPass) {
+            application.setState(ApplicationState.SUCCESS);
+            content = application.getTitle() + "，审批通过。";
+            application.getApplicationType().handleCheckInRetroApplication(application, accessRecordRepository);
+        } else {
+            application.setState(ApplicationState.FAIL);
+            content = application.getTitle() + "，审批不通过。原因请在我的->申请进程查看。";
         }
+        application.setUpdateTime(System.currentTimeMillis());
+        application.setRemarks(remark);
+        applicationRepository.save(application);
+        // 发送消息
+        sendMessage(application.getHandleUserId(), MessageType.RESULT, content);
+        // 发送订阅消息
+        userRepository.findById(application.getApplyUserId()).ifPresent(user -> {
+            AsyncRunUtil.getInstance().submit(() -> application.getState().sendApplicationMessage(user, application));
+        });
     }
 
     // 取消申请
     public void cancelApplication(String applicationId, String remark) {
-        Optional<Application> applicationOptional = applicationRepository.findById(applicationId);
-        applicationOptional.ifPresent(application -> {
-            if (application.getState().equals(ApplicationState.SUCCESS) || application.getState().equals(ApplicationState.FAIL)) {
-                throw new AlertException(1000, "该申请已经处理，无法取消");
-            }
-            application.setState(ApplicationState.CANCEL);
-            application.setRemarks(remark);
-            application.setUpdateTime(System.currentTimeMillis());
-            applicationRepository.save(application);
-            // 发送消息
-            Message message = new Message();
-            message.setMessageReceiverId(application.getHandleUserId());
-            message.setMessageType(MessageType.RESULT);
-            message.setContent(application.getTitle() + "。已取消。");
-            messageService.sendMessage(message);
-        });
+        Application application = applicationRepository.findByIdOrElseNull(applicationId);
+        if (application.getState().equals(ApplicationState.SUCCESS) || application.getState().equals(ApplicationState.FAIL)) {
+            throw new AlertException(1000, "该申请已经处理，无法取消");
+        }
+        application.setState(ApplicationState.CANCEL);
+        application.setRemarks(remark);
+        application.setUpdateTime(System.currentTimeMillis());
+        applicationRepository.save(application);
+        // 发送消息
+        sendMessage(application.getHandleUserId(), MessageType.RESULT, application.getTitle() + "。已取消。");
+    }
+
+    /**
+     * 发送系统消息
+     *
+     * @param receiverId 收件人id
+     * @param type       消息类型
+     * @param content    消息内容
+     */
+    private void sendMessage(String receiverId, MessageType type, String content) {
+        Message message = new Message();
+        message.setMessageReceiverId(receiverId);
+        message.setMessageType(type);
+        message.setContent(content);
+        messageService.sendMessage(message);
     }
 
 }
