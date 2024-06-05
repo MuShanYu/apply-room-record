@@ -18,4 +18,6 @@ public class RoomRecordCountDTO {
 
     @NotNull
     private Long endTime;
+
+    private String chargePersonId;
 }
