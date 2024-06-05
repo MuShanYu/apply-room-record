@@ -200,7 +200,6 @@ public class DataStatisticsService {
 
     // 加上房间类别，如果不为空
     public Map<String, Object> countAccessRecord(RoomRecordCountDTO roomRecordCountDTO) {
-        System.out.println(roomRecordCountDTO);
         String roomCategory = roomRecordCountDTO.getRoomCategory();
         String roomId = roomRecordCountDTO.getRoomId();
         Long startTime = roomRecordCountDTO.getStartTime();
