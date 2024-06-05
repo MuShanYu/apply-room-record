@@ -200,6 +200,7 @@ public class DataStatisticsService {
 
     // 加上房间类别，如果不为空
     public Map<String, Object> countAccessRecord(RoomRecordCountDTO roomRecordCountDTO) {
+        System.out.println(roomRecordCountDTO);
         String roomCategory = roomRecordCountDTO.getRoomCategory();
         String roomId = roomRecordCountDTO.getRoomId();
         Long startTime = roomRecordCountDTO.getStartTime();
@@ -248,7 +249,7 @@ public class DataStatisticsService {
                             .and(oneDayAfter))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                     .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
-                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargePersonId()))
+                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
             // 统计扫码出去的次数，出去的时间不为空
@@ -260,7 +261,7 @@ public class DataStatisticsService {
                             .and(oneDayAfter))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                     .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
-                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargePersonId()))
+                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
                     .build().render(RenderingStrategies.MYBATIS3);
@@ -273,7 +274,7 @@ public class DataStatisticsService {
                             .where(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                             .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                             .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
-                            .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargePersonId()))
+                            .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                             .and(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
                                     .and(oneDayAfter))
                             .groupBy(AccessRecordDynamicSqlSupport.userId), "a")
@@ -380,7 +381,7 @@ public class DataStatisticsService {
                 .and(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
                         .and(webAppDateEnd))
                 .and(RoomDynamicSqlSupport.state, isNotEqualTo(RoomState.ROOM_NEGATIVE))
-                .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargePersonId()))
+                .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                 .groupBy(RoomDynamicSqlSupport.id)
                 .build().render(RenderingStrategies.MYBATIS3);
         List<ExcelRoomRecordWriteModel> roomRecordWriteModels = roomQueryRepository.selectRoomRecordExcelModels(statement);
@@ -400,7 +401,7 @@ public class DataStatisticsService {
                             .and(AccessRecordDynamicSqlSupport.roomId, isEqualTo(roomExcelModelId))
                             .and(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
                                     .and(webAppDateEnd))
-                            .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargePersonId()))
+                            .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                             .groupBy(AccessRecordDynamicSqlSupport.userId), "a")
                     .build().render(RenderingStrategies.MYBATIS3);
             // 统计进入的次数
@@ -412,7 +413,7 @@ public class DataStatisticsService {
                             .and(webAppDateEnd))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualTo(roomExcelModelId))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
-                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargePersonId()))
+                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                     .build().render(RenderingStrategies.MYBATIS3);
             // 统计出去的次数
             countOutTimesStatement = select(count())
@@ -424,7 +425,7 @@ public class DataStatisticsService {
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomExcelModelId))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
-                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargePersonId()))
+                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                     .build().render(RenderingStrategies.MYBATIS3);
             // 设置当前对象
             long peopleInAndOut = accessRecordQueryRepository.count(countPeopleInAndOut);
