@@ -2,6 +2,8 @@ package com.guet.ARC.service;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.DesensitizedUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -12,6 +14,7 @@ import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.enmu.Device;
+import com.guet.ARC.common.enmu.RedisCacheKey;
 import com.guet.ARC.common.enmu.RoleType;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRepository;
@@ -24,6 +27,7 @@ import com.guet.ARC.domain.UserRole;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.enums.State;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
+import com.guet.ARC.netty.manager.UserOnlineManager;
 import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.RedisCacheUtil;
 import com.guet.ARC.util.WxUtils;
@@ -37,10 +41,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-import static org.mybatis.dynamic.sql.SqlBuilder.isLikeWhenPresent;
-import static org.mybatis.dynamic.sql.SqlBuilder.select;
+import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
 @Service
 @Slf4j
@@ -56,7 +61,7 @@ public class UserService {
     private UserQueryRepository userQueryRepository;
 
     @Autowired
-    private RedisCacheUtil<String> redisCacheUtil;
+    private RedisCacheUtil redisCacheUtil;
 
     @Autowired
     private UserRoleService userRoleService;
@@ -497,4 +502,18 @@ public class UserService {
         return res;
     }
 
+    public List<Map<String, Object>> getOlineUserList() {
+        List<Map<String, Object>> res = new ArrayList<>();
+        String id = StpUtil.getLoginIdAsString();
+        ConcurrentMap<String, List<String>> onlineUserIdToSources = UserOnlineManager.getOnlineUserIdToSources();
+        for (User user : userRepository.findAllById(onlineUserIdToSources.keySet())) {
+            if (!StpUtil.hasRole(RoleType.SUPER_ADMIN.getName()) && !id.equals(user.getId())) {
+                user.setName(DesensitizedUtil.chineseName(user.getName()));
+            }
+            Map<String, Object> beanToMap = BeanUtil.beanToMap(user, "id", "name", "stuNum", "institute");
+            beanToMap.put("sources", onlineUserIdToSources.get(user.getId()));
+            res.add(beanToMap);
+        }
+        return res;
+    }
 }

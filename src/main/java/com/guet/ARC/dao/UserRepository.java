@@ -3,6 +3,7 @@ package com.guet.ARC.dao;
 import com.guet.ARC.common.jpa.JpaCompatibilityRepository;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.enums.State;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -30,6 +31,5 @@ public interface UserRepository extends JpaCompatibilityRepository<User, String>
 
     boolean existsByMail(String mail);
 
-    boolean existsById(String id);
-
+    boolean existsById(@NotNull String id);
 }

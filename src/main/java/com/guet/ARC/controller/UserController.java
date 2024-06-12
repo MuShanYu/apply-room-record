@@ -6,7 +6,6 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
-import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.service.UserService;
@@ -135,6 +134,13 @@ public class UserController {
     @ApiOperation(value = "根据旧token获取新token，会话续期")
     public Map<String, Object> refreshTokenApi(@RequestParam("userId") String userId, @RequestParam("device") String device) {
         return userService.refreshToken(userId, device);
+    }
+
+    @GetMapping("/admin/get/online/users")
+    @ApiOperation(value = "获取在线用户信息")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public List<Map<String, Object>> getOnlineUser() {
+        return userService.getOlineUserList();
     }
 
 }

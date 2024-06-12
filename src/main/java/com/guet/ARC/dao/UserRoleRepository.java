@@ -14,4 +14,5 @@ import java.util.Optional;
 public interface UserRoleRepository extends JpaCompatibilityRepository<UserRole, String> {
 
     Optional<UserRole> findByUserIdAndRoleIdAndState(String userId, String roleId, State state);
+
 }

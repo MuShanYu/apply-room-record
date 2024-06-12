@@ -47,6 +47,13 @@ public class AsyncRunUtil {
         executor.submit(task);
     }
 
+    public void submitOnFixRate(Runnable task, long period, TimeUnit timeUnit) {
+        if (executor == null) {
+            throw new IllegalStateException("Executor service is not initialized.");
+        }
+
+    }
+
     /**
      * 提交一个 Callable 任务进行异步执行，并返回 Future 对象以获取执行结果
      * @param task 要执行的任务
@@ -59,6 +66,8 @@ public class AsyncRunUtil {
         }
         return executor.submit(task);
     }
+
+
 
     /**
      * 关闭线程池，不再接受新任务，但会继续执行已提交的任务
