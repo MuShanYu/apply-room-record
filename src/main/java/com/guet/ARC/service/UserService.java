@@ -438,7 +438,7 @@ public class UserService {
     }
 
     public void updateUserName(UserUpdateNameDTO userUpdateNameDTO) {
-        User user = new User();
+        User user = userRepository.findByIdOrElseNull(userUpdateNameDTO.getUserId());
         user.setName(userUpdateNameDTO.getName());
         user.setId(userUpdateNameDTO.getUserId());
         user.setUpdateTime(System.currentTimeMillis());
