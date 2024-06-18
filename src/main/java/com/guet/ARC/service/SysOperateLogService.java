@@ -1,9 +1,11 @@
 package com.guet.ARC.service;
 
-import cn.hutool.core.collection.CollectionUtil;
+import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.util.DesensitizedUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.common.enmu.RoleType;
 import com.guet.ARC.dao.SysOperateLogRepository;
 import com.guet.ARC.domain.SysOperateLog;
 import com.guet.ARC.domain.dto.log.SysOperateLogQueryDTO;
@@ -42,6 +44,8 @@ public class SysOperateLogService {
             query.orderBy(cb.desc(root.get("createTime")));
             return cb.and(predicates.toArray(Predicate[]::new));
         }, PageRequest.of(queryDTO.getPage() - 1, queryDTO.getSize()));
+        if (!StpUtil.hasRole(RoleType.SUPER_ADMIN.getName()))
+            pageInfo.getContent().forEach(item -> item.setOperatorName(DesensitizedUtil.chineseName(item.getOperatorName())));
         return new PageInfo<>(pageInfo);
     }
 

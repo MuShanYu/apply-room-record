@@ -152,7 +152,6 @@ public class UserService {
         user.setName(userRegisterDTO.getName());
         user.setStuNum(userRegisterDTO.getStuNum());
         user.setInstitute(userRegisterDTO.getInstitute());
-        user.setNickname(userRegisterDTO.getName());
         user.setMail(userRegisterDTO.getMail());
         user.setPwd(SaSecureUtil.md5(userRegisterDTO.getStuNum()));
         user.setId(IdUtil.fastSimpleUUID());
@@ -438,43 +437,10 @@ public class UserService {
         }
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
-    public User userBeCurrentRoomCharger(String stuNum, String name) {
-        Optional<User> userOptional = userRepository.findByStuNum(stuNum);
-        User user;
-        if (userOptional.isPresent()) {
-            user = userOptional.get();
-            // 是否可用
-            if (user.getState().equals(State.NEGATIVE)) {
-                throw new AlertException(999, name + "负责人账户处于不可用状态");
-            }
-            // 判断权限
-            List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
-            List<String> roleNames = new ArrayList<>();
-            roles.forEach(v -> roleNames.add(v.getRoleName()));
-            if (!roleNames.contains(CommonConstant.ADMIN_ROLE)) {
-                // 修改为管理员
-                userRoleService.setRole(user.getId(), RoleType.ADMIN.getId());
-            }
-        } else {
-            // 要设置的负责人未注册
-            throw new AlertException(1000, "学号/工号错误，或者负责人" + stuNum + name + "未注册");
-        }
-        return user;
-    }
-
     public void updateUserName(UserUpdateNameDTO userUpdateNameDTO) {
         User user = new User();
         user.setName(userUpdateNameDTO.getName());
         user.setId(userUpdateNameDTO.getUserId());
-        user.setUpdateTime(System.currentTimeMillis());
-        userRepository.save(user);
-    }
-
-    public void updateUserNickname(UserUpdateNicknameDTO userUpdateNicknameDTO) {
-        User user = new User();
-        user.setNickname(userUpdateNicknameDTO.getNickname());
-        user.setId(userUpdateNicknameDTO.getUserId());
         user.setUpdateTime(System.currentTimeMillis());
         userRepository.save(user);
     }
@@ -515,5 +481,9 @@ public class UserService {
             res.add(beanToMap);
         }
         return res;
+    }
+
+    public List<User> findUserByIds(List<String> ids) {
+        return userRepository.findAllById(ids);
     }
 }

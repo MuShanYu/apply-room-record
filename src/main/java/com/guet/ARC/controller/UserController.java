@@ -128,12 +128,6 @@ public class UserController {
         userService.updateUserName(userUpdateNameDTO);
     }
 
-    @PostMapping("/user/update/nickname")
-    @ApiOperation(value = "用户更改昵称")
-    public void updateUserTelApi(@Valid @RequestBody UserUpdateNicknameDTO userUpdateNicknameDTO) {
-        userService.updateUserNickname(userUpdateNicknameDTO);
-    }
-
 
     @GetMapping("/user/refresh/token")
     @ApiOperation(value = "根据旧token获取新token，会话续期")

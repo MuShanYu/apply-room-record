@@ -20,8 +20,6 @@ public class User {
     @Id
     private String id;
 
-    private String nickname;
-
     private String pwd;
 
     private String stuNum;

@@ -3,6 +3,7 @@ package com.guet.ARC.service;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.constant.CommonConstant;
@@ -19,16 +20,19 @@ import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
 import com.guet.ARC.dao.mybatis.RoomQueryRepository;
 import com.guet.ARC.domain.enums.RoomState;
-import com.guet.ARC.util.CommonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class RoomService {
@@ -125,7 +129,11 @@ public class RoomService {
 
     // 状态正常的房间
     public Room queryRoomById(String id) {
-        return roomRepository.findByIdAndStateNot(id, RoomState.ROOM_NEGATIVE).orElse(null);
+        Room room = roomRepository.findByIdAndStateNot(id, RoomState.ROOM_NEGATIVE).orElse(null);
+        if (ObjectUtil.isNotNull(room)) {
+            autoUpdateRoomChargerName(CollectionUtil.toList(room));
+        }
+        return room;
     }
 
     /**
@@ -139,11 +147,8 @@ public class RoomService {
         List<Room> rooms = roomQueryRepository.selectMany(
                 roomQuery.queryCanApplyRoomListSql(roomQueryDTO)
         );
-        PageInfo<Room> pageInfo = new PageInfo<>();
-        pageInfo.setPage(roomQueryDTO.getPage());
-        pageInfo.setPageData(rooms);
-        pageInfo.setTotalSize(queryPageData.getTotal());
-        return pageInfo;
+        autoUpdateRoomChargerName(rooms);
+        return new PageInfo<>(queryPageData);
     }
 
     public PageInfo<Room> queryRoomList(RoomListQueryDTO roomListQueryDTO) {
@@ -167,18 +172,12 @@ public class RoomService {
             if (StringUtils.hasLength(roomName)) {
                 predicates.add(cb.like(root.get("roomName"), "%" + roomName + "%"));
             }
-            if (CollectionUtil.isEmpty(predicates)) {
-                return cb.conjunction();
-            }
             query.orderBy(cb.desc(root.get("createTime")));
             return cb.and(predicates.toArray(Predicate[]::new));
         }, pageRequest);
         List<Room> rooms = queryPageData.getContent();
-        PageInfo<Room> pageInfo = new PageInfo<>();
-        pageInfo.setPage(roomListQueryDTO.getPage());
-        pageInfo.setTotalSize(queryPageData.getTotalElements());
-        pageInfo.setPageData(rooms);
-        return pageInfo;
+        autoUpdateRoomChargerName(rooms);
+        return new PageInfo<>(queryPageData);
     }
 
     // 导入房间数据
@@ -226,6 +225,25 @@ public class RoomService {
 
     // 查询用户进出过的房间列表
     public List<Room> queryAccessRecordRoomList() {
-        return roomQueryRepository.selectMany(roomQuery.queryAccessRecordRoomListSql());
+        List<Room> rooms = roomQueryRepository.selectMany(roomQuery.queryAccessRecordRoomListSql());
+        autoUpdateRoomChargerName(rooms);
+        return rooms;
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void autoUpdateRoomChargerName(List<Room> rooms) {
+        List<String> chargerPersonIds = rooms.stream().map(Room::getChargePersonId).collect(Collectors.toList());
+        Map<String, User> idToUser = userService.findUserByIds(chargerPersonIds).stream().collect(Collectors.toMap(User::getId, Function.identity()));
+        List<Room> needUpdateRoom = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        for (Room room : rooms) {
+            User user = idToUser.get(room.getChargePersonId());
+            if (!user.getName().equals(room.getChargePerson())) {
+                room.setChargePerson(user.getName());
+                room.setUpdateTime(now);
+                needUpdateRoom.add(room);
+            }
+        }
+        roomRepository.saveAll(needUpdateRoom);
     }
 }

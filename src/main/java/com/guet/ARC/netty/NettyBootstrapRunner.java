@@ -1,5 +1,6 @@
 package com.guet.ARC.netty;
 
+import cn.hutool.core.io.resource.ClassPathResource;
 import com.guet.ARC.netty.handler.SocketConnectedHandler;
 import com.guet.ARC.netty.handler.UserOnlineHandler;
 import io.netty.bootstrap.ServerBootstrap;
@@ -9,6 +10,9 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +50,11 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
+        /*final SslContext sslCtx;
+        // 使用自签名证书进行 SSL 配置
+        ClassPathResource pem = new ClassPathResource("x.pem");
+        ClassPathResource key = new ClassPathResource("x.key");
+        sslCtx = SslContextBuilder.forServer(pem.getStream(), key.getStream()).build();*/
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -57,6 +66,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                 @Override
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     ChannelPipeline pipeline = socketChannel.pipeline();
+//                    pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));  // 添加 SSL 处理
                     pipeline.addLast(new HttpServerCodec());//请求解码器
                     pipeline.addLast(new HttpObjectAggregator(65536));//将多个消息转换成单一的消息对象
                     pipeline.addLast(new ChunkedWriteHandler());//支持异步发送大的码流，一般用于发送文件流

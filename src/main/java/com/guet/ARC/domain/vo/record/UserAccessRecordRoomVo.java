@@ -23,5 +23,5 @@ public class UserAccessRecordRoomVo extends AccessRecord {
     private String school;
 
     @ExcelProperty(value = "姓名", order = 3)
-    private String nickname;
+    private String name;
 }
