@@ -13,7 +13,7 @@ public class PageInfo<T> {
     }
 
     public PageInfo(Page<T> page) {
-        this.page = page.getNumber();
+        this.page = page.getNumber() + 1;
         this.totalSize = page.getTotalElements();
         this.pageData = page.getContent();
     }

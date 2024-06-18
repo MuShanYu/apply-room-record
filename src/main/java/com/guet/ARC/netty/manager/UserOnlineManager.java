@@ -36,25 +36,32 @@ public class UserOnlineManager {
     }
 
     public static void removeChannel(Channel channel) {
-        String source = channelToSource.getOrDefault(channel, null);
-        if (StrUtil.isNotEmpty(source)) {
-            String userId = String.valueOf(channel.attr(AttributeKey.valueOf("userId")).get());
-            List<String> sources = userIdToSources.getOrDefault(userId, new ArrayList<>());
-            // 删除
-            sources.remove(source);
-            // 完全下线
-            if (sources.isEmpty()) {
-                userIdToSources.remove(userId);
+        try {
+            lock.writeLock().lock();
+            channel.close();
+            String source = channelToSource.getOrDefault(channel, null);
+            if (StrUtil.isNotEmpty(source)) {
+                String userId = String.valueOf(channel.attr(AttributeKey.valueOf("userId")).get());
+                List<String> sources = userIdToSources.getOrDefault(userId, new ArrayList<>());
+                // 删除
+                sources.remove(source);
                 channelToSource.remove(channel);
+                // 完全下线
+                if (sources.isEmpty()) {
+                    userIdToSources.remove(userId);
+                }
             }
+        } finally {
+            lock.writeLock().unlock();
         }
+
     }
 
     public static ConcurrentMap<String, List<String>> getOnlineUserIdToSources() {
         return userIdToSources;
     }
 
-    public static void broadCastToOnlineUser(Channel curChannel) {
+    public static void broadCastToOnlineUser() {
         try {
             lock.readLock().lock();
             Set<Channel> channels = channelToSource.keySet();
@@ -70,6 +77,7 @@ public class UserOnlineManager {
         Set<Channel> channels = channelToSource.keySet();
         for (Channel channel : channels) {
             if (!channel.isActive() || !channel.isOpen()) {
+                log.info("remove channel: {}", channel.id());
                 removeChannel(channel);
             }
         }

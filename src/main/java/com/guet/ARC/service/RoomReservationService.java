@@ -3,6 +3,7 @@ package com.guet.ARC.service;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -123,7 +124,7 @@ public class RoomReservationService {
         }
         long time = System.currentTimeMillis();
         RoomReservation roomReservation = new RoomReservation();
-        roomReservation.setId(CommonUtils.generateUUID());
+        roomReservation.setId(IdUtil.fastSimpleUUID());
         roomReservation.setRoomUsage(applyRoomDTO.getRoomUsage());
         roomReservation.setReserveStartTime(applyRoomDTO.getStartTime());
         roomReservation.setReserveEndTime(applyRoomDTO.getEndTime());

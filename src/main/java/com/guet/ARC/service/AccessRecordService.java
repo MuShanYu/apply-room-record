@@ -3,6 +3,7 @@ package com.guet.ARC.service;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.support.ExcelTypeEnum;
@@ -138,7 +139,7 @@ public class AccessRecordService {
 
     private AccessRecord saveAccessRecord(String userId, String roomId, long now) {
         AccessRecord accessRecord = new AccessRecord();
-        accessRecord.setId(CommonUtils.generateUUID());
+        accessRecord.setId(IdUtil.fastSimpleUUID());
         accessRecord.setCreateTime(now);
         accessRecord.setUpdateTime(now);
         accessRecord.setEntryTime(now);

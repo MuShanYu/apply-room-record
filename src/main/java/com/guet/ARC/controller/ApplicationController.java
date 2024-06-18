@@ -1,7 +1,12 @@
 package com.guet.ARC.controller;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaMode;
+import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
+import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.Application;
 import com.guet.ARC.domain.dto.apply.ApplicationListQuery;
 import com.guet.ARC.domain.vo.apply.ApplicationListVo;
@@ -47,6 +52,8 @@ public class ApplicationController {
 
     @PutMapping("/application")
     @ApiOperation(value = "更新申请事项状态")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @Log(title = "更新申请事项状态", businessType = BusinessType.UPDATE)
     public void updateApplicationStateApi(@RequestParam("applicationId") String applicationId,
                                           @RequestParam("isPass") Boolean isPass,
                                           @RequestParam("remark") String remark) {

@@ -3,9 +3,11 @@ package com.guet.ARC.controller;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
 import cn.dev33.satoken.stp.StpUtil;
+import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.service.UserService;
@@ -101,6 +103,7 @@ public class UserController {
     @PostMapping("/admin/update/role")
     @ApiOperation(value = "更改用户权限")
     @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
+    @Log(title = "更改用户权限", businessType = BusinessType.GRANT)
     public void changeRoleApi(@RequestBody UserRoleChangeDTO userRoleChangeDTO) {
         userService.changeUserRole(userRoleChangeDTO.getUserId(), userRoleChangeDTO.getRoleIds());
     }
@@ -108,6 +111,7 @@ public class UserController {
     @PostMapping("/admin/batchInsert/users")
     @ApiOperation(value = "批量导入用户信息")
     @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
+    @Log(title = "批量导入用户信息", businessType = BusinessType.IMPORT)
     public Map<String, Object> batchInsertUsersApi(@RequestBody @Valid List<UserRegisterDTO> registerDTOS) {
         Map<String, Object> res = new HashMap<>();
         List<String> errorMsg = new ArrayList<>();
@@ -119,6 +123,7 @@ public class UserController {
     @PostMapping("/admin/update/user/name")
     @ApiOperation(value = "更改用户的名字")
     @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
+    @Log(title = "更改用户名字", businessType = BusinessType.UPDATE)
     public void updateUserTelApi(@Valid @RequestBody UserUpdateNameDTO userUpdateNameDTO) {
         userService.updateUserName(userUpdateNameDTO);
     }

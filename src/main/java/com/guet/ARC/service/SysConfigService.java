@@ -1,5 +1,6 @@
 package com.guet.ARC.service;
 
+import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.guet.ARC.common.domain.PageInfo;
@@ -9,7 +10,6 @@ import com.guet.ARC.dao.SysConfigRepository;
 import com.guet.ARC.domain.SysConfig;
 import com.guet.ARC.domain.dto.config.SysConfigAddDTO;
 import com.guet.ARC.domain.enums.State;
-import com.guet.ARC.util.CommonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -35,7 +35,7 @@ public class SysConfigService {
             throw new AlertException(1000, "传入的json格式有误");
         }
         SysConfig sysConfig = new SysConfig();
-        sysConfig.setId(CommonUtils.generateUUID());
+        sysConfig.setId(IdUtil.fastSimpleUUID());
         sysConfig.setConfigKey(key);
         sysConfig.setConfigValue(value);
         long now = System.currentTimeMillis();

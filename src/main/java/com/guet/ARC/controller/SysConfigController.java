@@ -2,9 +2,11 @@ package com.guet.ARC.controller;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
+import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.SysConfig;
 import com.guet.ARC.domain.dto.config.SysConfigAddDTO;
 import com.guet.ARC.service.SysConfigService;
@@ -37,6 +39,7 @@ public class SysConfigController {
     @PostMapping("/config/post/add")
     @ApiOperation(value = "添加配置")
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @Log(title = "添加配置", businessType = BusinessType.INSERT)
     public SysConfig addConfigApi(@Valid @RequestBody SysConfigAddDTO sysConfigAddDTO) {
         return sysConfigService.addConfig(sysConfigAddDTO);
     }
@@ -44,6 +47,7 @@ public class SysConfigController {
     @PostMapping("/config/post/update")
     @ApiOperation(value = "更新配置")
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @Log(title = "更新配置", businessType = BusinessType.UPDATE)
     public void updateSysConfigApi(@RequestBody SysConfig sysConfig) {
         sysConfigService.updateSysConfig(sysConfig);
     }
@@ -61,6 +65,7 @@ public class SysConfigController {
     @GetMapping("/config/del/{id}")
     @ApiOperation(value = "删除配置")
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @Log(title = "删除配置", businessType = BusinessType.DELETE)
     public void delSysConfigApi(@PathVariable("id") String id) {
         sysConfigService.delSysConfig(id);
     }

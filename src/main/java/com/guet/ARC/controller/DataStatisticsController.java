@@ -76,4 +76,12 @@ public class DataStatisticsController {
                                                   @RequestBody @Valid RoomRecordCountDTO roomRecordCountDTO) {
         dataStatisticsService.exportCountRoomRecordCountData(response, roomRecordCountDTO);
     }
+
+    @GetMapping("/admin/query/server/info")
+    @ApiOperation(value = "获取服务器信息")
+    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    public Map<String, Object> getServerInfoApi() throws Exception {
+        return dataStatisticsService.getServerInfo();
+    }
+
 }

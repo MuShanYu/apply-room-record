@@ -18,20 +18,20 @@ public class UserOnlineHandler extends SimpleChannelInboundHandler<TextWebSocket
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
-        UserOnlineManager.broadCastToOnlineUser(ctx.channel());
+        UserOnlineManager.broadCastToOnlineUser();
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         UserOnlineManager.removeChannel(ctx.channel());
-        UserOnlineManager.broadCastToOnlineUser(ctx.channel());
+        UserOnlineManager.broadCastToOnlineUser();
         super.channelUnregistered(ctx);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         UserOnlineManager.removeChannel(ctx.channel());
-        UserOnlineManager.broadCastToOnlineUser(ctx.channel());
+        UserOnlineManager.broadCastToOnlineUser();
         super.exceptionCaught(ctx, cause);
     }
 

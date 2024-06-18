@@ -195,7 +195,7 @@ public class RoomService {
         // 因为前端是循环调用，所以这里必须是线程安全的
         user = userService.userCanBeCurrentRoomCharger(roomAddUpdateDTO.getStuNum(), roomAddUpdateDTO.getChargePerson());
         long now = System.currentTimeMillis();
-        String id = CommonUtils.generateUUID();
+        String id = IdUtil.fastSimpleUUID();
         room.setId(id);
         room.setCreateTime(now);
         room.setUpdateTime(now);

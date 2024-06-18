@@ -2,9 +2,11 @@ package com.guet.ARC.controller;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
+import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.AccessRecord;
 import com.guet.ARC.domain.dto.record.AddRecordDTO;
 import com.guet.ARC.domain.dto.record.UserAccessCountDataQueryDTO;
@@ -38,6 +40,7 @@ public class AccessRecordController {
     @GetMapping("/admin/record/delete/{accessRecordId}")
     @ApiOperation(value = "删除记录")
     @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
+    @Log(title = "删除进出记录", businessType = BusinessType.DELETE)
     public void delRecord(@PathVariable String accessRecordId) {
         accessRecordService.delAccessRecord(accessRecordId);
     }

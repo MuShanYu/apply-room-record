@@ -2,9 +2,11 @@ package com.guet.ARC.controller;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
+import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.Notice;
 import com.guet.ARC.domain.dto.notice.NoticeQueryDTO;
 import com.guet.ARC.domain.vo.notice.NoticeVo;
@@ -33,6 +35,7 @@ public class NoticeController {
     @PostMapping("/notice/save")
     @ApiOperation(value = "保存公告")
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @Log(title = "保存公告", businessType = BusinessType.INSERT)
     public void saveNoticeApi(@RequestBody Notice notice) {
         noticeService.saveNotice(notice);
     }
@@ -40,6 +43,7 @@ public class NoticeController {
     @PutMapping("/notice")
     @ApiOperation(value = "修改公告")
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @Log(title = "修改公告", businessType = BusinessType.UPDATE)
     public void updateNoticeApi(@RequestBody Notice notice) {
         noticeService.updateNotice(notice);
     }
@@ -60,6 +64,7 @@ public class NoticeController {
     @DeleteMapping("/notice")
     @ApiOperation(value = "删除公告")
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @Log(title = "删除公告", businessType = BusinessType.DELETE)
     public void deleteNoticeApi(@RequestParam("noticeId") String noticeId) {
         noticeService.setNoticeToDeleted(noticeId);
     }
@@ -67,6 +72,7 @@ public class NoticeController {
     @PutMapping("/notice/reset")
     @ApiOperation(value = "重置公告状态")
     @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @Log(title = "重置公告状态", businessType = BusinessType.UPDATE)
     public void resetNoticeApi(@RequestParam("noticeId") String noticeId) {
         noticeService.resetNoticeToNormal(noticeId);
     }
