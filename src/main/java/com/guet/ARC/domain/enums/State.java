@@ -5,9 +5,15 @@ package com.guet.ARC.domain.enums;
  * Date: 2023/11/13
  */
 public enum State {
-    // 正常
+    /**
+     * 异常
+     */
     NEGATIVE,
-    // 已删除
-    ACTIVE
 
+    ACTIVE,
+
+    /**
+     * 已删除
+     */
+    DEL
 }

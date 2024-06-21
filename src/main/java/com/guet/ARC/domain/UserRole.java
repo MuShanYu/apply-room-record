@@ -9,14 +9,15 @@ import javax.annotation.Generated;
 import javax.persistence.*;
 
 @Builder
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 @Entity
 @Table(name = "tbl_user_role" )
 @DynamicUpdate
 @DynamicInsert
+@Getter
+@Setter
+@ToString
 public class UserRole {
 
     @Id

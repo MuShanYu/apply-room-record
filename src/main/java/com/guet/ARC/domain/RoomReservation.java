@@ -4,6 +4,8 @@ package com.guet.ARC.domain;
 import com.guet.ARC.domain.enums.ReservationState;
 import com.guet.ARC.domain.enums.State;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
@@ -14,7 +16,8 @@ import javax.persistence.*;
 @Table(name = "tbl_room_reservation")
 @DynamicInsert
 @DynamicUpdate
-@Data
+@Getter
+@Setter
 @ToString
 public class RoomReservation {
 

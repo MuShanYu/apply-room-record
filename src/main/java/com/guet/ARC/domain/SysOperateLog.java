@@ -4,6 +4,8 @@ import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.common.enmu.OperatorSource;
 import com.guet.ARC.domain.enums.State;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
@@ -18,7 +20,8 @@ import javax.persistence.*;
 @Table(name = "tbl_sys_operate_log")
 @DynamicInsert
 @DynamicUpdate
-@Data
+@Getter
+@Setter
 @ToString
 public class SysOperateLog {
 

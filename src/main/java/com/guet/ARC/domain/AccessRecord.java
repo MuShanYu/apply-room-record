@@ -5,6 +5,8 @@ import com.alibaba.excel.annotation.ExcelProperty;
 import com.guet.ARC.domain.enums.State;
 import com.guet.ARC.domain.excel.converter.DateConverter;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
@@ -16,7 +18,8 @@ import javax.persistence.*;
 @Table(name = "tbl_access_record" )
 @DynamicUpdate
 @DynamicInsert
-@Data
+@Getter
+@Setter
 @ToString
 public class AccessRecord {
 

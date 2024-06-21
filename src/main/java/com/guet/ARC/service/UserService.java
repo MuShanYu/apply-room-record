@@ -189,6 +189,7 @@ public class UserService {
             if (roleList.contains(CommonConstant.ADMIN_ROLE) || roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
                 // 拥有任意权限，允许登录
                 map.put("roles", roleList);
+                map.put("permissions", StpUtil.getPermissionList());
             } else {
                 // 权限不足，踢出下线，抛出错误
                 StpUtil.logout();
