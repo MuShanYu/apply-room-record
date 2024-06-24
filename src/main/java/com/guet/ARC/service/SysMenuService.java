@@ -8,7 +8,6 @@ import cn.hutool.core.lang.tree.TreeNodeConfig;
 import cn.hutool.core.lang.tree.TreeUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
 import com.guet.ARC.dao.SysMenuRepository;
 import com.guet.ARC.dao.SysMenuRoleRepository;
 import com.guet.ARC.dao.UserRoleRepository;
@@ -106,6 +105,37 @@ public class SysMenuService {
                 .filter(StrUtil::isNotEmpty).collect(Collectors.toList());
     }
 
+    // 根据角色id获取对应菜单列表
+    public List<String> queryMenuListByRoleId(String roleId) {
+        List<String> menuIds = sysMenuRoleRepository.findByRoleIdIn(CollectionUtil.toList(roleId)).stream()
+                .map(SysMenuRole::getMenuId)
+                .distinct()
+                .collect(Collectors.toList());
+        return sysMenuRepository.findAllById(menuIds).stream()
+                // 目录权限，前端采用半选中的方式，即子节点被选中，父节点被半选中，后端不在返回目录节点id
+//                .filter(sysMenu -> !MenuType.CATALOG.equals(sysMenu.getMenuType()))
+                .map(SysMenu::getId).distinct().collect(Collectors.toList());
+    }
+
+    // 授权
+    @Transactional(rollbackFor = RuntimeException.class)
+    public List<SysMenuRole> grantMenuToRole(List<String> menuIds, String roleId) {
+        // 删除旧的
+        List<String> delMenuRoleIds = sysMenuRoleRepository.findByRoleIdIn(CollectionUtil.toList(roleId)).stream()
+                .map(SysMenuRole::getId).collect(Collectors.toList());
+        sysMenuRoleRepository.deleteAllById(delMenuRoleIds);
+        // 授权
+        List<SysMenuRole> sysMenuRoles = new ArrayList<>();
+        menuIds.forEach(menuId -> {
+            SysMenuRole sysMenuRole = new SysMenuRole();
+            sysMenuRole.setId(IdUtil.fastSimpleUUID());
+            sysMenuRole.setRoleId(roleId);
+            sysMenuRole.setMenuId(menuId);
+            sysMenuRoles.add(sysMenuRole);
+        });
+        return sysMenuRoleRepository.saveAll(sysMenuRoles);
+    }
+
     private void getAllChildNode(List<SysMenu> childNode, SysMenu parentNode) {
         if (StrUtil.isEmpty(parentNode.getParentId())) {
             // 没有子节点了返回
@@ -150,9 +180,6 @@ public class SysMenuService {
                     tree.setName(treeNode.getName());
                     tree.putExtra("path", treeNode.getPath());
                     tree.putExtra("component", treeNode.getComponent());
-                    if (treeNode.getParentId().equals("0") && treeNode.getMenuType().equals(MenuType.CATALOG)){
-                        tree.putExtra("component", "ParentView");
-                    }
                     tree.putExtra("queryParam", treeNode.getQueryParam());
                     tree.putExtra("isLink", treeNode.getIsLink());
                     tree.putExtra("menuType", treeNode.getMenuType());

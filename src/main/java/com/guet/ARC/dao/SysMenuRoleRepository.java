@@ -10,4 +10,5 @@ public interface SysMenuRoleRepository extends JpaCompatibilityRepository<SysMen
     List<SysMenuRole> findByRoleIdIn(List<String> roleIds);
 
     void deleteByMenuIdIn(List<String> menuIds);
+
 }

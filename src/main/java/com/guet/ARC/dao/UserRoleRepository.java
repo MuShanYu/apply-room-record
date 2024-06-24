@@ -17,4 +17,6 @@ public interface UserRoleRepository extends JpaCompatibilityRepository<UserRole,
     Optional<UserRole> findByUserIdAndRoleIdAndState(String userId, String roleId, State state);
 
     List<UserRole> findByUserIdAndState(String userId, State state);
+
+    List<UserRole> findByRoleIdIn(List<String> roleIds);
 }

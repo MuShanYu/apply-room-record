@@ -142,4 +142,9 @@ public class UserController {
         return userService.getOlineUserList();
     }
 
+    @GetMapping("/user/get/auth")
+    @ApiOperation(value = "获取用户当前角色和权限")
+    public Map<String, Object> getUserInfo() {
+        return userService.getUserPermissionAndRole();
+    }
 }

@@ -1,27 +1,40 @@
 package com.guet.ARC.service;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
+import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.enmu.RoleType;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.dao.RoleRepository;
+import com.guet.ARC.dao.SysMenuRoleRepository;
 import com.guet.ARC.dao.UserRoleRepository;
 import com.guet.ARC.domain.Role;
+import com.guet.ARC.domain.SysMenuRole;
 import com.guet.ARC.domain.UserRole;
 import com.guet.ARC.dao.mybatis.support.RoleDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.RoleQueryRepository;
 import com.guet.ARC.dao.mybatis.support.UserRoleDynamicSqlSupport;
 import com.guet.ARC.domain.enums.State;
+import lombok.extern.slf4j.Slf4j;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
 @Service
+@Slf4j
 public class UserRoleService {
     @Autowired
     private RoleQueryRepository roleQueryRepository;
@@ -29,7 +42,11 @@ public class UserRoleService {
     @Autowired
     private UserRoleRepository userRoleRepository;
 
+    @Autowired
+    private RoleRepository roleRepository;
 
+    @Autowired
+    private SysMenuRoleRepository sysMenuRoleRepository;
 
     public void setRole(String userId, String roleId) {
         UserRole userRole = new UserRole();
@@ -91,6 +108,7 @@ public class UserRoleService {
 
     /**
      * 更具用户id查询用户权限列表
+     *
      * @param userId 用户id
      * @return 权限列表
      */
@@ -108,5 +126,57 @@ public class UserRoleService {
             return Collections.emptyList();
         }
         return roles;
+    }
+
+    public PageInfo<Role> queryRoleList(Integer page, Integer size, String roleDes) {
+        Page<Role> pageData;
+        PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("createTime").descending());
+        if (StrUtil.isEmpty(roleDes)) {
+            pageData = roleRepository.findByState(State.ACTIVE, pageRequest);
+        } else {
+            pageData = roleRepository.findByRoleDesIsLikeAndState("%" + roleDes + "%", State.ACTIVE, pageRequest);
+        }
+        return new PageInfo<>(pageData);
+    }
+
+    public Role updateRole(Role role) {
+        if (roleRepository.existsByRoleName(role.getRoleName())) {
+            throw new AlertException(1000, role.getRoleName() + "已经存在。");
+        }
+        Role roleInDB = roleRepository.findByIdOrElseNull(role.getId());
+        Map<String, Object> updateMap = BeanUtil.beanToMap(role, false, true);
+        BeanUtil.copyProperties(updateMap, roleInDB);
+        roleInDB.setUpdateTime(System.currentTimeMillis());
+        return roleRepository.save(roleInDB);
+    }
+
+    public Role save(Role role) {
+        if (roleRepository.existsByRoleName(role.getRoleName())) {
+            throw new AlertException(1000, role.getRoleName() + "已经存在。");
+        }
+        role.setId(IdUtil.fastSimpleUUID());
+        role.setUpdateTime(System.currentTimeMillis());
+        role.setCreateTime(System.currentTimeMillis());
+        role.setState(State.ACTIVE);
+        return roleRepository.save(role);
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void delRole(String roleId) {
+        // menu role
+        List<String> menuRoleIds = sysMenuRoleRepository.findByRoleIdIn(CollectionUtil.toList(roleId)).stream()
+                .map(SysMenuRole::getId)
+                .collect(Collectors.toList());
+        // user role
+        List<String> userRoleIds = userRoleRepository.findByRoleIdIn(CollectionUtil.toList(roleId)).stream()
+                .map(UserRole::getId)
+                .collect(Collectors.toList());
+        // role
+        Role role = roleRepository.findByIdOrElseNull(roleId);
+        role.setUpdateTime(System.currentTimeMillis());
+        role.setState(State.DEL);
+        roleRepository.save(role);
+        sysMenuRoleRepository.deleteAllById(menuRoleIds);
+        userRoleRepository.deleteAllById(userRoleIds);
     }
 }

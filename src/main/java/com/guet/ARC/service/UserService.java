@@ -185,8 +185,8 @@ public class UserService {
             map = new HashMap<>();
             login(map, user, userLoginDTO.getDevice());
             // 获取权限列表
-            List<String> roleList = StpUtil.getRoleList();
-            if (roleList.contains(CommonConstant.ADMIN_ROLE) || roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
+            /*List<String> roleList = StpUtil.getRoleList();
+            if (!roleList.contains(CommonConstant.ADMIN_ROLE) || !roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
                 // 拥有任意权限，允许登录
                 map.put("roles", roleList);
                 map.put("permissions", StpUtil.getPermissionList());
@@ -194,7 +194,7 @@ public class UserService {
                 // 权限不足，踢出下线，抛出错误
                 StpUtil.logout();
                 throw new AlertException(1000, "您不是管理员，没有权限登录后台管理");
-            }
+            }*/
         } else {
             throw new AlertException(1000, "账号或者密码错误");
         }
@@ -486,5 +486,12 @@ public class UserService {
 
     public List<User> findUserByIds(List<String> ids) {
         return userRepository.findAllById(ids);
+    }
+
+    public Map<String, Object> getUserPermissionAndRole() {
+        Map<String, Object> res = new HashMap<>();
+        res.put("roles", StpUtil.getRoleList());
+        res.put("permission", StpUtil.getPermissionList());
+        return res;
     }
 }
