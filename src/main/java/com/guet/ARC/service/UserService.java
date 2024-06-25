@@ -310,7 +310,7 @@ public class UserService {
             UserRoleVo userRoleVo = new UserRoleVo();
             userCopier.copy(user, userRoleVo, null);
             userRoleVo.setRoleList(userRoleService.queryRoleByUserId(user.getId()));
-            userRoleVo.setName(CommonUtils.encodeName(userRoleVo.getName()));
+//            userRoleVo.setName(CommonUtils.encodeName(userRoleVo.getName()));
             userRoleVos.add(userRoleVo);
         }
         PageInfo<UserRoleVo> pageInfo = new PageInfo<>();
@@ -393,8 +393,6 @@ public class UserService {
             User updateUserInfo = new User();
             CglibUtil.copy(user, updateUserInfo);
             CglibUtil.fillBean(userInfo, updateUserInfo);
-//            log.info("user or:{}", user);
-//            log.info("update user: {}", updateUserInfo);
             updateUserInfo.setUpdateTime(System.currentTimeMillis());
             userRepository.save(updateUserInfo);
         });
@@ -493,5 +491,29 @@ public class UserService {
         res.put("roles", StpUtil.getRoleList());
         res.put("permission", StpUtil.getPermissionList());
         return res;
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void resetUserPwd(String newPwd, String userId) {
+        User user = userRepository.findByIdOrElseNull(userId);
+        user.setPwd(SaSecureUtil.md5(newPwd));
+        user.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(user);
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void updateUserInfoAdmin(User user) {
+        userRepository.findByStuNum(user.getStuNum()).ifPresent(u -> {
+            if (!u.getId().equals(user.getId())) {
+                throw new AlertException(1000, "学号" + user.getStuNum() + "已被其他用户注册");
+            }
+        });
+        userRepository.findByMail(user.getMail()).ifPresent(u -> {
+            if (!u.getId().equals(user.getId())) {
+                throw new AlertException(1000, "邮箱" + user.getMail() + "已被其他用户注册");
+            }
+        });
+        user.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(user);
     }
 }

@@ -3,6 +3,8 @@ package com.guet.ARC.dao;
 import com.guet.ARC.common.jpa.JpaCompatibilityRepository;
 import com.guet.ARC.domain.UserRole;
 import com.guet.ARC.domain.enums.State;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -19,4 +21,8 @@ public interface UserRoleRepository extends JpaCompatibilityRepository<UserRole,
     List<UserRole> findByUserIdAndState(String userId, State state);
 
     List<UserRole> findByRoleIdIn(List<String> roleIds);
+
+    Page<UserRole> findByRoleId(String roleId, PageRequest request);
+
+    List<UserRole> findByRoleIdAndAndUserIdIn(String roleId, List<String> userIds);
 }

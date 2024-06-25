@@ -8,6 +8,7 @@ import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.enmu.BusinessType;
+import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.service.UserService;
@@ -131,7 +132,8 @@ public class UserController {
 
     @GetMapping("/user/refresh/token")
     @ApiOperation(value = "根据旧token获取新token，会话续期")
-    public Map<String, Object> refreshTokenApi(@RequestParam("userId") String userId, @RequestParam("device") String device) {
+    public Map<String, Object> refreshTokenApi(@RequestParam("userId") String userId,
+                                               @RequestParam("device") String device) {
         return userService.refreshToken(userId, device);
     }
 
@@ -146,5 +148,18 @@ public class UserController {
     @ApiOperation(value = "获取用户当前角色和权限")
     public Map<String, Object> getUserInfo() {
         return userService.getUserPermissionAndRole();
+    }
+
+    @PostMapping("/admin/rest/pwd")
+    @ApiOperation(value = "重置用户密码")
+    public void resetUserPwd(@RequestParam("userId") String userId,
+                             @RequestParam("newPwd") String newPwd) {
+        userService.resetUserPwd(newPwd, userId);
+    }
+
+    @PostMapping("/admin/update/userInfo")
+    @ApiOperation(value = "管理员手动修改用户信息")
+    public void adminUpdateUserInfoApi(@Valid @RequestBody User user) {
+        userService.updateUserInfoAdmin(user);
     }
 }

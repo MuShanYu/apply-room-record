@@ -5,6 +5,7 @@ import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.enums.State;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.Optional;
  * Author: Yulf
  * Date: 2023/11/21
  */
-public interface UserRepository extends JpaCompatibilityRepository<User, String> {
+public interface UserRepository extends JpaCompatibilityRepository<User, String>, JpaSpecificationExecutor<User> {
 
     boolean existsByStuNumAndState(String stuNum, State state);
 
