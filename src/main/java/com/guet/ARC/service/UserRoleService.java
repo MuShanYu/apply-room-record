@@ -16,21 +16,15 @@ import com.guet.ARC.domain.Role;
 import com.guet.ARC.domain.SysMenuRole;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.UserRole;
-import com.guet.ARC.dao.mybatis.support.RoleDynamicSqlSupport;
 import com.guet.ARC.dao.mybatis.RoleQueryRepository;
-import com.guet.ARC.dao.mybatis.support.UserRoleDynamicSqlSupport;
-import com.guet.ARC.domain.dto.menu.GrantMenuToRoleDTO;
 import com.guet.ARC.domain.dto.role.CancelGrantRoleDTO;
 import com.guet.ARC.domain.dto.role.GrantRoleToUserDTO;
 import com.guet.ARC.domain.enums.State;
 import lombok.extern.slf4j.Slf4j;
-import org.mybatis.dynamic.sql.render.RenderingStrategies;
-import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,13 +32,9 @@ import javax.persistence.criteria.Predicate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.mybatis.dynamic.sql.SqlBuilder.*;
-
 @Service
 @Slf4j
 public class UserRoleService {
-    @Autowired
-    private RoleQueryRepository roleQueryRepository;
 
     @Autowired
     private UserRoleRepository userRoleRepository;
@@ -128,9 +118,6 @@ public class UserRoleService {
     }
 
     public Role updateRole(Role role) {
-        if (roleRepository.existsByRoleName(role.getRoleName())) {
-            throw new AlertException(1000, role.getRoleName() + "已经存在。");
-        }
         Role roleInDB = roleRepository.findByIdOrElseNull(role.getId());
         Map<String, Object> updateMap = BeanUtil.beanToMap(role, false, true);
         BeanUtil.copyProperties(updateMap, roleInDB);

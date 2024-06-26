@@ -14,7 +14,6 @@ import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.enmu.Device;
-import com.guet.ARC.common.enmu.RedisCacheKey;
 import com.guet.ARC.common.enmu.RoleType;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRepository;
@@ -28,7 +27,6 @@ import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.enums.State;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.netty.manager.UserOnlineManager;
-import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.RedisCacheUtil;
 import com.guet.ARC.util.WxUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +41,6 @@ import org.springframework.util.StringUtils;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
@@ -185,16 +182,11 @@ public class UserService {
             map = new HashMap<>();
             login(map, user, userLoginDTO.getDevice());
             // 获取权限列表
-            /*List<String> roleList = StpUtil.getRoleList();
-            if (!roleList.contains(CommonConstant.ADMIN_ROLE) || !roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                // 拥有任意权限，允许登录
-                map.put("roles", roleList);
-                map.put("permissions", StpUtil.getPermissionList());
-            } else {
+            if (StpUtil.getPermissionList().isEmpty()) {
                 // 权限不足，踢出下线，抛出错误
                 StpUtil.logout();
-                throw new AlertException(1000, "您不是管理员，没有权限登录后台管理");
-            }*/
+                throw new AlertException(1000, "没有权限登录后台管理");
+            }
         } else {
             throw new AlertException(1000, "账号或者密码错误");
         }
