@@ -166,6 +166,7 @@ public class UserService {
             map = new HashMap<>();
             login(map, user, userLoginDTO.getDevice());
             map.put("roles", StpUtil.getRoleList());
+            map.put("permissions", StpUtil.getPermissionList());
         } else {
             throw new AlertException(1000, "账号或者密码错误");
         }
@@ -212,6 +213,7 @@ public class UserService {
             map.put("canWxLogin", true);
             login(map, user, Device.WECHAT.getDevice());
             map.put("roles", StpUtil.getRoleList());
+            map.put("permissions", StpUtil.getPermissionList());
         } else {
             map.put("canWxLogin", false);
         }
@@ -455,7 +457,9 @@ public class UserService {
         StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", userId);
         // 返回结果
         res.put("token", loginToken);
-        res.put("isNeedRefresh", Boolean.TRUE);
+        res.put("userInfo", userRepository.findByIdOrElseNull(userId));
+        res.put("roles", StpUtil.getRoleList());
+        res.put("permissions", StpUtil.getPermissionList());
         return res;
     }
 
