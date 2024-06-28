@@ -1,8 +1,10 @@
 package com.guet.ARC.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.Role;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.role.CancelGrantRoleDTO;
@@ -45,6 +47,7 @@ public class UserRoleController {
     @PutMapping("/role/update")
     @ApiOperation(value = "修改角色信息")
     @SaCheckPermission(value = {"authority:role:update"})
+    @Log(title = "修改角色信息", businessType = BusinessType.UPDATE)
     public Role updateRoleApi(@RequestBody Role role) {
         return userRoleService.updateRole(role);
     }
@@ -52,6 +55,7 @@ public class UserRoleController {
     @PostMapping("/role/save")
     @ApiOperation(value = "添加新角色")
     @SaCheckPermission(value = {"authority:role:add"})
+    @Log(title = "添加新角色", businessType = BusinessType.INSERT)
     public Role saveRoleApi(@RequestBody Role role) {
         return userRoleService.save(role);
     }
@@ -59,6 +63,7 @@ public class UserRoleController {
     @DeleteMapping("/role/del/{roleId}")
     @ApiOperation(value = "删除角色")
     @SaCheckPermission(value = {"authority:role:del"})
+    @Log(title = "删除角色", businessType = BusinessType.DELETE)
     public void delRoleApi(@PathVariable("roleId") String roleId) {
         userRoleService.delRole(roleId);
     }
@@ -77,6 +82,7 @@ public class UserRoleController {
     @PutMapping("/role/grant/user")
     @ApiOperation(value = "给用户授权某一个角色")
     @SaCheckPermission(value = {"authority:role:userDistribute"})
+    @Log(title = "给用户授权某一个角色", businessType = BusinessType.GRANT)
     public void grantUserRoleApi(@RequestParam("stuNum") String stuNum,
                                  @RequestParam("roleId") String roleId) {
         userRoleService.grantUserRole(stuNum, roleId);
@@ -85,6 +91,7 @@ public class UserRoleController {
     @DeleteMapping("/role/cancel/grant")
     @ApiOperation(value = "取消角色对用户的授权")
     @SaCheckPermission(value = {"authority:role:cancelUserDistribute"})
+    @Log(title = "取消角色对用户的授权", businessType = BusinessType.GRANT)
     public void cancelRoleGrantApi(@RequestBody CancelGrantRoleDTO dto) {
         userRoleService.cancelRoleGrant(dto);
     }
@@ -98,6 +105,7 @@ public class UserRoleController {
     @PostMapping("/role/grant/user/batch")
     @ApiOperation(value = "批量用户授予角色")
     @SaCheckPermission(value = {"system:user:distributeRole"})
+    @Log(title = "批量用户授予角色", businessType = BusinessType.GRANT)
     public void grantRoleToUserBatchApi(@RequestBody GrantRoleToUserDTO dto) {
         userRoleService.grantRoleToUser(dto);
     }

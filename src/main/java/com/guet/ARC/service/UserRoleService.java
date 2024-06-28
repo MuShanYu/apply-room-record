@@ -117,7 +117,6 @@ public class UserRoleService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     public void cancelRoleGrant(CancelGrantRoleDTO dto) {
-        log.info("dto: {}", dto);
         List<UserRole> userRoles = userRoleRepository.findByRoleIdAndAndUserIdIn(dto.getRoleId(), dto.getUserIds());
         userRoleRepository.deleteAllInBatch(userRoles);
     }
@@ -147,10 +146,8 @@ public class UserRoleService {
     }
 
     public void grantRoleToUser(GrantRoleToUserDTO dto) {
-        log.info("dot: {}", dto);
         // 删除原来的，赋予新的
         List<UserRole> userRoles = userRoleRepository.findByUserIdAndState(dto.getUserId(), State.ACTIVE);
-        log.info("userRoles {}", userRoles);
         userRoleRepository.deleteAllInBatch(userRoles);
         // 赋予
         long now = System.currentTimeMillis();

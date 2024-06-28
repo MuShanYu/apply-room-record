@@ -142,6 +142,7 @@ public class UserController {
     @PostMapping("/admin/rest/pwd")
     @ApiOperation(value = "重置用户密码")
     @SaCheckPermission(value = {"system:user:resetPwd"})
+    @Log(title = "重置用户密码", businessType = BusinessType.UPDATE)
     public void resetUserPwd(@RequestParam("userId") String userId,
                              @RequestParam("newPwd") String newPwd) {
         userService.resetUserPwd(newPwd, userId);
@@ -150,6 +151,7 @@ public class UserController {
     @PostMapping("/admin/update/userInfo")
     @ApiOperation(value = "管理员手动修改用户信息")
     @SaCheckPermission(value = {"system:user:update"})
+    @Log(title = "管理员手动修改用户信息", businessType = BusinessType.UPDATE)
     public void adminUpdateUserInfoApi(@Valid @RequestBody User user) {
         userService.updateUserInfoAdmin(user);
     }
