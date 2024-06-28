@@ -3,6 +3,7 @@ package com.guet.ARC.service;
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.DesensitizedUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -48,9 +49,6 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private UserRoleRepository userRoleRepository;
 
     @Autowired
     private UserQueryRepository userQueryRepository;
@@ -248,8 +246,6 @@ public class UserService {
             user.setUpdateTime(System.currentTimeMillis());
             user.setOpenId(openid);
             userRepository.save(user);
-        } else if (user.getOpenId().equals(openid)) {
-            // 与获取的Openid相同
         }
     }
 
@@ -392,13 +388,10 @@ public class UserService {
                 throw new AlertException(1000, "学号/工号与注册姓名不匹配");
             }
             // 判断权限
-            List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
-            List<String> roleNames = new ArrayList<>();
-            roles.forEach(v -> roleNames.add(v.getRoleName()));
-            if (roleNames.contains(CommonConstant.ADMIN_ROLE) || roleNames.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
+            if (CollectionUtil.isNotEmpty(StpUtil.getPermissionList())) {
                 return user;
             } else {
-                throw new AlertException(1000, name + "不是管理员，无法设置成负责人");
+                throw new AlertException(1000, name + "非后台管理员，无法设置成负责人");
             }
         } else {
             throw new AlertException(1000, "学号/工号错误，或者负责人" + stuNum + name + "未注册");
