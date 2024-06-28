@@ -84,7 +84,7 @@ public class UserRoleController {
 
     @DeleteMapping("/role/cancel/grant")
     @ApiOperation(value = "取消角色对用户的授权")
-    @SaCheckPermission(value = {"authority:role:userDistribute"})
+    @SaCheckPermission(value = {"authority:role:cancelUserDistribute"})
     public void cancelRoleGrantApi(@RequestBody CancelGrantRoleDTO dto) {
         userRoleService.cancelRoleGrant(dto);
     }

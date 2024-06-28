@@ -1,12 +1,10 @@
 package com.guet.ARC.service;
 
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
@@ -73,13 +71,6 @@ public class RoomService {
 
     public void disableRoom(String id) {
         Room room = roomRepository.findByIdOrElseNull(id);
-        String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        List<String> roleList = StpUtil.getRoleList();
-        if (!room.getChargePersonId().equals(currentUserId)) {
-            if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                throw new AlertException(1000, "不允许禁用非负责的房间或者您没有权限修改");
-            }
-        }
         // 修改
         if (room.getState().equals(RoomState.ROOM_ACTIVE) || room.getState().equals(RoomState.ROOM_CAN_NOT_BE_RESERVED)) {
             room.setState(RoomState.ROOM_NEGATIVE);
@@ -92,14 +83,6 @@ public class RoomService {
 
     // 修改房间基本信息
     public Room updateRoom(Room room) {
-        // 判断是否可以修改
-        String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        if (!currentUserId.equals(room.getChargePersonId())) {
-            List<String> roleList = StpUtil.getRoleList();
-            if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                throw new AlertException(1000, "不允许修改非负责房间或者您没有权限修改");
-            }
-        }
         // 修改
         if (room.getId() == null || room.getId().trim().isEmpty()) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
@@ -111,14 +94,6 @@ public class RoomService {
 
     public void updateRoomCharger(UpdateRoomChargerDTO roomChargerDTO) {
         User user = userService.userCanBeCurrentRoomCharger(roomChargerDTO.getChargePersonStNum(), roomChargerDTO.getChargePerson());
-        // 判断是否可以修改
-        String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        if (!currentUserId.equals(roomChargerDTO.getOriginChargePersonId())) {
-            List<String> roleList = StpUtil.getRoleList();
-            if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                throw new AlertException(1000, "不允许修改非负责房间或者您没有权限修改");
-            }
-        }
         // 修改房间信息
         Room room = roomRepository.findByIdOrElseNull(roomChargerDTO.getId());
         room.setUpdateTime(System.currentTimeMillis());
@@ -206,13 +181,6 @@ public class RoomService {
 
     public void disableReserveRoom(String roomId) {
         Room room = roomRepository.findByIdOrElseNull(roomId);
-        String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        List<String> roleList = StpUtil.getRoleList();
-        if (!room.getChargePersonId().equals(currentUserId)) {
-            if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                throw new AlertException(1000, "不允许禁用非负责的房间或者您没有权限修改");
-            }
-        }
         // 修改
         if (room.getState().equals(RoomState.ROOM_CAN_NOT_BE_RESERVED)) {
             room.setState(RoomState.ROOM_ACTIVE);
