@@ -1,5 +1,6 @@
 package com.guet.ARC.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
 import com.guet.ARC.common.anno.Log;
@@ -38,7 +39,7 @@ public class SysConfigController {
 
     @PostMapping("/config/post/add")
     @ApiOperation(value = "添加配置")
-    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @SaCheckPermission(value = {"system:config:add"})
     @Log(title = "添加配置", businessType = BusinessType.INSERT)
     public SysConfig addConfigApi(@Valid @RequestBody SysConfigAddDTO sysConfigAddDTO) {
         return sysConfigService.addConfig(sysConfigAddDTO);
@@ -46,7 +47,7 @@ public class SysConfigController {
 
     @PostMapping("/config/post/update")
     @ApiOperation(value = "更新配置")
-    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @SaCheckPermission(value = {"system:config:update"})
     @Log(title = "更新配置", businessType = BusinessType.UPDATE)
     public void updateSysConfigApi(@RequestBody SysConfig sysConfig) {
         sysConfigService.updateSysConfig(sysConfig);
@@ -54,7 +55,7 @@ public class SysConfigController {
 
     @GetMapping("/config/get/list")
     @ApiOperation(value = "管理员查询系统配置列表")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:config"})
     public PageInfo<SysConfig> querySysConfigListApi(@Min(1)
                                                      @RequestParam("page") Integer page,
                                                      @Range(min = 1, max = 100)
@@ -64,7 +65,7 @@ public class SysConfigController {
 
     @GetMapping("/config/del/{id}")
     @ApiOperation(value = "删除配置")
-    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @SaCheckPermission(value = {"system:config:disable"})
     @Log(title = "删除配置", businessType = BusinessType.DELETE)
     public void delSysConfigApi(@PathVariable("id") String id) {
         sysConfigService.delSysConfig(id);

@@ -1,5 +1,6 @@
 package com.guet.ARC.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
 import cn.dev33.satoken.stp.StpUtil;
@@ -96,22 +97,14 @@ public class UserController {
 
     @PostMapping("/admin/query/userList")
     @ApiOperation(value = "查询用户列表")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:user"})
     public PageInfo<UserRoleVo> queryUserListApi(@Valid @RequestBody UserListQueryDTO userListQueryDTO) {
         return userService.queryUserList(userListQueryDTO);
     }
 
-    @PostMapping("/admin/update/role")
-    @ApiOperation(value = "更改用户权限")
-    @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
-    @Log(title = "更改用户权限", businessType = BusinessType.GRANT)
-    public void changeRoleApi(@RequestBody UserRoleChangeDTO userRoleChangeDTO) {
-        userService.changeUserRole(userRoleChangeDTO.getUserId(), userRoleChangeDTO.getRoleIds());
-    }
-
     @PostMapping("/admin/batchInsert/users")
     @ApiOperation(value = "批量导入用户信息")
-    @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
+    @SaCheckPermission(value = {"import:user"})
     @Log(title = "批量导入用户信息", businessType = BusinessType.IMPORT)
     public Map<String, Object> batchInsertUsersApi(@RequestBody @Valid List<UserRegisterDTO> registerDTOS) {
         Map<String, Object> res = new HashMap<>();
@@ -123,7 +116,6 @@ public class UserController {
 
     @PostMapping("/admin/update/user/name")
     @ApiOperation(value = "更改用户的名字")
-    @SaCheckRole(CommonConstant.SUPER_ADMIN_ROLE)
     @Log(title = "更改用户名字", businessType = BusinessType.UPDATE)
     public void updateUserTelApi(@Valid @RequestBody UserUpdateNameDTO userUpdateNameDTO) {
         userService.updateUserName(userUpdateNameDTO);
@@ -139,7 +131,7 @@ public class UserController {
 
     @GetMapping("/admin/get/online/users")
     @ApiOperation(value = "获取在线用户信息")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"monitor:onlineUser"})
     public List<Map<String, Object>> getOnlineUser() {
         return userService.getOlineUserList();
     }
@@ -152,6 +144,7 @@ public class UserController {
 
     @PostMapping("/admin/rest/pwd")
     @ApiOperation(value = "重置用户密码")
+    @SaCheckPermission(value = {"system:user:resetPwd"})
     public void resetUserPwd(@RequestParam("userId") String userId,
                              @RequestParam("newPwd") String newPwd) {
         userService.resetUserPwd(newPwd, userId);
@@ -159,6 +152,7 @@ public class UserController {
 
     @PostMapping("/admin/update/userInfo")
     @ApiOperation(value = "管理员手动修改用户信息")
+    @SaCheckPermission(value = {"system:user:update"})
     public void adminUpdateUserInfoApi(@Valid @RequestBody User user) {
         userService.updateUserInfoAdmin(user);
     }

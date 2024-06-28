@@ -14,7 +14,6 @@ import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.enmu.Device;
-import com.guet.ARC.common.enmu.RoleType;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.UserRoleRepository;
@@ -22,7 +21,6 @@ import com.guet.ARC.dao.mybatis.UserQueryRepository;
 import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.domain.Role;
 import com.guet.ARC.domain.User;
-import com.guet.ARC.domain.UserRole;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.enums.State;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
@@ -87,7 +85,6 @@ public class UserService {
         }
         User user = buildUser(userRegisterDTO, System.currentTimeMillis());
         userRepository.saveAndFlush(user);
-        userRoleService.setRole(user.getId(), RoleType.USER.getId());
         // 返回信息
         Map<String, Object> map = new HashMap<>();
         // 用户登录
@@ -106,19 +103,11 @@ public class UserService {
         long now = System.currentTimeMillis();
         List<User> errorData = new ArrayList<>();
         List<User> successData = new ArrayList<>();
-        List<UserRole> userRoles = new ArrayList<>();
         User user = null;
         try {
             for (UserRegisterDTO userRegisterDTO : userRegisterDTOS) {
                 // 初始化信息
                 user = buildUser(userRegisterDTO, now);
-                UserRole userRole = new UserRole();
-                userRole.setId(IdUtil.fastSimpleUUID());
-                userRole.setUserId(user.getId());
-                userRole.setRoleId(RoleType.USER.getId());
-                userRole.setState(State.ACTIVE);
-                userRole.setUpdateTime(now);
-                userRole.setCreateTime(now);
                 if (user.getStuNum().isEmpty() || user.getInstitute().isEmpty() || user.getName().isEmpty()) {
                     errorData.add(user);
                     continue;
@@ -129,7 +118,6 @@ public class UserService {
                     errorMsg.add(user.getStuNum() + "该学号已经被注册");
                 } else {
                     successData.add(user);
-                    userRoles.add(userRole);
                 }
             }
         } catch (Exception e) {
@@ -137,7 +125,6 @@ public class UserService {
             errorMsg.add(e.getMessage());
         }
         userRepository.saveAllAndFlush(successData);
-        userRoleRepository.saveAllAndFlush(userRoles);
         return errorData;
     }
 
@@ -304,7 +291,6 @@ public class UserService {
             UserRoleVo userRoleVo = new UserRoleVo();
             userCopier.copy(user, userRoleVo, null);
             userRoleVo.setRoleList(userRoleService.queryRoleByUserId(user.getId()));
-//            userRoleVo.setName(CommonUtils.encodeName(userRoleVo.getName()));
             userRoleVos.add(userRoleVo);
         }
         PageInfo<UserRoleVo> pageInfo = new PageInfo<>();
@@ -392,17 +378,6 @@ public class UserService {
         });
     }
 
-    public void changeUserRole(String userId, String[] roleIds) {
-        if (!StringUtils.hasLength(userId)) {
-            throw new AlertException(1000, "用户ID不能为空");
-        }
-        String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        if (userIdContext.equals(userId)) {
-            throw new AlertException(ResultCode.OPERATE_OBJECT_NOT_SELF);
-        }
-        userRoleService.changeRole(userId, roleIds);
-    }
-
     public User userCanBeCurrentRoomCharger(String stuNum, String name) {
         Optional<User> userOptional = userRepository.findByStuNum(stuNum);
         User user;
@@ -465,12 +440,8 @@ public class UserService {
 
     public List<Map<String, Object>> getOlineUserList() {
         List<Map<String, Object>> res = new ArrayList<>();
-        String id = StpUtil.getLoginIdAsString();
         ConcurrentMap<String, List<String>> onlineUserIdToSources = UserOnlineManager.getOnlineUserIdToSources();
         for (User user : userRepository.findAllById(onlineUserIdToSources.keySet())) {
-            if (!StpUtil.hasRole(RoleType.SUPER_ADMIN.getName()) && !id.equals(user.getId())) {
-                user.setName(DesensitizedUtil.chineseName(user.getName()));
-            }
             Map<String, Object> beanToMap = BeanUtil.beanToMap(user, "id", "name", "stuNum", "institute");
             beanToMap.put("sources", onlineUserIdToSources.get(user.getId()));
             res.add(beanToMap);

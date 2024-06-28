@@ -1,5 +1,6 @@
 package com.guet.ARC.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
 import com.guet.ARC.common.anno.Log;
@@ -52,8 +53,8 @@ public class ApplicationController {
 
     @PutMapping("/application")
     @ApiOperation(value = "更新申请事项状态")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
-    @Log(title = "更新申请事项状态", businessType = BusinessType.UPDATE)
+    @SaCheckPermission(value = {"work:approve:application"})
+    @Log(title = "更新申请项状态", businessType = BusinessType.UPDATE)
     public void updateApplicationStateApi(@RequestParam("applicationId") String applicationId,
                                           @RequestParam("isPass") Boolean isPass,
                                           @RequestParam("remark") String remark) {

@@ -1,5 +1,6 @@
 package com.guet.ARC.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.hutool.core.lang.tree.Tree;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.domain.SysMenu;
@@ -29,17 +30,19 @@ public class SysMenuController {
 
     @PostMapping("/sys-menu/save")
     @ApiOperation(value = "保存菜单")
+    @SaCheckPermission(value = {"authority:menu:add"})
     public SysMenu saveMenu(@RequestBody SysMenu sysMenu) {
         return sysMenuService.save(sysMenu);
     }
 
     @GetMapping("/sys-menu/query/list")
     @ApiOperation(value = "获取菜单树")
+    @SaCheckPermission(value = {"authority:menu"})
     public List<Tree<String>> queryMenuList(@RequestParam("menuName") String menuName) {
         return sysMenuService.queryMenuList(menuName);
     }
 
-    @GetMapping("/sys-menu/query/my-grant")
+    @GetMapping("/user/sys-menu/query/my-grant")
     @ApiOperation(value = "获取我所被授权的菜单树")
     public List<Tree<String>> getBuiltMenu() {
         return sysMenuService.getBuiltMenu();
@@ -47,12 +50,14 @@ public class SysMenuController {
 
     @PutMapping("/sys-menu/update")
     @ApiOperation(value = "修改菜单信息")
+    @SaCheckPermission(value = {"authority:menu:update"})
     public SysMenu updateMenu(@RequestBody SysMenu sysMenu) {
         return sysMenuService.updateMenu(sysMenu);
     }
 
     @DeleteMapping("/sys-menu/del/{id}")
     @ApiOperation(value = "删除菜单")
+    @SaCheckPermission(value = {"authority:menu:del"})
     public void delMenu(@PathVariable("id") String id) {
         sysMenuService.delMenu(id);
     }
@@ -65,6 +70,7 @@ public class SysMenuController {
 
     @PutMapping("/sys-menu/grant-to-role")
     @ApiOperation(value = "修改角色授权的菜单项菜单")
+    @SaCheckPermission(value = {"authority:role:menuDistribute"})
     public List<SysMenuRole> grantMenuToRoleApi(@RequestBody GrantMenuToRoleDTO dto) {
         return sysMenuService.grantMenuToRole(dto.getMenuIds(), dto.getRoleId());
     }

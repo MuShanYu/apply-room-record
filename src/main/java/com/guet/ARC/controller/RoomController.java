@@ -1,5 +1,6 @@
 package com.guet.ARC.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.annotation.SaMode;
 import com.guet.ARC.common.anno.Log;
@@ -33,14 +34,14 @@ public class RoomController {
 
     @PostMapping("/room/add")
     @ApiOperation(value = "新增房间")
-    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @SaCheckPermission(value = {"system:room:add"})
     public Room addRoom(@Valid @RequestBody RoomAddUpdateDTO room) {
         return roomService.addRoom(room);
     }
 
     @GetMapping("/room/disable")
     @ApiOperation(value = "禁用房间")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:room:disableAndRollBack", "system:room:disable"}, mode = SaMode.OR)
     @Log(title = "启用/禁用房间", businessType = BusinessType.UPDATE)
     public void disableRoom(@NotEmpty(message = "id不能为空") @RequestParam("id") String id) {
         roomService.disableRoom(id);
@@ -48,7 +49,7 @@ public class RoomController {
 
     @PostMapping("/room/update")
     @ApiOperation(value = "修改房间")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:room:update"})
     @Log(title = "更新房间信息", businessType = BusinessType.UPDATE)
     public Room updateRoom(@RequestBody Room room) {
         return roomService.updateRoom(room);
@@ -56,7 +57,7 @@ public class RoomController {
 
     @PostMapping("/room/updateCharger")
     @ApiOperation(value = "修改房间负责人")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:room:updateCharger"})
     @Log(title = "修改房间负责人", businessType = BusinessType.UPDATE)
     public void updateRoomCharger(@Valid @RequestBody UpdateRoomChargerDTO roomChargerDTO) {
         roomService.updateRoomCharger(roomChargerDTO);
@@ -70,7 +71,7 @@ public class RoomController {
 
     @PostMapping("/room/queryRoomList")
     @ApiOperation("查询房间列表")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:room"})
     public PageInfo<Room> queryRoomList(@Valid @RequestBody RoomListQueryDTO roomListQueryDTO) {
         return roomService.queryRoomList(roomListQueryDTO);
     }
@@ -83,7 +84,7 @@ public class RoomController {
 
     @PostMapping("/room/insert-and-register-admin")
     @ApiOperation(value = "新增房间并自动注册负责人信息")
-    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @SaCheckPermission(value = {"system:room:import"})
     @Log(title = "新增房间并自动注册负责人信息", businessType = BusinessType.INSERT)
     public Room insertRoomAndRegisterAdminUserApi(@RequestBody RoomAddUpdateDTO room) {
         return roomService.insertRoomAndRegisterAdminUser(room);
@@ -91,7 +92,7 @@ public class RoomController {
 
     @GetMapping("/room/disable/reserve")
     @ApiOperation(value = "禁止预约房间")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:room:disableReserveAndRollBack"}, mode = SaMode.OR)
     @Log(title = "禁止预约房间", businessType = BusinessType.UPDATE)
     public void disableReserveRoomApi(@RequestParam("roomId") String roomId) {
         roomService.disableReserveRoom(roomId);
