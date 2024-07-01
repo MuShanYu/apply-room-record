@@ -10,17 +10,27 @@
 
 ![image-20240226142949403](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226142949403.png)
 
-![image-20240524154241867](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240524154241867.png)
+![image-20240701093952500](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093952500.png)
 
-![image-20240605171235244](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240605171235244.png)
+![image-20240701093224957](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093224957.png)
 
-![image-20240524154342067](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240524154342067.png)
+![image-20240701093423280](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093423280.png)
 
-![image-20240524154142556](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240524154142556.png)
+![image-20240701093454404](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093454404.png)
+
+![image-20240701093639341](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093639341.png)
+
+![image-20240701093755788](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093755788.png)
+
+![image-20240701093832862](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093832862.png)
+
+![image-20240701093857376](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093857376.png)
+
+![image-20240701093919123](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093919123.png)
 
 ## 项目描述
 
-本项目为**房间预约与流动统计**，应用功能不局限于预约与流动统计，主要功能包含消息通知、公告、房间预约、通用申请处理、房间签到签出、人员人数与人次统计、签到时长统计、报表统计、基础功能等。
+本项目为**房间预约与流动统计**，应用功能不局限于预约与流动统计，主要功能包含消息通知、公告、房间预约、通用申请处理、房间签到签出、人员人数与人次统计、签到时长统计、报表统计、基础功能、通用权限解决方案、在线用户监控等。
 
 基础功能主要有：统一异常处理、统一请求结果返回、统一请求异常处理、wx请求工具包基础等。
 
@@ -28,7 +38,7 @@
 
 - 管理端：Vue、element-ui等、基于vue-element-admin框架开发。
 - 客户端：基于uni-app开发，组件使用图鸟UI。
-- 后端：springBoot、mybatis-dynamic-sql、redis、mysql、sa-token等。
+- 后端：springBoot、mybatis-dynamic-sql、redis、mysql、sa-token、springboot-jpa、netty等。
 
 本项目分为：
 
@@ -43,10 +53,9 @@
 - 首先将代码clone到您的本地，使用集成开发工具打开项目，如idea。
 - 配置本地开发环境，要求使用jdk11，数据库使用mysql8，redis。
 - 环境配置完成后修改配置文件，包括数据库配置（账号密码）、redis配置、邮箱账号密码配置（如没有请去对应邮箱官网申请）。
-- 运行db_create.sql，创建基础数据库。
+- 运行resource/db/db_create.sql，创建基础数据库。
 - 运行项目，查看本地数据库是否成功生成数据表。
-- 下载测试数据：[测试数据](https://mushanyu-app-arr.oss-cn-beijing.aliyuncs.com/static/apply_room_record.sql)
-- 运行测试数据脚本。（必须，因为包含了配置信息）
+- 运行项目下的init_data.sql脚本插入初始化数据。
 
 ### 2. 客户端
 
@@ -63,7 +72,7 @@
 
 ## 部署说明
 
-后端项目提供完整dockerfile构建应用镜像
+前后端项目提供完整dockerfile构建应用镜像
 
 ## 开源协议
 
@@ -75,4 +84,4 @@ QQ交流群
 
 ![image-20240226155137983](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226155137983.png)
 
-@MuShanYu：wx：wxid_f5ayc9d2mken22
+微信交流：@MuShanYu：wx：wxid_f5ayc9d2mken22
