@@ -3,7 +3,10 @@ package com.guet.ARC.component;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpInterface;
 import cn.dev33.satoken.stp.StpUtil;
+import com.guet.ARC.dao.SysMenuRepository;
+import com.guet.ARC.dao.SysMenuRoleRepository;
 import com.guet.ARC.domain.Role;
+import com.guet.ARC.service.SysMenuService;
 import com.guet.ARC.service.UserRoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -17,9 +20,12 @@ public class StpInterfaceComponent implements StpInterface {
     @Autowired
     private UserRoleService userRoleService;
 
+    @Autowired
+    private SysMenuService sysMenuService;
+
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
-        return null;
+        return sysMenuService.getMyPermissionList();
     }
 
     @Override

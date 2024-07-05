@@ -17,4 +17,6 @@ public class RoomReservationCountDTO {
 
     @NotNull
     private Long endTime;
+
+    private String chargerPersonId;
 }

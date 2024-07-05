@@ -1,5 +1,6 @@
 package com.guet.ARC.dao;
 
+import com.guet.ARC.common.jpa.JpaCompatibilityRepository;
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.enums.RoomState;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,7 +14,7 @@ import java.util.Optional;
  * Author: Yulf
  * Date: 2023/11/22
  */
-public interface RoomRepository extends JpaRepository<Room, String>, JpaSpecificationExecutor<Room> {
+public interface RoomRepository extends JpaCompatibilityRepository<Room, String>, JpaSpecificationExecutor<Room> {
 
     long countByRoomName(String roomName);
 

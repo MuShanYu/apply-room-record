@@ -3,6 +3,8 @@ package com.guet.ARC.domain;
 
 import com.guet.ARC.domain.enums.State;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
@@ -13,14 +15,13 @@ import javax.persistence.*;
 @Table(name = "tbl_user" )
 @DynamicUpdate
 @DynamicInsert
-@Data
+@Getter
+@Setter
 @ToString
 public class User {
 
     @Id
     private String id;
-
-    private String nickname;
 
     private String pwd;
 

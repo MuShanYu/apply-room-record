@@ -1,10 +1,8 @@
 package com.guet.ARC.controller;
 
 
-import cn.dev33.satoken.annotation.SaCheckRole;
-import cn.dev33.satoken.annotation.SaMode;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.guet.ARC.common.anno.ResponseBodyResult;
-import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.domain.dto.attendance.AttendanceDetailListDTO;
 import com.guet.ARC.domain.dto.attendance.AttendanceListQueryDTO;
@@ -32,7 +30,7 @@ public class AttendanceRecordController {
 
     @PostMapping("/attendance/query/list")
     @ApiOperation(value = "查询签到统计列表")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:room:attendanceDetail"})
     public PageInfo<AttendanceCountListVo> queryAttendanceCountList(@Valid @RequestBody AttendanceListQueryDTO queryDTO) {
         return attendanceService.queryAttendanceCountList(queryDTO);
     }

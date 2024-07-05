@@ -18,7 +18,23 @@ public enum RedisCacheKey {
      */
     ROOM_APPLY_TIMEOUT_NOTIFY_KEY("room:soon:timeout:notify:"),
 
-    MAIL_RESEND_KEY("mail:resend:list");
+    MAIL_RESEND_KEY("mail:resend:list"),
+
+    /**
+     * websocket channel -> userId
+     */
+    WEBSOCKET_CHANNEL_TO_USER_ID("websocket:channel:to:userid:map"),
+    /**
+     * websocket channel -> source（设备类型）
+     */
+    WEBSOCKET_CHANNEL_TO_SOURCE("websocket:channel:to:source:map"),
+    /**
+     * websocket userId -> list<chanel>
+     */
+    WEBSOCKET_USERID_TO_LIST_SOURCE("websocket:userid:to:list:channel:map"),
+
+    WEBSOCKET_USERID_TO_CHANNEL("websocket:userid:to:channel")
+    ;
 
     private final String key;
 

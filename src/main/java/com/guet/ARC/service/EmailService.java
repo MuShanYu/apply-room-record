@@ -1,6 +1,7 @@
 package com.guet.ARC.service;
 
 import com.guet.ARC.common.enmu.RedisCacheKey;
+import com.guet.ARC.util.CommonUtils;
 import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +10,6 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.mail.internet.InternetAddress;
@@ -36,7 +36,6 @@ public class EmailService {
      * @param subject 主题
      * @param content 内容
      */
-    @Async
     public void sendSimpleMail(String to, String subject, String content) {
         try {
             //创建SimpleMailMessage对象
@@ -50,9 +49,11 @@ public class EmailService {
             //邮件内容
             message.setText(content);
             //发送邮件
-            javaMailSender.send(message);
+            if (CommonUtils.isValidMail(to)) {
+                javaMailSender.send(message);
+            }
         } catch (Exception e) {
-            log.error("mail send failed. the mail is {}, and the error is", to, e);
+            log.error("mail send failed. the mail is {}, and the error message is {}", to, e.getMessage());
             // 构建重发对象
             redisCacheUtil.pushDataToCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey(), buildSimpleMailSendJsonString(to, subject, content));
         }
@@ -65,7 +66,6 @@ public class EmailService {
      * @param subject 主题
      * @param content 内容
      */
-    @Async
     public void sendHtmlMail(String to, String subject, String content) {
         //获取MimeMessage对象
         MimeMessage message = javaMailSender.createMimeMessage();

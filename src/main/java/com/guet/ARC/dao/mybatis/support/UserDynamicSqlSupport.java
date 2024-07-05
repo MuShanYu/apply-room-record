@@ -14,9 +14,6 @@ public final class UserDynamicSqlSupport {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-02-23T14:20:41.579+08:00", comments="Source field: tbl_user.id")
     public static final SqlColumn<String> id = user.id;
 
-    @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-02-23T14:20:41.58+08:00", comments="Source field: tbl_user.nickname")
-    public static final SqlColumn<String> nickname = user.nickname;
-
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-02-23T14:20:41.58+08:00", comments="Source field: tbl_user.pwd")
     public static final SqlColumn<String> pwd = user.pwd;
 
@@ -44,8 +41,6 @@ public final class UserDynamicSqlSupport {
     @Generated(value="org.mybatis.generator.api.MyBatisGenerator", date="2023-02-23T14:20:41.579+08:00", comments="Source Table: tbl_user")
     public static final class User extends SqlTable {
         public final SqlColumn<String> id = column("id", JDBCType.VARCHAR);
-
-        public final SqlColumn<String> nickname = column("nickname", JDBCType.VARCHAR);
 
         public final SqlColumn<String> pwd = column("pwd", JDBCType.VARCHAR);
 

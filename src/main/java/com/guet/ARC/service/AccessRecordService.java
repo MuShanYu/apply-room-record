@@ -3,6 +3,7 @@ package com.guet.ARC.service;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.support.ExcelTypeEnum;
@@ -138,7 +139,7 @@ public class AccessRecordService {
 
     private AccessRecord saveAccessRecord(String userId, String roomId, long now) {
         AccessRecord accessRecord = new AccessRecord();
-        accessRecord.setId(CommonUtils.generateUUID());
+        accessRecord.setId(IdUtil.fastSimpleUUID());
         accessRecord.setCreateTime(now);
         accessRecord.setUpdateTime(now);
         accessRecord.setEntryTime(now);
@@ -151,21 +152,16 @@ public class AccessRecordService {
 
     // 删除进出记录
     public void delAccessRecord(String accessRecordId) {
-        Optional<AccessRecord> accessRecordOptional = accessRecordQueryRepository.selectByPrimaryKey(accessRecordId);
-        if (accessRecordOptional.isPresent()) {
-            AccessRecord accessRecord = accessRecordOptional.get();
-            if (accessRecord.getState().equals(State.ACTIVE)) {
-                accessRecord.setState(State.NEGATIVE);
-            } else {
-                accessRecord.setState(State.ACTIVE);
-            }
-            accessRecord.setUpdateTime(System.currentTimeMillis());
-            int update = accessRecordQueryRepository.updateByPrimaryKeySelective(accessRecord);
-            if (update == 0) {
-                throw new AlertException(ResultCode.SYSTEM_ERROR);
-            }
+        AccessRecord accessRecord = accessRecordRepository.findByIdOrElseNull(accessRecordId);
+        if (accessRecord.getState().equals(State.ACTIVE)) {
+            accessRecord.setState(State.NEGATIVE);
         } else {
-            throw new AlertException(ResultCode.PARAM_IS_INVALID);
+            accessRecord.setState(State.ACTIVE);
+        }
+        accessRecord.setUpdateTime(System.currentTimeMillis());
+        int update = accessRecordQueryRepository.updateByPrimaryKeySelective(accessRecord);
+        if (update == 0) {
+            throw new AlertException(ResultCode.SYSTEM_ERROR);
         }
     }
 
@@ -173,27 +169,15 @@ public class AccessRecordService {
     public PageInfo<UserAccessRecordVo> queryUserAccessRecordList(Integer page, Integer size) {
         String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
         Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordVo> userAccessRecordVos = accessRecordQueryRepository.selectVo(
-                accessRecordQuery.queryUserAccessRecordListSql(userId)
-        );
-        PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
-        pageInfo.setPageData(userAccessRecordVos);
-        pageInfo.setTotalSize(queryPageData.getTotal());
-        pageInfo.setPage(page);
-        return pageInfo;
+        accessRecordQueryRepository.selectVo(accessRecordQuery.queryUserAccessRecordListSql(userId));
+        return new PageInfo<>(queryPageData);
     }
 
     // 管理员查询用户进出信息列表
     public PageInfo<UserAccessRecordVo> queryUserAccessRecordListAdmin(Integer page, Integer size, String userId) {
         Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
-        List<UserAccessRecordVo> userAccessRecordVos = accessRecordQueryRepository.selectVo(
-                accessRecordQuery.queryUserAccessRecordListAdminSql(userId)
-        );
-        PageInfo<UserAccessRecordVo> pageInfo = new PageInfo<>();
-        pageInfo.setPageData(userAccessRecordVos);
-        pageInfo.setTotalSize(queryPageData.getTotal());
-        pageInfo.setPage(page);
-        return pageInfo;
+        accessRecordQueryRepository.selectVo(accessRecordQuery.queryUserAccessRecordListAdminSql(userId));
+        return new PageInfo<>(queryPageData);
     }
 
     // 查询用户进出房间的次数
@@ -237,14 +221,10 @@ public class AccessRecordService {
             throw new AlertException(1000, "结束时间不能小于等于开始时间");
         }
         Page<UserAccessRecordRoomVo> queryPageData = PageHelper.startPage(userAccessQueryDTO.getPage(), userAccessQueryDTO.getSize());
-        List<UserAccessRecordRoomVo> userAccessRecordVos = accessRecordQueryRepository.selectUserAccessRoomVo(
+        accessRecordQueryRepository.selectUserAccessRoomVo(
                 accessRecordQuery.queryUserAccessRecordByRoomIdSql(userAccessQueryDTO.getRoomId(), webAppDateStart, webAppDateEnd)
         );
-        PageInfo<UserAccessRecordRoomVo> pageInfo = new PageInfo<>();
-        pageInfo.setPageData(userAccessRecordVos);
-        pageInfo.setTotalSize(queryPageData.getTotal());
-        pageInfo.setPage(userAccessQueryDTO.getPage());
-        return pageInfo;
+        return new PageInfo<>(queryPageData);
     }
 
 

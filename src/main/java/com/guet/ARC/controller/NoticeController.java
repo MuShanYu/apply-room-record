@@ -1,10 +1,10 @@
 package com.guet.ARC.controller;
 
-import cn.dev33.satoken.annotation.SaCheckRole;
-import cn.dev33.satoken.annotation.SaMode;
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
-import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.Notice;
 import com.guet.ARC.domain.dto.notice.NoticeQueryDTO;
 import com.guet.ARC.domain.vo.notice.NoticeVo;
@@ -32,21 +32,23 @@ public class NoticeController {
 
     @PostMapping("/notice/save")
     @ApiOperation(value = "保存公告")
-    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @SaCheckPermission(value = {"system:notice:add"})
+    @Log(title = "保存公告", businessType = BusinessType.INSERT)
     public void saveNoticeApi(@RequestBody Notice notice) {
         noticeService.saveNotice(notice);
     }
 
     @PutMapping("/notice")
     @ApiOperation(value = "修改公告")
-    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @SaCheckPermission(value = {"system:notice:update"})
+    @Log(title = "修改公告", businessType = BusinessType.UPDATE)
     public void updateNoticeApi(@RequestBody Notice notice) {
         noticeService.updateNotice(notice);
     }
 
     @PostMapping("/notice/query/admin/list")
     @ApiOperation(value = "管理员公告列表")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:notice"})
     public PageInfo<NoticeVo> queryNoticeListAdminApi(@Valid @RequestBody NoticeQueryDTO queryDTO) {
         return noticeService.queryNoticeListAdmin(queryDTO);
     }
@@ -59,14 +61,16 @@ public class NoticeController {
 
     @DeleteMapping("/notice")
     @ApiOperation(value = "删除公告")
-    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @SaCheckPermission(value = {"system:notice:revoke"})
+    @Log(title = "删除公告", businessType = BusinessType.DELETE)
     public void deleteNoticeApi(@RequestParam("noticeId") String noticeId) {
         noticeService.setNoticeToDeleted(noticeId);
     }
 
     @PutMapping("/notice/reset")
     @ApiOperation(value = "重置公告状态")
-    @SaCheckRole(value = {CommonConstant.SUPER_ADMIN_ROLE})
+    @SaCheckPermission(value = {"system:notice:revoke"})
+    @Log(title = "重置公告状态", businessType = BusinessType.UPDATE)
     public void resetNoticeApi(@RequestParam("noticeId") String noticeId) {
         noticeService.resetNoticeToNormal(noticeId);
     }

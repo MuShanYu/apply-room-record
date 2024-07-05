@@ -1,10 +1,11 @@
 package com.guet.ARC.controller;
 
-import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaMode;
+import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
-import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
+import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.RoomReservation;
 import com.guet.ARC.domain.dto.apply.MyApplyQueryDTO;
 import com.guet.ARC.domain.dto.room.ApplyRoomDTO;
@@ -55,28 +56,29 @@ public class RoomReservationController {
 
     @PostMapping("/roomReservation/queryRoomApplyDetailList")
     @ApiOperation("查询房间预约详细信息")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:room:reserveDetail"})
     public PageInfo<RoomReservationUserVo> queryRoomApplyDetailList(@Valid @RequestBody RoomApplyDetailListQueryDTO roomApplyDetailListQueryDTO) {
         return roomReservationService.queryRoomApplyDetailList(roomApplyDetailListQueryDTO);
     }
 
     @PostMapping("/roomReservation/userRecord")
     @ApiOperation("查询用户预约详细信息")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"system:user:reserveDetail"})
     public PageInfo<RoomReservationVo> queryUserReserveRecordApi(@Valid @RequestBody UserRoomReservationDetailQueryDTO userRoomReservationDetailQueryDTO) {
         return roomReservationService.queryUserReserveRecord(userRoomReservationDetailQueryDTO);
     }
 
     @PostMapping("/roomReservation/reviewed/userRecord")
     @ApiOperation("查询待审核房间列表信息")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"work:roomApprove"})
     public PageInfo<RoomReservationAdminVo> queryRoomReserveToBeReviewedApi(@Valid @RequestBody RoomReserveReviewedDTO roomReserveReviewedDTO) {
         return roomReservationService.queryRoomReserveToBeReviewed(roomReserveReviewedDTO);
     }
 
     @GetMapping("/roomReservation/approval")
     @ApiOperation("审批房间预约")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"work:roomApprove:pass", "work:roomApprove:reject"}, mode = SaMode.AND)
+    @Log(title = "审批房间预约", businessType = BusinessType.UPDATE)
     public void passOrRejectReserveApi(@NotEmpty @RequestParam("reserveId") String reserveId,
                                        @NotNull @RequestParam("passed") boolean passed,
                                        @RequestParam(value = "reason", required = false) String reason) {
@@ -85,7 +87,8 @@ public class RoomReservationController {
 
     @GetMapping("/roomReservation/del/record")
     @ApiOperation("删除房间预约记录")
-    @SaCheckRole(value = {CommonConstant.ADMIN_ROLE, CommonConstant.SUPER_ADMIN_ROLE}, mode = SaMode.OR)
+    @SaCheckPermission(value = {"work:roomApprove:del"})
+    @Log(title = "删除房间预约记录", businessType = BusinessType.DELETE)
     public void delRoomReservationRecordApi(@NotEmpty @RequestParam("id") String id) {
         roomReservationService.delRoomReservationRecord(id);
     }

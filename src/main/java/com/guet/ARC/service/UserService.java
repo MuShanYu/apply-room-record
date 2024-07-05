@@ -2,28 +2,26 @@ package com.guet.ARC.service;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.cglib.CglibUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.enmu.Device;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRepository;
-import com.guet.ARC.dao.UserRoleRepository;
 import com.guet.ARC.dao.mybatis.UserQueryRepository;
 import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
-import com.guet.ARC.domain.Role;
 import com.guet.ARC.domain.User;
-import com.guet.ARC.domain.UserRole;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.enums.State;
 import com.guet.ARC.domain.vo.user.UserRoleVo;
-import com.guet.ARC.util.CommonUtils;
+import com.guet.ARC.netty.manager.UserOnlineManager;
 import com.guet.ARC.util.RedisCacheUtil;
 import com.guet.ARC.util.WxUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -36,10 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-import static org.mybatis.dynamic.sql.SqlBuilder.isLikeWhenPresent;
-import static org.mybatis.dynamic.sql.SqlBuilder.select;
+import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
 @Service
 @Slf4j
@@ -49,13 +47,10 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private UserRoleRepository userRoleRepository;
-
-    @Autowired
     private UserQueryRepository userQueryRepository;
 
     @Autowired
-    private RedisCacheUtil<String> redisCacheUtil;
+    private RedisCacheUtil redisCacheUtil;
 
     @Autowired
     private UserRoleService userRoleService;
@@ -84,7 +79,6 @@ public class UserService {
         }
         User user = buildUser(userRegisterDTO, System.currentTimeMillis());
         userRepository.saveAndFlush(user);
-        userRoleService.setRole(user.getId(), CommonConstant.ROLE_USER_ID);
         // 返回信息
         Map<String, Object> map = new HashMap<>();
         // 用户登录
@@ -103,19 +97,11 @@ public class UserService {
         long now = System.currentTimeMillis();
         List<User> errorData = new ArrayList<>();
         List<User> successData = new ArrayList<>();
-        List<UserRole> userRoles = new ArrayList<>();
         User user = null;
         try {
             for (UserRegisterDTO userRegisterDTO : userRegisterDTOS) {
                 // 初始化信息
                 user = buildUser(userRegisterDTO, now);
-                UserRole userRole = new UserRole();
-                userRole.setId(IdUtil.fastSimpleUUID());
-                userRole.setUserId(user.getId());
-                userRole.setRoleId(CommonConstant.ROLE_USER_ID);
-                userRole.setState(State.ACTIVE);
-                userRole.setUpdateTime(now);
-                userRole.setCreateTime(now);
                 if (user.getStuNum().isEmpty() || user.getInstitute().isEmpty() || user.getName().isEmpty()) {
                     errorData.add(user);
                     continue;
@@ -126,7 +112,6 @@ public class UserService {
                     errorMsg.add(user.getStuNum() + "该学号已经被注册");
                 } else {
                     successData.add(user);
-                    userRoles.add(userRole);
                 }
             }
         } catch (Exception e) {
@@ -134,7 +119,6 @@ public class UserService {
             errorMsg.add(e.getMessage());
         }
         userRepository.saveAllAndFlush(successData);
-        userRoleRepository.saveAllAndFlush(userRoles);
         return errorData;
     }
 
@@ -146,7 +130,6 @@ public class UserService {
         user.setName(userRegisterDTO.getName());
         user.setStuNum(userRegisterDTO.getStuNum());
         user.setInstitute(userRegisterDTO.getInstitute());
-        user.setNickname(userRegisterDTO.getName());
         user.setMail(userRegisterDTO.getMail());
         user.setPwd(SaSecureUtil.md5(userRegisterDTO.getStuNum()));
         user.setId(IdUtil.fastSimpleUUID());
@@ -164,6 +147,7 @@ public class UserService {
             map = new HashMap<>();
             login(map, user, userLoginDTO.getDevice());
             map.put("roles", StpUtil.getRoleList());
+            map.put("permissions", StpUtil.getPermissionList());
         } else {
             throw new AlertException(1000, "账号或者密码错误");
         }
@@ -180,14 +164,10 @@ public class UserService {
             map = new HashMap<>();
             login(map, user, userLoginDTO.getDevice());
             // 获取权限列表
-            List<String> roleList = StpUtil.getRoleList();
-            if (roleList.contains(CommonConstant.ADMIN_ROLE) || roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                // 拥有任意权限，允许登录
-                map.put("roles", roleList);
-            } else {
+            if (StpUtil.getPermissionList().isEmpty()) {
                 // 权限不足，踢出下线，抛出错误
                 StpUtil.logout();
-                throw new AlertException(1000, "您不是管理员，没有权限登录后台管理");
+                throw new AlertException(1000, "没有权限登录后台管理");
             }
         } else {
             throw new AlertException(1000, "账号或者密码错误");
@@ -214,6 +194,7 @@ public class UserService {
             map.put("canWxLogin", true);
             login(map, user, Device.WECHAT.getDevice());
             map.put("roles", StpUtil.getRoleList());
+            map.put("permissions", StpUtil.getPermissionList());
         } else {
             map.put("canWxLogin", false);
         }
@@ -261,8 +242,6 @@ public class UserService {
             user.setUpdateTime(System.currentTimeMillis());
             user.setOpenId(openid);
             userRepository.save(user);
-        } else if (user.getOpenId().equals(openid)) {
-            // 与获取的Openid相同
         }
     }
 
@@ -304,7 +283,6 @@ public class UserService {
             UserRoleVo userRoleVo = new UserRoleVo();
             userCopier.copy(user, userRoleVo, null);
             userRoleVo.setRoleList(userRoleService.queryRoleByUserId(user.getId()));
-            userRoleVo.setName(CommonUtils.encodeName(userRoleVo.getName()));
             userRoleVos.add(userRoleVo);
         }
         PageInfo<UserRoleVo> pageInfo = new PageInfo<>();
@@ -387,22 +365,9 @@ public class UserService {
             User updateUserInfo = new User();
             CglibUtil.copy(user, updateUserInfo);
             CglibUtil.fillBean(userInfo, updateUserInfo);
-//            log.info("user or:{}", user);
-//            log.info("update user: {}", updateUserInfo);
             updateUserInfo.setUpdateTime(System.currentTimeMillis());
             userRepository.save(updateUserInfo);
         });
-    }
-
-    public void changeUserRole(String userId, String[] roleIds) {
-        if (!StringUtils.hasLength(userId)) {
-            throw new AlertException(1000, "用户ID不能为空");
-        }
-        String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        if (userIdContext.equals(userId)) {
-            throw new AlertException(ResultCode.OPERATE_OBJECT_NOT_SELF);
-        }
-        userRoleService.changeRole(userId, roleIds);
     }
 
     public User userCanBeCurrentRoomCharger(String stuNum, String name) {
@@ -419,56 +384,20 @@ public class UserService {
                 throw new AlertException(1000, "学号/工号与注册姓名不匹配");
             }
             // 判断权限
-            List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
-            List<String> roleNames = new ArrayList<>();
-            roles.forEach(v -> roleNames.add(v.getRoleName()));
-            if (roleNames.contains(CommonConstant.ADMIN_ROLE) || roleNames.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
+            if (CollectionUtil.isNotEmpty(StpUtil.getPermissionList())) {
                 return user;
             } else {
-                throw new AlertException(1000, name + "不是管理员，无法设置成负责人");
+                throw new AlertException(1000, name + "非后台管理员，无法设置成负责人");
             }
         } else {
             throw new AlertException(1000, "学号/工号错误，或者负责人" + stuNum + name + "未注册");
         }
-    }
-
-    @Transactional(rollbackFor = RuntimeException.class)
-    public User userBeCurrentRoomCharger(String stuNum, String name) {
-        Optional<User> userOptional = userRepository.findByStuNum(stuNum);
-        User user;
-        if (userOptional.isPresent()) {
-            user = userOptional.get();
-            // 是否可用
-            if (user.getState().equals(State.NEGATIVE)) {
-                throw new AlertException(999, name + "负责人账户处于不可用状态");
-            }
-            // 判断权限
-            List<Role> roles = userRoleService.queryRoleByUserId(user.getId());
-            List<String> roleNames = new ArrayList<>();
-            roles.forEach(v -> roleNames.add(v.getRoleName()));
-            if (!roleNames.contains(CommonConstant.ADMIN_ROLE)) {
-                // 修改为管理员
-                userRoleService.setRole(user.getId(), CommonConstant.ROLE_ADMIN_ID);
-            }
-        } else {
-            // 要设置的负责人未注册
-            throw new AlertException(1000, "学号/工号错误，或者负责人" + stuNum + name + "未注册");
-        }
-        return user;
     }
 
     public void updateUserName(UserUpdateNameDTO userUpdateNameDTO) {
-        User user = new User();
+        User user = userRepository.findByIdOrElseNull(userUpdateNameDTO.getUserId());
         user.setName(userUpdateNameDTO.getName());
         user.setId(userUpdateNameDTO.getUserId());
-        user.setUpdateTime(System.currentTimeMillis());
-        userRepository.save(user);
-    }
-
-    public void updateUserNickname(UserUpdateNicknameDTO userUpdateNicknameDTO) {
-        User user = new User();
-        user.setNickname(userUpdateNicknameDTO.getNickname());
-        user.setId(userUpdateNicknameDTO.getUserId());
         user.setUpdateTime(System.currentTimeMillis());
         userRepository.save(user);
     }
@@ -492,8 +421,55 @@ public class UserService {
         StpUtil.getSessionByLoginId(StpUtil.getLoginId()).set("userId", userId);
         // 返回结果
         res.put("token", loginToken);
-        res.put("isNeedRefresh", Boolean.TRUE);
+        res.put("userInfo", userRepository.findByIdOrElseNull(userId));
+        res.put("roles", StpUtil.getRoleList());
+        res.put("permissions", StpUtil.getPermissionList());
         return res;
     }
 
+    public List<Map<String, Object>> getOlineUserList() {
+        List<Map<String, Object>> res = new ArrayList<>();
+        ConcurrentMap<String, List<String>> onlineUserIdToSources = UserOnlineManager.getOnlineUserIdToSources();
+        for (User user : userRepository.findAllById(onlineUserIdToSources.keySet())) {
+            Map<String, Object> beanToMap = BeanUtil.beanToMap(user, "id", "name", "stuNum", "institute");
+            beanToMap.put("sources", onlineUserIdToSources.get(user.getId()));
+            res.add(beanToMap);
+        }
+        return res;
+    }
+
+    public List<User> findUserByIds(List<String> ids) {
+        return userRepository.findAllById(ids);
+    }
+
+    public Map<String, Object> getUserPermissionAndRole() {
+        Map<String, Object> res = new HashMap<>();
+        res.put("roles", StpUtil.getRoleList());
+        res.put("permission", StpUtil.getPermissionList());
+        return res;
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void resetUserPwd(String newPwd, String userId) {
+        User user = userRepository.findByIdOrElseNull(userId);
+        user.setPwd(SaSecureUtil.md5(newPwd));
+        user.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(user);
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void updateUserInfoAdmin(User user) {
+        userRepository.findByStuNum(user.getStuNum()).ifPresent(u -> {
+            if (!u.getId().equals(user.getId())) {
+                throw new AlertException(1000, "学号" + user.getStuNum() + "已被其他用户注册");
+            }
+        });
+        userRepository.findByMail(user.getMail()).ifPresent(u -> {
+            if (!u.getId().equals(user.getId())) {
+                throw new AlertException(1000, "邮箱" + user.getMail() + "已被其他用户注册");
+            }
+        });
+        user.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(user);
+    }
 }

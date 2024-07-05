@@ -45,13 +45,10 @@ public interface AccessRecordQueryRepository {
 
     BasicColumn[] selectAccessRoomVoList = BasicColumn.columnList(id, entryTime, outTime, state, updateTime, createTime,
             userId, roomId, RoomDynamicSqlSupport.school, RoomDynamicSqlSupport.teachBuilding,
-            RoomDynamicSqlSupport.roomName, UserDynamicSqlSupport.nickname);
+            RoomDynamicSqlSupport.roomName, UserDynamicSqlSupport.name);
 
     BasicColumn[] selectCountVoList = BasicColumn.columnList(roomId, RoomDynamicSqlSupport.school,
             RoomDynamicSqlSupport.teachBuilding, RoomDynamicSqlSupport.category, RoomDynamicSqlSupport.roomName);
-
-    BasicColumn[] selectAttendanceCountDetailList = BasicColumn.columnList(id, entryTime, outTime, state,
-            UserDynamicSqlSupport.name, UserDynamicSqlSupport.institute, UserDynamicSqlSupport.stuNum);
 
     @Generated(value = "org.mybatis.generator.api.MyBatisGenerator", date = "2022-08-09T20:41:25.257+08:00", comments = "Source Table: tbl_access_record")
     @SelectProvider(type = SqlProviderAdapter.class, method = "select")
@@ -130,7 +127,7 @@ public interface AccessRecordQueryRepository {
             @Result(column = "school", property = "school", jdbcType = JdbcType.VARCHAR),
             @Result(column = "teach_building", property = "teachBuilding", jdbcType = JdbcType.VARCHAR),
             @Result(column = "room_name", property = "roomName", jdbcType = JdbcType.VARCHAR),
-            @Result(column = "nickname", property = "nickname", jdbcType = JdbcType.VARCHAR),
+            @Result(column = "name", property = "name", jdbcType = JdbcType.VARCHAR),
     })
     List<UserAccessRecordRoomVo> selectUserAccessRoomVo(SelectStatementProvider selectStatement);
 

@@ -3,6 +3,8 @@ package com.guet.ARC.domain;
 import com.guet.ARC.domain.enums.RoomState;
 import com.guet.ARC.domain.enums.State;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
@@ -13,7 +15,8 @@ import javax.persistence.*;
 @Table(name = "tbl_room")
 @DynamicInsert
 @DynamicUpdate
-@Data
+@Getter
+@Setter
 @ToString
 public class Room {
 

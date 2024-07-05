@@ -1,5 +1,9 @@
 package com.guet.ARC.service;
 
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.NumberUtil;
+import cn.hutool.system.oshi.CpuInfo;
+import cn.hutool.system.oshi.OshiUtil;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.support.ExcelTypeEnum;
 import com.alibaba.excel.write.metadata.WriteSheet;
@@ -31,13 +35,22 @@ import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import oshi.hardware.CentralProcessor;
+import oshi.hardware.GlobalMemory;
+import oshi.hardware.HWDiskStore;
+import oshi.software.os.OSFileStore;
+
 
 import javax.persistence.criteria.Predicate;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
@@ -139,6 +152,7 @@ public class DataStatisticsService {
                         .leftJoin(RoomDynamicSqlSupport.room)
                         .on(RoomDynamicSqlSupport.id, equalTo(RoomReservationDynamicSqlSupport.roomId))
                         .where(RoomReservationDynamicSqlSupport.state, isEqualTo(state))
+                        .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomReservationCountDTO.getChargerPersonId()))
                         .and(RoomReservationDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                         .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
                         .and(RoomReservationDynamicSqlSupport.updateTime, isBetween(webAppDateStart).and(oneDayAfter))
@@ -247,6 +261,7 @@ public class DataStatisticsService {
                             .and(oneDayAfter))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                     .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
+                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                     .build().render(RenderingStrategies.MYBATIS3);
             // 统计扫码出去的次数，出去的时间不为空
@@ -258,6 +273,7 @@ public class DataStatisticsService {
                             .and(oneDayAfter))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                     .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
+                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
                     .build().render(RenderingStrategies.MYBATIS3);
@@ -270,6 +286,7 @@ public class DataStatisticsService {
                             .where(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                             .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomId))
                             .and(RoomDynamicSqlSupport.category, isEqualToWhenPresent(roomCategory))
+                            .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                             .and(AccessRecordDynamicSqlSupport.createTime, isBetween(webAppDateStart)
                                     .and(oneDayAfter))
                             .groupBy(AccessRecordDynamicSqlSupport.userId), "a")
@@ -376,6 +393,7 @@ public class DataStatisticsService {
                 .and(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
                         .and(webAppDateEnd))
                 .and(RoomDynamicSqlSupport.state, isNotEqualTo(RoomState.ROOM_NEGATIVE))
+                .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                 .groupBy(RoomDynamicSqlSupport.id)
                 .build().render(RenderingStrategies.MYBATIS3);
         List<ExcelRoomRecordWriteModel> roomRecordWriteModels = roomQueryRepository.selectRoomRecordExcelModels(statement);
@@ -389,10 +407,13 @@ public class DataStatisticsService {
             countPeopleInAndOut = select(count())
                     .from(select(AccessRecordDynamicSqlSupport.userId)
                             .from(AccessRecordDynamicSqlSupport.accessRecord)
+                            .leftJoin(RoomDynamicSqlSupport.room)
+                            .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
                             .where(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                             .and(AccessRecordDynamicSqlSupport.roomId, isEqualTo(roomExcelModelId))
                             .and(AccessRecordDynamicSqlSupport.entryTime, isBetween(webAppDateStart)
                                     .and(webAppDateEnd))
+                            .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                             .groupBy(AccessRecordDynamicSqlSupport.userId), "a")
                     .build().render(RenderingStrategies.MYBATIS3);
             // 统计进入的次数
@@ -404,6 +425,7 @@ public class DataStatisticsService {
                             .and(webAppDateEnd))
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualTo(roomExcelModelId))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
+                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                     .build().render(RenderingStrategies.MYBATIS3);
             // 统计出去的次数
             countOutTimesStatement = select(count())
@@ -415,6 +437,7 @@ public class DataStatisticsService {
                     .and(AccessRecordDynamicSqlSupport.roomId, isEqualToWhenPresent(roomExcelModelId))
                     .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
                     .and(AccessRecordDynamicSqlSupport.outTime, isNotNull())
+                    .and(RoomDynamicSqlSupport.chargePersonId, isEqualToWhenPresent(roomRecordCountDTO.getChargerPersonId()))
                     .build().render(RenderingStrategies.MYBATIS3);
             // 设置当前对象
             long peopleInAndOut = accessRecordQueryRepository.count(countPeopleInAndOut);
@@ -427,4 +450,89 @@ public class DataStatisticsService {
         }
         return roomRecordWriteModels;
     }
+
+    public Map<String, Object> getServerInfo() throws Exception {
+        CpuInfo cpuInfo = OshiUtil.getCpuInfo();
+        GlobalMemory memory = OshiUtil.getMemory();
+        List<OSFileStore> fileStores = OshiUtil.getOs().getFileSystem().getFileStores();
+        Properties props = System.getProperties();
+        // 内存信息
+        Map<String, Object> mem = new HashMap<>();
+        mem.put("totalMemory", convertFileSize(memory.getTotal()));//内存总量
+        mem.put("memoryUsed", convertFileSize(memory.getTotal() - memory.getAvailable()));//已用内存
+        mem.put("restMemory", convertFileSize(memory.getAvailable())); //剩余内存
+        mem.put("usage", NumberUtil.mul(NumberUtil.div(memory.getTotal() - memory.getAvailable(), memory.getTotal(), 4), 100));
+        //设置服务器信息
+        Map<String, Object> sys = new HashMap<>();
+        sys.put("computerIp", InetAddress.getLocalHost().getHostAddress());//服务器Ip
+        sys.put("computerName", InetAddress.getLocalHost().getHostName());//服务器名称
+        sys.put("userDir", props.getProperty("user.dir"));//项目路径
+        sys.put("osName", props.getProperty("os.name"));//操作系统
+        sys.put("osArch", props.getProperty("os.arch"));//系统架构
+        //设置磁盘信息
+        List<Map<String, Object>> sysFiles = new ArrayList<>();
+        for (OSFileStore fs : fileStores) {
+            long free = fs.getUsableSpace();
+            long total = fs.getTotalSpace();
+            Map<String, Object> sysFile = new HashMap<>();
+            sysFile.put("dirName", fs.getMount());//盘符路径
+            sysFile.put("sysTypeName", fs.getType());//盘符类型
+            sysFile.put("typeName", fs.getName());//文件类型
+            sysFile.put("fileSize", convertFileSize(total));//总大小
+            sysFile.put("restSize", convertFileSize(free));//剩余大小
+            sysFile.put("usedSize", convertFileSize(total - free));//已经使用量
+            sysFile.put("usage", NumberUtil.mul(NumberUtil.div(total - free, total, 4), 100));//资源的使用率
+            sysFiles.add(sysFile);
+        }
+        //设置Java虚拟机
+        Map<String, Object> jvm = new HashMap<>();
+        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+        jvm.put("jvmTotal", convertFileSize(Runtime.getRuntime().totalMemory())); // 当前JVM占用的内存总数(M)
+        jvm.put("usedMemory", convertFileSize(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())); //JVM最大可用内存总数(M)
+        jvm.put("freeMemory", convertFileSize(Runtime.getRuntime().freeMemory()));//JVM空闲内存(M)
+        jvm.put("usage", NumberUtil.mul(NumberUtil.div(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(), Runtime.getRuntime().totalMemory(), 4), 100));
+        jvm.put("version", props.getProperty("java.version"));//JDK版本
+        jvm.put("home", props.getProperty("java.home"));//JDK路径
+        jvm.put("jvmName", runtimeMXBean.getVmName());
+        jvm.put("startTime", DateUtil.format(new Date(runtimeMXBean.getStartTime()), "yyyy-MM-dd HH:mm:ss"));
+        jvm.put("uptime", formatUptime(runtimeMXBean.getUptime()));
+        jvm.put("inputArguments", runtimeMXBean.getInputArguments());
+        // 封装结果
+        Map<String, Object> server = new HashMap<>();
+        server.put("cpu", cpuInfo);
+        server.put("mem", mem);
+        server.put("sys", sys);
+        server.put("jvm", jvm);
+        server.put("sysFiles", sysFiles);
+        return server;
+    }
+
+    public String convertFileSize(long size) {
+        long kb = 1024;
+        long mb = kb * 1024;
+        long gb = mb * 1024;
+        if (size >= gb) {
+            return String.format("%.1f GB", (float) size / gb);
+        } else if (size >= mb) {
+            float f = (float) size / mb;
+            return String.format(f > 100 ? "%.0f MB" : "%.1f MB", f);
+        } else if (size >= kb) {
+            float f = (float) size / kb;
+            return String.format(f > 100 ? "%.0f KB" : "%.1f KB", f);
+        } else {
+            return String.format("%d B", size);
+        }
+    }
+
+    private String formatUptime(long uptime) {
+        long days = TimeUnit.MILLISECONDS.toDays(uptime);
+        uptime -= TimeUnit.DAYS.toMillis(days);
+        long hours = TimeUnit.MILLISECONDS.toHours(uptime);
+        uptime -= TimeUnit.HOURS.toMillis(hours);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(uptime);
+        uptime -= TimeUnit.MINUTES.toMillis(minutes);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(uptime);
+        return String.format("%d days, %d hours, %d minutes, %d seconds", days, hours, minutes, seconds);
+    }
+
 }

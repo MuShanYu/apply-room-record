@@ -1,11 +1,10 @@
 package com.guet.ARC.service;
 
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.guet.ARC.common.constant.CommonConstant;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.exception.AlertException;
@@ -19,17 +18,19 @@ import com.guet.ARC.domain.dto.room.RoomQueryDTO;
 import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
 import com.guet.ARC.dao.mybatis.RoomQueryRepository;
 import com.guet.ARC.domain.enums.RoomState;
-import com.guet.ARC.util.CommonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class RoomService {
@@ -69,39 +70,19 @@ public class RoomService {
     }
 
     public void disableRoom(String id) {
-        Optional<Room> optionalRoom = roomRepository.findById(id);
-        if (optionalRoom.isPresent()) {
-            Room room = optionalRoom.get();
-            String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-            List<String> roleList = StpUtil.getRoleList();
-            if (!room.getChargePersonId().equals(currentUserId)) {
-                if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                    throw new AlertException(1000, "不允许禁用非负责的房间或者您没有权限修改");
-                }
-            }
-            // 修改
-            if (room.getState().equals(RoomState.ROOM_ACTIVE) || room.getState().equals(RoomState.ROOM_CAN_NOT_BE_RESERVED)) {
-                room.setState(RoomState.ROOM_NEGATIVE);
-            } else {
-                room.setState(RoomState.ROOM_ACTIVE);
-            }
-            room.setUpdateTime(System.currentTimeMillis());
-            roomRepository.save(room);
+        Room room = roomRepository.findByIdOrElseNull(id);
+        // 修改
+        if (room.getState().equals(RoomState.ROOM_ACTIVE) || room.getState().equals(RoomState.ROOM_CAN_NOT_BE_RESERVED)) {
+            room.setState(RoomState.ROOM_NEGATIVE);
         } else {
-            throw new AlertException(1000, "要禁用的房间不存在");
+            room.setState(RoomState.ROOM_ACTIVE);
         }
+        room.setUpdateTime(System.currentTimeMillis());
+        roomRepository.save(room);
     }
 
     // 修改房间基本信息
     public Room updateRoom(Room room) {
-        // 判断是否可以修改
-        String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        if (!currentUserId.equals(room.getChargePersonId())) {
-            List<String> roleList = StpUtil.getRoleList();
-            if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                throw new AlertException(1000, "不允许修改非负责房间或者您没有权限修改");
-            }
-        }
         // 修改
         if (room.getId() == null || room.getId().trim().isEmpty()) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
@@ -113,28 +94,21 @@ public class RoomService {
 
     public void updateRoomCharger(UpdateRoomChargerDTO roomChargerDTO) {
         User user = userService.userCanBeCurrentRoomCharger(roomChargerDTO.getChargePersonStNum(), roomChargerDTO.getChargePerson());
-        // 判断是否可以修改
-        String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-        if (!currentUserId.equals(roomChargerDTO.getOriginChargePersonId())) {
-            List<String> roleList = StpUtil.getRoleList();
-            if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                throw new AlertException(1000, "不允许修改非负责房间或者您没有权限修改");
-            }
-        }
         // 修改房间信息
-        Optional<Room> roomOptional = roomRepository.findById(roomChargerDTO.getId());
-        if (roomOptional.isPresent()) {
-            Room room = roomOptional.get();
-            room.setUpdateTime(System.currentTimeMillis());
-            room.setChargePerson(roomChargerDTO.getChargePerson());
-            room.setChargePersonId(user.getId());
-            roomRepository.save(room);
-        }
+        Room room = roomRepository.findByIdOrElseNull(roomChargerDTO.getId());
+        room.setUpdateTime(System.currentTimeMillis());
+        room.setChargePerson(roomChargerDTO.getChargePerson());
+        room.setChargePersonId(user.getId());
+        roomRepository.save(room);
     }
 
     // 状态正常的房间
     public Room queryRoomById(String id) {
-        return roomRepository.findByIdAndStateNot(id, RoomState.ROOM_NEGATIVE).orElse(null);
+        Room room = roomRepository.findByIdAndStateNot(id, RoomState.ROOM_NEGATIVE).orElse(null);
+        if (ObjectUtil.isNotNull(room)) {
+            autoUpdateRoomChargerName(CollectionUtil.toList(room));
+        }
+        return room;
     }
 
     /**
@@ -148,11 +122,8 @@ public class RoomService {
         List<Room> rooms = roomQueryRepository.selectMany(
                 roomQuery.queryCanApplyRoomListSql(roomQueryDTO)
         );
-        PageInfo<Room> pageInfo = new PageInfo<>();
-        pageInfo.setPage(roomQueryDTO.getPage());
-        pageInfo.setPageData(rooms);
-        pageInfo.setTotalSize(queryPageData.getTotal());
-        return pageInfo;
+        autoUpdateRoomChargerName(rooms);
+        return new PageInfo<>(queryPageData);
     }
 
     public PageInfo<Room> queryRoomList(RoomListQueryDTO roomListQueryDTO) {
@@ -176,18 +147,12 @@ public class RoomService {
             if (StringUtils.hasLength(roomName)) {
                 predicates.add(cb.like(root.get("roomName"), "%" + roomName + "%"));
             }
-            if (CollectionUtil.isEmpty(predicates)) {
-                return cb.conjunction();
-            }
             query.orderBy(cb.desc(root.get("createTime")));
             return cb.and(predicates.toArray(Predicate[]::new));
         }, pageRequest);
         List<Room> rooms = queryPageData.getContent();
-        PageInfo<Room> pageInfo = new PageInfo<>();
-        pageInfo.setPage(roomListQueryDTO.getPage());
-        pageInfo.setTotalSize(queryPageData.getTotalElements());
-        pageInfo.setPageData(rooms);
-        return pageInfo;
+        autoUpdateRoomChargerName(rooms);
+        return new PageInfo<>(queryPageData);
     }
 
     // 导入房间数据
@@ -204,7 +169,7 @@ public class RoomService {
         // 因为前端是循环调用，所以这里必须是线程安全的
         user = userService.userCanBeCurrentRoomCharger(roomAddUpdateDTO.getStuNum(), roomAddUpdateDTO.getChargePerson());
         long now = System.currentTimeMillis();
-        String id = CommonUtils.generateUUID();
+        String id = IdUtil.fastSimpleUUID();
         room.setId(id);
         room.setCreateTime(now);
         room.setUpdateTime(now);
@@ -215,31 +180,38 @@ public class RoomService {
     }
 
     public void disableReserveRoom(String roomId) {
-        Optional<Room> optionalRoom = roomQueryRepository.selectByPrimaryKey(roomId);
-        if (optionalRoom.isPresent()) {
-            Room room = optionalRoom.get();
-            String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
-            List<String> roleList = StpUtil.getRoleList();
-            if (!room.getChargePersonId().equals(currentUserId)) {
-                if (!roleList.contains(CommonConstant.SUPER_ADMIN_ROLE)) {
-                    throw new AlertException(1000, "不允许禁用非负责的房间或者您没有权限修改");
-                }
-            }
-            // 修改
-            if (room.getState().equals(RoomState.ROOM_CAN_NOT_BE_RESERVED)) {
-                room.setState(RoomState.ROOM_ACTIVE);
-            } else {
-                room.setState(RoomState.ROOM_CAN_NOT_BE_RESERVED);
-            }
-            room.setUpdateTime(System.currentTimeMillis());
-            roomRepository.save(room);
+        Room room = roomRepository.findByIdOrElseNull(roomId);
+        // 修改
+        if (room.getState().equals(RoomState.ROOM_CAN_NOT_BE_RESERVED)) {
+            room.setState(RoomState.ROOM_ACTIVE);
         } else {
-            throw new AlertException(1000, "要禁用预约的房间不存在");
+            room.setState(RoomState.ROOM_CAN_NOT_BE_RESERVED);
         }
+        room.setUpdateTime(System.currentTimeMillis());
+        roomRepository.save(room);
     }
 
     // 查询用户进出过的房间列表
     public List<Room> queryAccessRecordRoomList() {
-        return roomQueryRepository.selectMany(roomQuery.queryAccessRecordRoomListSql());
+        List<Room> rooms = roomQueryRepository.selectMany(roomQuery.queryAccessRecordRoomListSql());
+        autoUpdateRoomChargerName(rooms);
+        return rooms;
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void autoUpdateRoomChargerName(List<Room> rooms) {
+        List<String> chargerPersonIds = rooms.stream().map(Room::getChargePersonId).collect(Collectors.toList());
+        Map<String, User> idToUser = userService.findUserByIds(chargerPersonIds).stream().collect(Collectors.toMap(User::getId, Function.identity()));
+        List<Room> needUpdateRoom = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        for (Room room : rooms) {
+            User user = idToUser.get(room.getChargePersonId());
+            if (!user.getName().equals(room.getChargePerson())) {
+                room.setChargePerson(user.getName());
+                room.setUpdateTime(now);
+                needUpdateRoom.add(room);
+            }
+        }
+        roomRepository.saveAll(needUpdateRoom);
     }
 }

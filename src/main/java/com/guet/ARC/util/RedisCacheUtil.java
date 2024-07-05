@@ -179,6 +179,7 @@ public class RedisCacheUtil<T> {
         return hashOperations;
     }
 
+
     /**
      * 获得缓存的Map
      *
@@ -190,33 +191,15 @@ public class RedisCacheUtil<T> {
         return map;
     }
 
-
-    /**
-     * 缓存Map
-     *
-     * @param key
-     * @param dataMap
-     * @return
-     */
-    public <T> HashOperations<String, Integer, T> setCacheIntegerMap(String key, Map<Integer, T> dataMap) {
-        HashOperations hashOperations = redisTemplate.opsForHash();
-        if (null != dataMap) {
-            for (Map.Entry<Integer, T> entry : dataMap.entrySet()) {
-                hashOperations.put(key, entry.getKey(), entry.getValue());
-            }
-        }
-        return hashOperations;
+    public Map<String, T> getCacheSingleDataMapByKey(String cacheKey, String valueKey) {
+        Map<String, T> map = redisTemplate.opsForHash().entries(cacheKey);
+        Map<String, T> res = new HashMap<>();
+        res.put(valueKey, map.get(valueKey));
+        return res;
     }
 
-    /**
-     * 获得缓存的Map
-     *
-     * @param key
-     * @return
-     */
-    public <T> Map<Integer, T> getCacheIntegerMap(String key) {
-        Map<Integer, T> map = redisTemplate.opsForHash().entries(key);
-        return map;
+    public void delMapMember(String key, String valueKey) {
+        redisTemplate.opsForHash().delete(key, valueKey);
     }
 
     public Long getExpire(String key) {
