@@ -189,9 +189,9 @@ public class SysMenuService {
                         Map<String, Object> meta = new HashMap<>();
                         meta.put("title", treeNode.getTitle());
                         meta.put("noCache", treeNode.getNoCache().getBool());
-                        meta.put("hide", treeNode.getHide().getBool());
                         meta.put("icon", treeNode.getIcon());
                         meta.put("breadcrumb", treeNode.getBreadcrumb().getBool());
+                        tree.putExtra("hidden", treeNode.getHide().getBool());
                         tree.putExtra("meta", meta);
                     } else {
                         tree.putExtra("title", treeNode.getTitle());
