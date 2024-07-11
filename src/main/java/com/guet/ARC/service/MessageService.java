@@ -2,6 +2,7 @@ package com.guet.ARC.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.extra.cglib.CglibUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.domain.PageInfo;
@@ -40,7 +41,7 @@ public class MessageService {
     // 发送消息
     public void sendMessage(Message message) {
         long now = System.currentTimeMillis();
-        String userId = StpUtil.getSession().getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         message.setId(IdUtil.fastSimpleUUID());
         message.setUpdateTime(now);
         message.setCreateTime(now);
@@ -50,7 +51,7 @@ public class MessageService {
 
     // 查询消息列表
     public Map<String, Object> queryMyMessageList(Integer page, Integer size, MessageType messageType) {
-        String userId = StpUtil.getSession().getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         Page<MessageVo> pageResult = PageHelper.startPage(page, size);
         messageQueryRepository.selectMany(messageQuery.queryMessageListSql(userId, messageType));
         PageInfo<MessageVo> pageInfo = new PageInfo<>(pageResult);
@@ -69,11 +70,7 @@ public class MessageService {
     }
 
     public void setMessageToRead(String messageId) {
-        Optional<Message> messageOptional = messageRepository.findById(messageId);
-        if (messageOptional.isEmpty()) {
-            throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
-        }
-        Message message = messageOptional.get();
+        Message message = CglibUtil.copy(messageRepository.findByIdOrElseNull(messageId), Message.class);
         message.setReadState(ReadState.READ);
         message.setUpdateTime(System.currentTimeMillis());
         messageRepository.save(message);

@@ -35,10 +35,8 @@ import com.guet.ARC.util.ExcelUtil;
 import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -78,8 +76,6 @@ public class AccessRecordService {
     // 放弃签到状态持续时间
     private static final int ROOM_ACCESS_SIGN_IN_LAST_TIME = 15;
 
-
-    @Transactional(rollbackFor = RuntimeException.class)
     public void addAccessRecord(String roomId, short type) {
         // type为1代表进入，type为2代表出
         long now = System.currentTimeMillis();
@@ -182,7 +178,7 @@ public class AccessRecordService {
 
     // 查询用户进出房间的次数
     public PageInfo<UserAccessRecordCountVo> queryUserAccessCount(Integer page, Integer size) {
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         return queryAccessCount(page, size, userId);
     }
 
@@ -317,8 +313,6 @@ public class AccessRecordService {
         }
         // 统计用户一段时间内的情况
         // 先查出有多少人在这段时间内有扫码记录，然后分别统计
-        SelectStatementProvider countEntryTimesStatement;
-        SelectStatementProvider countOutTimesStatement;
         // TODO:加上时间范围限制，否则会查询到所有用户
         List<UserAccessRecordCountDataExcelModel> userAccessRecordExcelModels = accessRecordQueryRepository.selectUserIdAndNameByRoomId(roomId, webAppDateStart, webAppDateEnd);
         for (UserAccessRecordCountDataExcelModel excelModel : userAccessRecordExcelModels) {

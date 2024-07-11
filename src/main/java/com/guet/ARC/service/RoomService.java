@@ -22,7 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Predicate;
@@ -198,7 +197,6 @@ public class RoomService {
         return rooms;
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
     public void autoUpdateRoomChargerName(List<Room> rooms) {
         List<String> chargerPersonIds = rooms.stream().map(Room::getChargePersonId).collect(Collectors.toList());
         Map<String, User> idToUser = userService.findUserByIds(chargerPersonIds).stream().collect(Collectors.toMap(User::getId, Function.identity()));

@@ -8,7 +8,6 @@ import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.user.*;
-import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -96,7 +95,7 @@ public class UserController {
     @PostMapping("/admin/query/userList")
     @ApiOperation(value = "查询用户列表")
     @SaCheckPermission(value = {"system:user"})
-    public PageInfo<UserRoleVo> queryUserListApi(@Valid @RequestBody UserListQueryDTO userListQueryDTO) {
+    public PageInfo<User> queryUserListApi(@Valid @RequestBody UserListQueryDTO userListQueryDTO) {
         return userService.queryUserList(userListQueryDTO);
     }
 
@@ -153,7 +152,7 @@ public class UserController {
     @ApiOperation(value = "管理员手动修改用户信息")
     @SaCheckPermission(value = {"system:user:update"})
     @Log(title = "管理员手动修改用户信息", businessType = BusinessType.UPDATE)
-    public void adminUpdateUserInfoApi(@Valid @RequestBody User user) {
-        userService.updateUserInfoAdmin(user);
+    public void adminUpdateUserInfoApi(@Valid @RequestBody User userInfo) {
+        userService.updateUserInfoAdmin(userInfo);
     }
 }

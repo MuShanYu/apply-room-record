@@ -5,6 +5,7 @@ import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.cglib.CglibUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.domain.PageInfo;
@@ -72,7 +73,6 @@ public class RoomReservationService {
     @Autowired
     private RedisCacheUtil<String> redisCacheUtil;
 
-    @Transactional(rollbackOn = RuntimeException.class)
     public void cancelApply(String roomReservationId, String reason) {
         if (roomReservationId == null || roomReservationId.trim().isEmpty()) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
@@ -99,7 +99,6 @@ public class RoomReservationService {
     }
 
     //同步方法
-    @Transactional(rollbackOn = RuntimeException.class)
     public synchronized RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
         AsyncRunUtil asyncRunUtil = AsyncRunUtil.getInstance();
         // 检测预约起始和预约结束时间
@@ -147,8 +146,9 @@ public class RoomReservationService {
         // 发送订阅消息
         asyncRunUtil.submit(() -> {
             // 因为需要房间管理者的openid，所有user要更改一下name未预约人
-            user.setName(curUser.getName());
-            roomReservation.getState().sendReservationNoticeMessage(room, user, roomReservation);
+            User copiedUser = CglibUtil.copy(user, User.class);
+            copiedUser.setName(curUser.getName());
+            roomReservation.getState().sendReservationNoticeMessage(room, copiedUser, roomReservation);
         });
         return roomReservation;
     }
