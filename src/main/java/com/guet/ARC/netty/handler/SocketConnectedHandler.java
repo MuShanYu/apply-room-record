@@ -66,6 +66,7 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<Object> 
         }
         // 扩展：可以在这里获取不同配置的uri进行路由分发实现不同的业务逻辑
         ctx.channel().attr(AttributeKey.valueOf("userId")).set(userId);
+//        log.info("新用户建立连接{}", userId);
         // 握手建立
         WebSocketServerHandshakerFactory handShakerFactory = new WebSocketServerHandshakerFactory(
                 url, null, true);

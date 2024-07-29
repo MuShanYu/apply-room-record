@@ -32,6 +32,7 @@ public class UserOnlineManager {
         channelToSource.put(channel, source);
         List<String> sources = userIdToSources.getOrDefault(userId, new ArrayList<>());
         sources.add(source);
+//        log.info("连接设备{}", sources);
         userIdToSources.put(userId, sources);
     }
 
@@ -66,6 +67,7 @@ public class UserOnlineManager {
             lock.readLock().lock();
             Set<Channel> channels = channelToSource.keySet();
             for (Channel channel : channels) {
+//                log.info("转发给用户{}更新信息", channel.attr(AttributeKey.valueOf("userId")).get());
                 channel.writeAndFlush(new TextWebSocketFrame(IdUtil.fastSimpleUUID()));
             }
         } finally {
@@ -77,7 +79,7 @@ public class UserOnlineManager {
         Set<Channel> channels = channelToSource.keySet();
         for (Channel channel : channels) {
             if (!channel.isActive() || !channel.isOpen()) {
-                log.info("remove channel: {}", channel.id());
+//                log.info("remove channel: {}", channel.id());
                 removeChannel(channel);
             }
         }
