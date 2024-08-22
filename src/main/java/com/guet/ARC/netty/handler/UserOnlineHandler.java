@@ -3,7 +3,6 @@ package com.guet.ARC.netty.handler;
 import com.guet.ARC.netty.manager.UserOnlineManager;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -32,10 +31,9 @@ public class UserOnlineHandler extends SimpleChannelInboundHandler<TextWebSocket
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("userOnlineHandler exception caught. error is ", cause);
         UserOnlineManager.removeChannel(ctx.channel());
         UserOnlineManager.broadCastToOnlineUser();
         super.exceptionCaught(ctx, cause);
     }
-
-
 }
