@@ -29,6 +29,9 @@ public class RedisConfig {
     @Value("${spring.redis.port}")
     private String port;
 
+    @Value("${spring.redis.password}")
+    private String password;
+
     @Bean
     @SuppressWarnings("all")
     public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory) throws UnknownHostException {
@@ -79,6 +82,7 @@ public class RedisConfig {
         Config config = new Config();
         config.useSingleServer().setAddress(String.format("redis://%s:%s", host, port));
         config.useSingleServer().setDatabase(0);
+        config.useSingleServer().setPassword(password);
         config.setCodec(new JsonJacksonCodec());
         return Redisson.create(config);
     }
