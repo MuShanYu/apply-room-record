@@ -209,7 +209,7 @@ public class UserService {
         if (StrUtil.isEmpty(openid)) {
             throw new AlertException(1000, "用户标识获取失败");
         }
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isEmpty()) {
             throw new AlertException(ResultCode.USER_NOT_EXIST);
