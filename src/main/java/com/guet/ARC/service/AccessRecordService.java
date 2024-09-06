@@ -113,7 +113,6 @@ public class AccessRecordService {
                     // 更新缓存
                     redisCacheUtil.removeAccessRecordFromList(key, accessRecordCache);
                     // 移除延迟任务
-                    log.info("离开房间: {}", accessRecordCache);
                     delayQueue.delMailSendTaskByRecordId(accessRecordCache.getId());
                 } else if (type == 1) {
                     // 重复进入操作
