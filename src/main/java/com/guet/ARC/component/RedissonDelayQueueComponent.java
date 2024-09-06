@@ -1,5 +1,6 @@
 package com.guet.ARC.component;
 
+import cn.hutool.core.util.StrUtil;
 import com.guet.ARC.common.domain.TaskHolder;
 import com.guet.ARC.job.TaskHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -110,11 +111,12 @@ public class RedissonDelayQueueComponent implements ApplicationRunner, Applicati
     }
 
     public void delMailSendTaskByReserveId(String reserveId) {
-        mailSendDelayedQueue.removeIf(body -> body.getReservationId().equals(reserveId));
+        // 对于不同的holder这个字段可能为空。
+        mailSendDelayedQueue.removeIf(body -> StrUtil.isNotEmpty(body.getReservationId()) && body.getReservationId().equals(reserveId));
     }
 
     public void delMailSendTaskByRecordId(String recordId) {
-        mailSendDelayedQueue.removeIf(body -> body.getRecordId().equals(recordId));
+        mailSendDelayedQueue.removeIf(body -> StrUtil.isNotEmpty(body.getRecordId()) && body.getRecordId().equals(recordId));
     }
 
 }
