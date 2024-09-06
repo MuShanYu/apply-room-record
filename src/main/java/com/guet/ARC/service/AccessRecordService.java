@@ -13,14 +13,20 @@ import com.alibaba.excel.write.metadata.style.WriteCellStyle;
 import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.guet.ARC.common.domain.TaskHolder;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
+import com.guet.ARC.common.enmu.DelayTaskType;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.component.RedissonDelayQueueComponent;
 import com.guet.ARC.dao.AccessRecordRepository;
 import com.guet.ARC.dao.ApplicationRepository;
 import com.guet.ARC.dao.RoomRepository;
+import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.dao.mybatis.query.AccessRecordQuery;
 import com.guet.ARC.domain.AccessRecord;
+import com.guet.ARC.domain.Room;
+import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.record.UserAccessCountDataQueryDTO;
 import com.guet.ARC.domain.dto.record.UserAccessQueryDTO;
 import com.guet.ARC.domain.enums.ApplicationState;
@@ -71,17 +77,22 @@ public class AccessRecordService {
     @Autowired
     private AccessRecordQuery accessRecordQuery;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private RedissonDelayQueueComponent delayQueue;
+
     private static final String ACCESS_RECORD_KEY = "access_record_key:user_id:";
 
     // 放弃签到状态持续时间
-    private static final int ROOM_ACCESS_SIGN_IN_LAST_TIME = 15;
+    private static final int ROOM_ACCESS_SIGN_IN_LAST_TIME = 16;
 
     public void addAccessRecord(String roomId, short type) {
         // type为1代表进入，type为2代表出
-        long now = System.currentTimeMillis();
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         String key = ACCESS_RECORD_KEY + userId;
-        // 用户的进入状态保存12个小时
+        // 用户的进入状态保存16个小时
         if (redisCacheUtil.hasKey(key)) {
             // 查询有没有这个房间的进出记录
             List<AccessRecord> cachedList = redisCacheUtil.getCachedAccessRecordList(key);
@@ -93,14 +104,16 @@ public class AccessRecordService {
                 // 这条记录存在，这里只能进行出场操作
                 if (type == 2) {
                     // 是否有十分钟了
-//                    if (now - accessRecordCache.getEntryTime() < 10 * 60 * 1000) {
-//                        throw new AlertException(1000, "进入时间不足十分钟，无法进行当前操作");
-//                    }
+                    /*if (now - accessRecordCache.getEntryTime() < 10 * 60 * 1000) {
+                        throw new AlertException(1000, "进入时间不足十分钟，无法进行当前操作");
+                    }*/
                     accessRecordCache.setOutTime(System.currentTimeMillis());
                     accessRecordCache.setUpdateTime(System.currentTimeMillis());
                     accessRecordRepository.save(accessRecordCache);
                     // 更新缓存
                     redisCacheUtil.removeAccessRecordFromList(key, accessRecordCache);
+                    // 移除延迟任务
+                    delayQueue.delMailSendTaskByRecordId(accessRecordCache.getId());
                 } else if (type == 1) {
                     // 重复进入操作
                     throw new AlertException(1000, "16小时内已有该房间的进入记录，请勿重复操作");
@@ -110,9 +123,7 @@ public class AccessRecordService {
             } else {
                 // 这条记录不存在，添加这个记录到列表中，刷新列表过期时间，参数必须是入场
                 if (type == 1) {
-                    AccessRecord accessRecord = saveAccessRecord(userId, roomId, now);
-                    redisCacheUtil.pushDataToCacheList(key, accessRecord, ROOM_ACCESS_SIGN_IN_LAST_TIME, ChronoUnit.HOURS);
-                    redisCacheUtil.resetExpiration(key, ROOM_ACCESS_SIGN_IN_LAST_TIME, TimeUnit.HOURS);
+                    addRedisCacheAndTask(key, userId, roomId);
                 } else {
                     throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
                 }
@@ -122,15 +133,28 @@ public class AccessRecordService {
             // 如果不是入场，而是出场，必须先入场
             if (type == 1) {
                 // 点击的是入场
-                AccessRecord accessRecord = saveAccessRecord(userId, roomId, now);
-                // 添加进入状态缓存记录
-                redisCacheUtil.pushDataToCacheList(key, accessRecord, ROOM_ACCESS_SIGN_IN_LAST_TIME, ChronoUnit.HOURS);
-                // 更新列表过期时间
-                redisCacheUtil.resetExpiration(key, ROOM_ACCESS_SIGN_IN_LAST_TIME, TimeUnit.HOURS);
+                addRedisCacheAndTask(key, userId, roomId);
             } else {
                 throw new AlertException(ResultCode.PARAM_IS_ILLEGAL);
             }
         }
+    }
+
+    private void addRedisCacheAndTask(String key, String userId, String roomId) {
+        AccessRecord accessRecord = saveAccessRecord(userId, roomId, System.currentTimeMillis());
+        // 添加进入状态缓存记录
+        redisCacheUtil.pushDataToCacheList(key, accessRecord, ROOM_ACCESS_SIGN_IN_LAST_TIME, ChronoUnit.HOURS);
+        // 更新列表时间为最大时间
+        redisCacheUtil.resetExpiration(key, ROOM_ACCESS_SIGN_IN_LAST_TIME, TimeUnit.HOURS);
+        // 添加提醒任务到队列中
+        User user = userRepository.findByIdOrElseNull(userId);
+        Room room = roomRepository.findByIdOrElseNull(accessRecord.getRoomId());
+        TaskHolder taskHolder = new TaskHolder();
+        taskHolder.setRecordId(accessRecord.getId());
+        taskHolder.setToUserMail(user.getMail());
+        taskHolder.setRoomName(room.getRoomName());
+        taskHolder.setTaskType(DelayTaskType.SIGN_IN_EXPIRED_NOTIFY);
+        delayQueue.addMailSendTask(taskHolder, 57600L);
     }
 
     private AccessRecord saveAccessRecord(String userId, String roomId, long now) {
@@ -163,7 +187,7 @@ public class AccessRecordService {
 
     // 查询用户进出信息列表
     public PageInfo<UserAccessRecordVo> queryUserAccessRecordList(Integer page, Integer size) {
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         Page<UserAccessRecordVo> queryPageData = PageHelper.startPage(page, size);
         accessRecordQueryRepository.selectVo(accessRecordQuery.queryUserAccessRecordListSql(userId));
         return new PageInfo<>(queryPageData);
@@ -343,7 +367,7 @@ public class AccessRecordService {
         long endTime = DateUtil.endOfDay(new Date()).offset(DateField.DAY_OF_MONTH, -1).getTime();
         long startTime = DateUtil.beginOfWeek(new Date()).getTime();
         roomName = StrUtil.isEmpty(roomName) ? null : roomName;
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         PageHelper.startPage(page, size, false);
         List<UserAccessRecordVo> accessRecordVos = accessRecordQueryRepository.selectVo(
                 accessRecordQuery.queryCanApplyAccessRecordListSql(userId, startTime, endTime, roomName)
@@ -366,7 +390,7 @@ public class AccessRecordService {
 
     // 获取当前房间用户签到情况
     public List<Map<String, Object>> queryRoomAccessRecordNow() {
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         String key = ACCESS_RECORD_KEY + userId;
         List<Map<String, Object>> res = new ArrayList<>();
         if (redisCacheUtil.hasKey(key)) {

@@ -2,6 +2,7 @@ package com.guet.ARC.util;
 
 import cn.hutool.core.thread.ExecutorBuilder;
 
+import java.io.Serializable;
 import java.util.concurrent.*;
 
 /**
@@ -9,7 +10,7 @@ import java.util.concurrent.*;
  * Date 2024/6/3
  */
 
-public class AsyncRunUtil {
+public class AsyncRunUtil implements Serializable {
 
     private static final int CORE_POOL_SIZE = 5;
 
@@ -20,6 +21,10 @@ public class AsyncRunUtil {
     private static AsyncRunUtil asyncRunUtil;
     // 初始化线程池
     private final ExecutorService executor;
+
+    private AsyncRunUtil() {
+        this(CORE_POOL_SIZE, MAX_POOL_SIZE, MAX_QUEUE_SIZE);
+    }
 
     private AsyncRunUtil(int corePoolSize, int maxPoolSize, int queueSize) {
         executor = ExecutorBuilder.create()

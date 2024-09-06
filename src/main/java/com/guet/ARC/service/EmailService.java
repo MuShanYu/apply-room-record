@@ -1,8 +1,6 @@
 package com.guet.ARC.service;
 
-import com.guet.ARC.common.enmu.RedisCacheKey;
 import com.guet.ARC.util.CommonUtils;
-import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,9 +20,6 @@ public class EmailService {
 
     @Autowired
     private JavaMailSender javaMailSender;
-
-    @Autowired
-    private RedisCacheUtil<String> redisCacheUtil;
 
     @Value("${spring.mail.username}")
     private String username;
@@ -51,11 +46,12 @@ public class EmailService {
             //发送邮件
             if (CommonUtils.isValidMail(to)) {
                 javaMailSender.send(message);
+            } else {
+                log.error("用户邮箱格式错误：{}", to);
             }
         } catch (Exception e) {
-            log.error("mail send failed. the mail is {}, and the error message is {}", to, e.getMessage());
+            log.warn("mail send failed. the mail is {}, and the error message is {}", to, e.getMessage());
             // 构建重发对象
-            redisCacheUtil.pushDataToCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey(), buildSimpleMailSendJsonString(to, subject, content));
         }
     }
 
@@ -86,8 +82,7 @@ public class EmailService {
             javaMailSender.send(message);
         } catch (Exception e) {
             // 记录发送失败，添加发送任务重发
-            log.error("mail send failed. the mail is {}, and the error is", to, e);
-            redisCacheUtil.pushDataToCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey(), buildSimpleMailSendJsonString(to, subject, content));
+            log.warn("mail send failed. the mail is {}, and the error is {}", to, e.getMessage());
         }
     }
 
@@ -113,20 +108,8 @@ public class EmailService {
             helper.addAttachment(fileName, file);
             javaMailSender.send(message);
         } catch (Exception e) {
-            log.error("mail send failed. the mail is {}, and the error is", to, e);
-            redisCacheUtil.pushDataToCacheList(RedisCacheKey.MAIL_RESEND_KEY.getKey(), buildSimpleMailSendJsonString(to, subject, content));
+            log.warn("mail send failed. the mail is {}, and the error is {}", to, e.getMessage());
         }
-    }
-
-    private String buildSimpleMailSendJsonString(String to, String subject, String content) {
-        return "{" +
-                "\"to\":" + "\"" +
-                to + "\"" +
-                ",\"subject\":" + "\"" +
-                subject + "\"" +
-                ",\"content\":" + "\"" +
-                content + "\"" +
-                "}";
     }
 
 }
