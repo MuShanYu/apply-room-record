@@ -40,11 +40,9 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<Object> 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof FullHttpRequest) {
-            log.info("处理连接");
             handleConnected(ctx, (FullHttpRequest) msg);
         } else if (msg instanceof WebSocketFrame) {
             // 业务逻辑
-            log.info("处理消息");
             handleMessage(ctx, (WebSocketFrame) msg);
         }
     }
@@ -108,8 +106,4 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<Object> 
         ctx.fireChannelRead(frame.retain());
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
-    }
 }
