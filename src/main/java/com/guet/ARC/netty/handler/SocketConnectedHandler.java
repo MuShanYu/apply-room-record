@@ -2,13 +2,13 @@ package com.guet.ARC.netty.handler;
 
 import cn.hutool.core.net.url.UrlQuery;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
 import com.guet.ARC.dao.UserRepository;
 import com.guet.ARC.netty.manager.UserOnlineManager;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.AttributeKey;
@@ -48,12 +48,15 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<Object> 
     }
 
     private void handleConnected(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
-        String userId = String.valueOf(UrlQuery.of(request.uri(), Charset.defaultCharset()).get("userId"));
-        if (!request.decoderResult().isSuccess() || !"websocket".equals(request.headers().get("Upgrade"))) {
-            log.warn("protobuf don't support websocket");
-            ctx.channel().close();
+        if (!request.decoderResult().isSuccess()
+                || !"websocket".equalsIgnoreCase(request.headers().get(HttpHeaderNames.UPGRADE))
+                || !request.headers().contains(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE, true)) {
+            log.warn("Invalid WebSocket handshake request. Request headers: {}", request.headers());
+            FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
+            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
             return;
         }
+        String userId = String.valueOf(UrlQuery.of(request.uri(), Charset.defaultCharset()).get("userId"));
         if (StrUtil.isEmpty(userId)) {
             log.warn("Unauthorized access. Address is {}.", ctx.channel().remoteAddress());
             ctx.channel().close();

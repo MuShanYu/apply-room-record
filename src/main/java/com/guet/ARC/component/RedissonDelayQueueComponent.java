@@ -112,11 +112,11 @@ public class RedissonDelayQueueComponent implements ApplicationRunner, Applicati
 
     public void delMailSendTaskByReserveId(String reserveId) {
         // 对于不同的holder这个字段可能为空。
-        mailSendDelayedQueue.removeIf(body -> StrUtil.isNotEmpty(body.getReservationId()) && body.getReservationId().equals(reserveId));
+        mailSendDelayedQueue.removeIf(body -> reserveId.equals(body.getReservationId()));
     }
 
     public void delMailSendTaskByRecordId(String recordId) {
-        mailSendDelayedQueue.removeIf(body -> StrUtil.isNotEmpty(body.getRecordId()) && body.getRecordId().equals(recordId));
+        mailSendDelayedQueue.removeIf(body -> recordId.equals(body.getRecordId()));
     }
 
 }
