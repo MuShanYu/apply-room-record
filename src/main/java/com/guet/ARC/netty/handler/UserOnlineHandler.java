@@ -2,6 +2,7 @@ package com.guet.ARC.netty.handler;
 
 import com.guet.ARC.netty.manager.UserOnlineManager;
 import io.netty.channel.*;
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.ssl.NotSslRecordException;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,8 @@ public class UserOnlineHandler extends SimpleChannelInboundHandler<TextWebSocket
         } else if (cause instanceof IOException) {
             // 处理 I/O 异常
             log.error("I/O 异常：{}", cause.getMessage());
+        } else if (cause instanceof DecoderException) {
+            log.error("请求解码异常, 异常请求channel: {}，已关闭", ctx.channel());
         } else {
             // 处理其他异常
             log.error("未知异常：", cause);
