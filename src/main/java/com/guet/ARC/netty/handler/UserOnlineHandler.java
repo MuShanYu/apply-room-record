@@ -30,22 +30,13 @@ public class UserOnlineHandler extends SimpleChannelInboundHandler<TextWebSocket
 //        log.info("用户断开连接：{}", ctx.channel().attr(AttributeKey.valueOf("userId")).get());
         UserOnlineManager.removeChannel(ctx.channel());
         UserOnlineManager.broadCastToOnlineUser();
-        super.channelUnregistered(ctx);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("捕获到异常：", cause);
-        // 获取客户端的远程地址
-        InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-        log.info("获取本次channel：{}", ctx.channel());
-        log.info("获取本次访问ip地址：{}", ctx.channel().remoteAddress());
-        log.info("获取到远程访问地址强转类型：{}", remoteAddress);
-        String clientIP = remoteAddress.getAddress().getHostAddress();  // 获取IP地址
-        int clientPort = remoteAddress.getPort();  // 获取端口号
         if (cause instanceof NotSslRecordException) {
             // 处理 SSL 相关的异常
-            log.error("SSL 请求异常，异常信息：{}, 异常请求ip：{}:{}", cause.getMessage(), clientIP, clientPort);
+            log.error("SSL 请求异常，非https请求, 异常请求channel: {}", ctx.channel());
         } else if (cause instanceof IOException) {
             // 处理 I/O 异常
             log.error("I/O 异常：{}", cause.getMessage());
@@ -53,6 +44,7 @@ public class UserOnlineHandler extends SimpleChannelInboundHandler<TextWebSocket
             // 处理其他异常
             log.error("未知异常：", cause);
         }
+        // 关闭连接
         UserOnlineManager.removeChannel(ctx.channel());
         UserOnlineManager.broadCastToOnlineUser();
     }
