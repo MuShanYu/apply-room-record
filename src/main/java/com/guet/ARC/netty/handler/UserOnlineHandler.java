@@ -35,8 +35,10 @@ public class UserOnlineHandler extends SimpleChannelInboundHandler<TextWebSocket
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("捕获到异常：", cause);
         // 获取客户端的远程地址
         InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+        log.info("获取到远程访问地址：{}", remoteAddress);
         String clientIP = remoteAddress.getAddress().getHostAddress();  // 获取IP地址
         int clientPort = remoteAddress.getPort();  // 获取端口号
         if (cause instanceof NotSslRecordException) {
