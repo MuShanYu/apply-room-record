@@ -40,14 +40,17 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<Object> 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof FullHttpRequest) {
+            log.info("处理连接");
             handleConnected(ctx, (FullHttpRequest) msg);
         } else if (msg instanceof WebSocketFrame) {
             // 业务逻辑
+            log.info("处理消息");
             handleMessage(ctx, (WebSocketFrame) msg);
         }
     }
 
     private void handleConnected(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+        log.info("请求url：: " + request.uri());
         if (!request.decoderResult().isSuccess()
                 || !"websocket".equalsIgnoreCase(request.headers().get(HttpHeaderNames.UPGRADE))
                 || !request.headers().contains(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE, true)) {
@@ -57,6 +60,7 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<Object> 
             return;
         }
         String userId = String.valueOf(UrlQuery.of(request.uri(), Charset.defaultCharset()).get("userId"));
+        log.info("获取的user id : {}", userId);
         if (StrUtil.isEmpty(userId)) {
             log.warn("Unauthorized access. Address is {}.", ctx.channel().remoteAddress());
             ctx.channel().close();
