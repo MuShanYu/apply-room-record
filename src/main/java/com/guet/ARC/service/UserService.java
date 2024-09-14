@@ -447,4 +447,8 @@ public class UserService {
         copiedUser.setUpdateTime(System.currentTimeMillis());
         userRepository.save(copiedUser);
     }
+
+    public User findUserById(String userId) {
+        return userRepository.findByIdOrElseNull(userId);
+    }
 }

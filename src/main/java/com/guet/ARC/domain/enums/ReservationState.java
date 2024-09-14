@@ -89,7 +89,7 @@ public enum ReservationState {
             case ROOM_RESERVE_ALREADY_REVIEWED:
                 data.put("thing33", CommonUtils.createValueItem(name));
                 data.put("thing47", CommonUtils.createValueItem(room.getRoomName()));
-                data.put("thing13", CommonUtils.createValueItem(timeDateStr));
+                data.put("time36", CommonUtils.createValueItem(timeDateStr));
                 data.put("thing4", CommonUtils.createValueItem("符合要求，审核通过。"));
                 templateId = WxMessageTemplateId.APPLY_SUCCESS_NOTICE_TEMPLATE.getId();
                 break;
