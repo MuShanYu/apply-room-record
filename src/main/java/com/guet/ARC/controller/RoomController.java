@@ -7,10 +7,7 @@ import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.Room;
-import com.guet.ARC.domain.dto.room.RoomAddUpdateDTO;
-import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
-import com.guet.ARC.domain.dto.room.RoomQueryDTO;
-import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
+import com.guet.ARC.domain.dto.room.*;
 import com.guet.ARC.service.RoomService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -21,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @ResponseBodyResult
@@ -101,5 +99,11 @@ public class RoomController {
     @ApiOperation(value = "查询用户进出房间列表")
     public List<Room> queryAccessRecordRoomListApi() {
         return roomService.queryAccessRecordRoomList();
+    }
+
+    @PostMapping("/room/generate/wxQRCode")
+    @ApiOperation(value = "生成小程序二维码，如果已经生成则不会重复生成（可由参数控制），返回访问url")
+    public Map<String, Object> generateWxQRCodeApi(@RequestBody RoomQRCodeDTO dto) {
+        return roomService.generateRoomQRCode(dto);
     }
 }
