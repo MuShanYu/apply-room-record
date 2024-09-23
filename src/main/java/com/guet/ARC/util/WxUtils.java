@@ -10,6 +10,7 @@ import okhttp3.*;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,20 +33,17 @@ public class WxUtils {
         private String access_token;
         private String template_id;//模版id
         private String page = "pages/index/index";//默认跳到小程序首页
-        private String miniprogram_state = "developer";
+        private String miniprogram_state = "formal";
         private String lang = "zh_CN";
         private Map<String, Map<String, Object>> data;//推送文字
     }
 
     public static String getOpenid(String code) {
-        String url = "https://api.weixin.qq.com/sns/jscode2session?appid=&secret" +
-                "=&js_code=" + code + "&grant_type=authorization_code&connect_redirect=1";
-        Request request = new Request.Builder()
-                .url(url)
-                .get()
-                .build();
-        try {
-            Response response = okHttpClient.newCall(request).execute();
+        String url = "https://api.weixin.qq.com/sns/jscode2session?appid=?&secret"
+                + "=?&js_code=" + code
+                + "&grant_type=authorization_code&connect_redirect=1";
+        Request request = new Request.Builder().url(url).get().build();
+        try (Response response = okHttpClient.newCall(request).execute()) {
             if (response.body() != null) {
                 JSONObject jsonObject = JSONObject.parseObject(response.body().string());
                 return jsonObject.getString("openid");
@@ -59,12 +57,9 @@ public class WxUtils {
 
     private static String getAccessToken() {
         // 获取ACCESS_TOKEN
-        String getTokenUrl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&" +
-                "appid=&secret=";
-        Request request = new Request.Builder()
-                .url(getTokenUrl)
-                .get()
-                .build();
+        String getTokenUrl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&"
+                + "appid=?&secret=?";
+        Request request = new Request.Builder().url(getTokenUrl).get().build();
         try {
             Response response = okHttpClient.newCall(request).execute();
             if (response.isSuccessful()) {
@@ -95,12 +90,8 @@ public class WxUtils {
         String postJson = JSON.toJSONString(wxMessage);
         log.info("send message - {}", wxMessage);
         RequestBody requestBody = RequestBody.create(postJson, MediaType.get("application/json"));
-        Request request = new Request.Builder()
-                .url(sendMessageUrl)
-                .post(requestBody)
-                .build();
-        try {
-            Response response = okHttpClient.newCall(request).execute();
+        Request request = new Request.Builder().url(sendMessageUrl).post(requestBody).build();
+        try (Response response = okHttpClient.newCall(request).execute()) {
             if (response.isSuccessful()) {
                 if (response.body() != null) {
                     log.info("send message response - {}", response.body().string());
@@ -111,5 +102,31 @@ public class WxUtils {
         } catch (IOException e) {
             log.error("request failed.", e);
         }
+    }
+
+    public static byte[] createWxQRCode(String roomId) {
+        String postUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=" + getAccessToken();
+        JSONObject postData = new JSONObject();
+        postData.put("page", "sub-page-work/work/sign-in/index");
+        postData.put("scene", roomId);
+        postData.put("env_version", "release");
+        RequestBody requestBody = RequestBody.create(postData.toJSONString(), MediaType.get("application/json"));
+        Request request = new Request.Builder().url(postUrl).post(requestBody).build();
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (response.isSuccessful()) {
+                if (response.body() != null) {
+                    if (Objects.equals(response.header("Content-Type"), "image/jpeg")) {
+                        return response.body().bytes();
+                    } else {
+                        log.error("二维码请求失败：{}", JSONObject.toJSONString(response.body().string()));
+                    }
+                }
+            } else {
+                log.info("create qr code failed. the error response is {}", response.body());
+            }
+        } catch (IOException e) {
+            log.error("request failed.", e);
+        }
+        return new byte[0];
     }
 }

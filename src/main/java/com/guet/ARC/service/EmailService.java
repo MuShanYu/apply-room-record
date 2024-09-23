@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -24,6 +23,8 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String username;
 
+    private static final String sendName = "房间预约与人员流动统计";
+
     /**
      * 简单文本邮件
      *
@@ -33,25 +34,27 @@ public class EmailService {
      */
     public void sendSimpleMail(String to, String subject, String content) {
         try {
-            //创建SimpleMailMessage对象
-            SimpleMailMessage message = new SimpleMailMessage();
-            //邮件发送人
-            message.setFrom(username);
-            //邮件接收人
-            message.setTo(to);
-            //邮件主题
-            message.setSubject(subject);
-            //邮件内容
-            message.setText(content);
-            //发送邮件
+            // 创建MimeMessage对象
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            // 发件人昵称和邮箱
+            helper.setFrom(new InternetAddress(username, sendName, "UTF-8"));
+
+            // 收件人、主题和内容
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, true); // 第二个参数为true表示内容支持HTML格式
+
+            // 校验邮箱格式
             if (CommonUtils.isValidMail(to)) {
                 javaMailSender.send(message);
             } else {
                 log.error("用户邮箱格式错误：{}", to);
             }
         } catch (Exception e) {
-            log.warn("mail send failed. the mail is {}, and the error message is {}", to, e.getMessage());
-            // 构建重发对象
+            log.warn("邮件发送失败. 收件人: {}, 错误信息: {}", to, e.getMessage());
+            // 构建重发对象或其他处理逻辑
         }
     }
 
