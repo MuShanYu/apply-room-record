@@ -253,6 +253,9 @@ public class UserService {
             if (StrUtil.isNotEmpty(queryDTO.getName())) {
                 predicates.add(cb.like(root.get("name"), queryDTO.getName() + "%"));
             }
+            if (StrUtil.isNotEmpty(queryDTO.getStuNum())) {
+                predicates.add(cb.like(root.get("stuNum"), queryDTO.getStuNum()));
+            }
             if (StrUtil.isNotEmpty(queryDTO.getInstitute())) {
                 predicates.add(cb.like(root.get("institute"), queryDTO.getInstitute() + "%"));
             }
