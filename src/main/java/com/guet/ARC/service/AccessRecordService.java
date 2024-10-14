@@ -363,9 +363,9 @@ public class AccessRecordService {
     // 获取可以进行补卡申请的进出记录
     public PageInfo<UserAccessRecordVo> queryCanApplyAccessRecordList(Integer page, Integer size, String roomName) {
         // 除当天之外的，其他没有签退时间的数据，按照创建时间降序
-        // 只允许申请近七天内的，七天内最多只能申请三次
-        long endTime = DateUtil.endOfDay(new Date()).offset(DateField.DAY_OF_MONTH, -1).getTime();
-        long startTime = DateUtil.beginOfWeek(new Date()).getTime();
+        // 只允许申请近一个月内的，一周最多只能申请三次
+        long startTime = DateUtil.beginOfDay(DateUtil.beginOfMonth(new Date())).getTime();
+        long endTime = DateUtil.beginOfDay(new Date()).getTime();
         roomName = StrUtil.isEmpty(roomName) ? null : roomName;
         String userId = StpUtil.getLoginIdAsString();
         PageHelper.startPage(page, size, false);

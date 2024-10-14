@@ -71,7 +71,7 @@ public class AccessRecordQuery {
                 .on(RoomDynamicSqlSupport.id, equalTo(AccessRecordDynamicSqlSupport.roomId))
                 .where(AccessRecordDynamicSqlSupport.userId, isEqualTo(userId))
                 .and(AccessRecordDynamicSqlSupport.state, isEqualTo(State.ACTIVE))
-                .and(AccessRecordDynamicSqlSupport.createTime, isLessThanOrEqualTo(endTime))
+                .and(AccessRecordDynamicSqlSupport.createTime, isLessThan(endTime))
                 .and(AccessRecordDynamicSqlSupport.createTime, isGreaterThanOrEqualTo(startTime))
                 .and(AccessRecordDynamicSqlSupport.outTime, isNull())
                 .and(RoomDynamicSqlSupport.roomName, isEqualToWhenPresent(roomName))
