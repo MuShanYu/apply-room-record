@@ -68,7 +68,6 @@ public class UserController {
 
     @PostMapping("/user/update/userInfo")
     @ApiOperation(value = "修改用户信息")
-    @Log(title = "用户自行更改用户信息", businessType = BusinessType.UPDATE)
     public void updateUserInfoApi(@Valid @RequestBody Map<String, String> userInfo) {
         userService.updatePersonalInfo(userInfo);
     }

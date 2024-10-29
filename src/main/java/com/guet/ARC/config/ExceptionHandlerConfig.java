@@ -4,6 +4,7 @@ import cn.dev33.satoken.exception.NotLoginException;
 import com.alibaba.fastjson.JSON;
 import com.guet.ARC.common.domain.Result;
 import com.guet.ARC.common.exception.AlertException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,6 +19,7 @@ import java.util.Map;
 /**
  * 线上环境请注释printStackTrace
  */
+@Slf4j
 @RestControllerAdvice
 public class ExceptionHandlerConfig {
 
@@ -28,7 +30,7 @@ public class ExceptionHandlerConfig {
 
     @ExceptionHandler(RuntimeException.class)
     public Result<String> runtimeExceptionHandler(RuntimeException runtimeException) {
-        runtimeException.printStackTrace();
+        log.error("请求切面处异常：", runtimeException);
         Result<String> result = new Result<>();
         result.setSuccess(false);
         result.setCode(500);
@@ -39,7 +41,7 @@ public class ExceptionHandlerConfig {
 
     @ExceptionHandler(ServletException.class)
     public Result<String> servletExceptionHandler(ServletException servletException) {
-        servletException.printStackTrace();
+        log.error("ServletException异常：", servletException);
         Result<String> result = new Result<>();
         result.setSuccess(false);
         result.setCode(500);
@@ -114,7 +116,7 @@ public class ExceptionHandlerConfig {
             code = -3;
         }
         else if(e.getType().equals(NotLoginException.BE_REPLACED)) {
-            message = "您已被顶下线";
+            message = "a";
             code = -4;
         }
         else if(e.getType().equals(NotLoginException.KICK_OUT)) {

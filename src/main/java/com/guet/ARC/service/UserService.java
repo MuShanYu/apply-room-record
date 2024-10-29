@@ -173,7 +173,6 @@ public class UserService {
 //        log.info("openId:{}", openid);
         Optional<User> userOptional = userRepository.findByOpenId(openid);
         Map<String, Object> map = new HashMap<>();
-        ;
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             map.put("canWxLogin", true);
