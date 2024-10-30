@@ -32,8 +32,8 @@ spring:
   mail:
     host: smtp.yeah.net
     port: 465
-    username: your email
-    password: your pwd
+    username: email
+    password: pwd
     default-encoding: UTF-8
     protocol: smtp
     properties:
