@@ -1,9 +1,11 @@
 package com.guet.ARC.util;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.aliyun.oss.*;
 import com.aliyun.oss.common.auth.CredentialsProvider;
 import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.aliyun.oss.common.comm.SignVersion;
+import com.guet.ARC.ApplyRoomRecordConfig;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
@@ -16,19 +18,13 @@ import java.io.Serializable;
 @Slf4j
 public class OSSUtil implements Serializable {
 
-    private static final String endpoint = "your end point";
+    private String endpoint;
 
-    private static final String region = "your region";
-
-    private static final String accessKeyId = "your accessKey Id";
-
-    private static final String accessKeySecret = "your secret";
-
-    private static final String bucketName = "your bucket name";
+    private String bucketName;
 
     private static OSSUtil ossUtil;
 
-    private static OSS ossClient;
+    private final OSS ossClient;
 
     private OSSUtil() {
         ossClient = getOSSClient();
@@ -38,8 +34,11 @@ public class OSSUtil implements Serializable {
         if (ossClient != null) {
             return ossClient;
         }
+        ApplyRoomRecordConfig globalConfig = SpringUtil.getBean("applyRoomRecordConfig", ApplyRoomRecordConfig.class);
+        endpoint = globalConfig.getEndpoint();
+        bucketName = globalConfig.getBucketName();
         // 从环境变量中获取访问凭证。运行本代码示例之前，请先配置环境变量。
-        CredentialsProvider credentialsProvider = new DefaultCredentialProvider(accessKeyId, accessKeySecret);
+        CredentialsProvider credentialsProvider = new DefaultCredentialProvider(globalConfig.getAccessKeyId(), globalConfig.getAccessKeySecret());
         // 创建OSSClient配置
         ClientBuilderConfiguration config = new ClientBuilderConfiguration();
         config.setSignatureVersion(SignVersion.V4);
@@ -48,7 +47,7 @@ public class OSSUtil implements Serializable {
                 .endpoint("https://" + endpoint)
                 .credentialsProvider(credentialsProvider)
                 .clientConfiguration(config)
-                .region(region)
+                .region(globalConfig.getRegion())
                 .build();
     }
 

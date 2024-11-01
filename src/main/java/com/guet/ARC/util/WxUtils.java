@@ -1,8 +1,10 @@
 package com.guet.ARC.util;
 
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.guet.ARC.ApplyRoomRecordConfig;
 import com.guet.ARC.common.exception.AlertException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -20,12 +22,36 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class WxUtils {
 
-    private final static OkHttpClient okHttpClient = new OkHttpClient.Builder()
-            .connectTimeout(500, TimeUnit.SECONDS)
-            .writeTimeout(500, TimeUnit.SECONDS)
-            .readTimeout(500, TimeUnit.SECONDS)
-            .callTimeout(500, TimeUnit.SECONDS)
-            .build();
+    private String appId;
+
+    private String secret;
+
+    private OkHttpClient okHttpClient;
+
+    private static WxUtils wxUtils;
+
+    private WxUtils() {
+        init();
+    }
+
+    private void init() {
+        ApplyRoomRecordConfig globalConfig = SpringUtil.getBean("applyRoomRecordConfig", ApplyRoomRecordConfig.class);
+        appId = globalConfig.getAppId();
+        secret = globalConfig.getSecret();
+        okHttpClient = new OkHttpClient.Builder()
+                .connectTimeout(500, TimeUnit.SECONDS)
+                .writeTimeout(500, TimeUnit.SECONDS)
+                .readTimeout(500, TimeUnit.SECONDS)
+                .callTimeout(500, TimeUnit.SECONDS)
+                .build();
+    }
+
+    public static WxUtils getInstance() {
+        if (wxUtils == null) {
+            wxUtils = new WxUtils();
+        }
+        return wxUtils;
+    }
 
     @Data
     public static class WxMessage {
@@ -38,9 +64,9 @@ public class WxUtils {
         private Map<String, Map<String, Object>> data;//推送文字
     }
 
-    public static String getOpenid(String code) {
-        String url = "https://api.weixin.qq.com/sns/jscode2session?appid=?&secret"
-                + "=?&js_code=" + code
+    public String getOpenid(String code) {
+        String url = "https://api.weixin.qq.com/sns/jscode2session?appid="+ appId +
+                "?&secret=" + secret + "&js_code=" + code
                 + "&grant_type=authorization_code&connect_redirect=1";
         Request request = new Request.Builder().url(url).get().build();
         try (Response response = okHttpClient.newCall(request).execute()) {
@@ -55,10 +81,10 @@ public class WxUtils {
         return null;
     }
 
-    private static String getAccessToken() {
+    private String getAccessToken() {
         // 获取ACCESS_TOKEN
         String getTokenUrl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&"
-                + "appid=?&secret=?";
+                + "appid=" + appId + "?&secret=" + secret;
         Request request = new Request.Builder().url(getTokenUrl).get().build();
         try {
             Response response = okHttpClient.newCall(request).execute();
@@ -79,9 +105,8 @@ public class WxUtils {
         return null;
     }
 
-    public static void sendSubscriptionMessage(String openid, String tempId, Map<String, Map<String, Object>> data) {
-        String accessToken = getAccessToken();
-        String sendMessageUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" + accessToken;
+    public void sendSubscriptionMessage(String openid, String tempId, Map<String, Map<String, Object>> data) {
+        String sendMessageUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" + getAccessToken();
         WxMessage wxMessage = new WxMessage();
         wxMessage.setAccess_token(getAccessToken());
         wxMessage.setTouser(openid);
@@ -104,7 +129,7 @@ public class WxUtils {
         }
     }
 
-    public static byte[] createWxQRCode(String roomId) {
+    public byte[] createWxQRCode(String roomId) {
         String postUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=" + getAccessToken();
         JSONObject postData = new JSONObject();
         postData.put("page", "sub-page-work/work/sign-in/index");

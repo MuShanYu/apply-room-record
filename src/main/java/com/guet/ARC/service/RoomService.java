@@ -223,7 +223,7 @@ public class RoomService {
             try {
                 String filename = path + roomId + ".png";
                 if (dto.isCover() || !ossUtil.hasFile(filename)) {
-                    byte[] wxQRCode = WxUtils.createWxQRCode(roomId); // 可能生成失败
+                    byte[] wxQRCode = WxUtils.getInstance().createWxQRCode(roomId); // 可能生成失败
                     if (wxQRCode.length == 0) {
                         filePath.put(roomId, "");
                         continue;

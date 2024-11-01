@@ -111,7 +111,7 @@ public enum ReservationState {
                 return;
         }
         if (StrUtil.isNotEmpty(user.getOpenId())) {
-            WxUtils.sendSubscriptionMessage(user.getOpenId(), templateId, data);
+            WxUtils.getInstance().sendSubscriptionMessage(user.getOpenId(), templateId, data);
         }
     }
 

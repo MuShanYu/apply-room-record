@@ -163,7 +163,7 @@ public class UserService {
     // 微信登录
     public Map<String, Object> wxLogin(String code) {
         // 获取openId
-        String openid = WxUtils.getOpenid(code);
+        String openid = WxUtils.getInstance().getOpenid(code);
 
         // 查询用户是否已经绑定了，没有绑定则无法登录
         if (StrUtil.isEmpty(openid)) {
@@ -203,7 +203,7 @@ public class UserService {
     // 绑定微信
     public void bindWx(String code) {
         // 获取openId
-        String openid = WxUtils.getOpenid(code);
+        String openid = WxUtils.getInstance().getOpenid(code);
         // 查询用户是否已经绑定了，没有绑定则无法登录
         if (StrUtil.isEmpty(openid)) {
             throw new AlertException(1000, "用户标识获取失败");
@@ -231,7 +231,7 @@ public class UserService {
 
     public void unBindWx(String code) {
         // 获取openId
-        String openid = WxUtils.getOpenid(code);
+        String openid = WxUtils.getInstance().getOpenid(code);
         // 查询用户是否已经绑定了，没有绑定则无法登录
         if (StrUtil.isEmpty(openid)) {
             throw new AlertException(1000, "用户标识获取失败");
