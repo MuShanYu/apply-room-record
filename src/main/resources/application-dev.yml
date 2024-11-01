@@ -87,10 +87,11 @@ netty:
   websocket:
     # Websocket服务端口
     port: 9500
-    # 消息帧最大体积
-    max-frame-size: 10240
-    # URI路径
-    path: /websocket
+    #两个文件请放在resource目录下
+    # ssl配置相关
+    pemFile: x.pem
+    # ssl配置相关
+    keyFile: x.key
     # url路径
     url: ws://127.0.0.1:9500/websocket
 
@@ -105,3 +106,5 @@ apply-room-record:
   # 微信api相关
   appId: your appId in yaml
   secret: your secret in yaml
+  # websocket是否使用ssl
+  useWebsocketSSL: false

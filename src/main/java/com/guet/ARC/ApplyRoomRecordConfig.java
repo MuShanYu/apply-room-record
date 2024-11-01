@@ -35,6 +35,8 @@ public class ApplyRoomRecordConfig implements InitializingBean {
 
     private String secret = "in config";
 
+    private Boolean useWebsocketSSL = false;
+
     @Override
     public void afterPropertiesSet() {
         log.info("apply-room-record config is {}", this);

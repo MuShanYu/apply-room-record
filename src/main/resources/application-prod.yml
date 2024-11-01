@@ -91,7 +91,18 @@ sa-token:
 mybatis:
   configuration:
     default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
-
+# netty自定义配置相关
+netty:
+  websocket:
+    # Websocket服务端口
+    port: 9500
+    #两个文件请放在resource目录下
+    # ssl配置相关
+    pemFile: x.pem
+    # ssl配置相关
+    keyFile: x.key
+    # url路径
+    url: ws://127.0.0.1:9500/websocket
 # 项目配置统一管理，你可以在这里覆盖掉config的默认值
 apply-room-record:
   # oss相关
@@ -103,3 +114,5 @@ apply-room-record:
   # 微信api相关
   appId: your appId in yaml
   secret: your secret in yaml
+  # websocket是否使用ssl
+  useWebsocketSSL: false
