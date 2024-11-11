@@ -37,12 +37,12 @@ pipeline {
             steps {
                 script {
                     // 我这里保留最新的两个镜像，其他删除，当然您也可以保存更多版本的镜像。
-                    def oldContainerId = sh(script: "docker ps -q --filter name=apply-room-record*", returnStdout: true).trim()
+                    def oldContainerId = sh(script: "docker ps -q --filter name=server-apr*", returnStdout: true).trim()
                     if (oldContainerId) {
                         sh "docker stop ${oldContainerId}"
                         sh "docker rm ${oldContainerId}"
                     }
-                    def allImages = sh(script: "docker images --format '{{.ID}} {{.CreatedAt}}' --filter 'reference=apply-room-record-*' | sort -k2,2r -k3,3r | awk '{print \$1}'", returnStdout: true).split('\n')                    // 保留最后两个镜像（当前和上一个）
+                    def allImages = sh(script: "docker images --format '{{.ID}} {{.CreatedAt}}' --filter 'reference=server-apr-*' | sort -k2,2r -k3,3r | awk '{print \$1}'", returnStdout: true).split('\n')                    // 保留最后两个镜像（当前和上一个）
                     if (allImages.size() > 2) {
                         def imagesToRemove = allImages[2..-1]
                         for (image in imagesToRemove) {
