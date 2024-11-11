@@ -1,5 +1,5 @@
 # 使用一个轻量级的 Java 基础镜像
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:17-alpine
 
 # 设定工作目录
 WORKDIR /app
