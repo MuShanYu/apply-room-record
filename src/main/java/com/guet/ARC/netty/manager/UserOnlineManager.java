@@ -48,7 +48,7 @@ public class UserOnlineManager {
             channelToPlatform.remove(channel); // 移除连接平台信息
             if (StrUtil.isNotEmpty(source)) {
                 String userId = String.valueOf(channel.attr(AttributeKey.valueOf("userId")).get());
-                log.info("移除用户连接{}", userId);
+//                log.info("移除用户连接{}", userId);
                 List<String> sources = userIdToSources.getOrDefault(userId, new ArrayList<>());
                 // 删除
                 sources.remove(source);
@@ -77,7 +77,7 @@ public class UserOnlineManager {
                 // web管理的需要通知有新用户并展示
                 if ("web".equals(platform)) {
                     if (channel.isActive() && channel.isOpen() && channel.isWritable() && channel.isRegistered()) {
-                        log.info("转发给用户{}更新信息", channel.attr(AttributeKey.valueOf("userId")).get());
+//                        log.info("转发给用户{}更新信息", channel.attr(AttributeKey.valueOf("userId")).get());
                         channel.writeAndFlush(new TextWebSocketFrame(IdUtil.fastSimpleUUID()));
                     } else {
                         //log.info("remove channel: {}", channel.id());

@@ -66,7 +66,7 @@ public class WxUtils {
 
     public String getOpenid(String code) {
         String url = "https://api.weixin.qq.com/sns/jscode2session?appid="+ appId +
-                "?&secret=" + secret + "&js_code=" + code
+                "&secret=" + secret + "&js_code=" + code
                 + "&grant_type=authorization_code&connect_redirect=1";
         Request request = new Request.Builder().url(url).get().build();
         try (Response response = okHttpClient.newCall(request).execute()) {
@@ -84,7 +84,7 @@ public class WxUtils {
     private String getAccessToken() {
         // 获取ACCESS_TOKEN
         String getTokenUrl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&"
-                + "appid=" + appId + "?&secret=" + secret;
+                + "appid=" + appId + "&secret=" + secret;
         Request request = new Request.Builder().url(getTokenUrl).get().build();
         try {
             Response response = okHttpClient.newCall(request).execute();

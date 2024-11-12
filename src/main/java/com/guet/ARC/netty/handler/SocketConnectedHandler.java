@@ -70,7 +70,6 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<Object> 
             return;
         }
 
-        log.info("key is {}",  userId);
         // 扩展：可以在这里获取不同配置的uri进行路由分发实现不同的业务逻辑
         ctx.channel().attr(AttributeKey.valueOf("userId")).set(userId);
         ctx.channel().attr(AttributeKey.valueOf("platform")).set(platform);
