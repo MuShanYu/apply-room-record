@@ -1,7 +1,11 @@
 # 排除源码文件
 src/
 # 排除本地构建输出
-target/
+target/classes/
+target/generated-sources/
+target/maven-archiver/
+target/maven-status/
+target/apply-room-record.jar.original
 # 排除项目配置文件
 settings.xml
 README.md
