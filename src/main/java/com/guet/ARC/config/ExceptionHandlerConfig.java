@@ -30,7 +30,7 @@ public class ExceptionHandlerConfig {
 
     @ExceptionHandler(RuntimeException.class)
     public Result<String> runtimeExceptionHandler(RuntimeException runtimeException) {
-        log.error("请求切面处异常：", runtimeException);
+        log.error("运行时异常：", runtimeException);
         Result<String> result = new Result<>();
         result.setSuccess(false);
         result.setCode(500);

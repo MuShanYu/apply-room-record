@@ -132,7 +132,7 @@ public class WxUtils {
     public byte[] createWxQRCode(String roomId) {
         String postUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=" + getAccessToken();
         JSONObject postData = new JSONObject();
-        postData.put("page", "sub-page-work/work/sign-in/index");
+        postData.put("page", "page-work/sign-in/index");
         postData.put("scene", roomId);
         postData.put("env_version", "release");
         RequestBody requestBody = RequestBody.create(postData.toJSONString(), MediaType.get("application/json"));
