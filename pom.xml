@@ -14,7 +14,7 @@
     <name>apply-room-record</name>
     <description>apply-room-record</description>
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>17</java.version>
     </properties>
     <dependencies>
         <!--阿里云oss sdk，主要用于小程序码生成后保存至阿里云oss-->
