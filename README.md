@@ -4,6 +4,8 @@
 
 后台管理客户端：https://www.mushanyu.xyz
 
+登录账号：202300001，密码：123456
+
 小程序客户端界面预览：
 
 ![image-20240226142457470](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226142457470.png)
