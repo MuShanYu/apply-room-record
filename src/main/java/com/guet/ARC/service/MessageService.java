@@ -103,7 +103,6 @@ public class MessageService {
     }
 
     public PageInfo<Message> queryMessageBySenderId(String senderId, String receiverId, MessageType type, Integer page, Integer size) {
-        String curUserId = StpUtil.getLoginIdAsString();
         PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("createTime").descending());
         // 查询我收到的消息，以及我发送的消息
         Page<Message> receiverIsMe = messageRepository.findByMessageSenderIdAndMessageReceiverIdAndMessageType(senderId, receiverId, type, pageRequest);
@@ -115,7 +114,7 @@ public class MessageService {
         // res中去除id相同的
         Set<String> idSet = new HashSet<>();
         res.removeIf(message -> !idSet.add(message.getId()));
-        res.sort((a, b) -> (int)(b.getCreateTime() - a.getCreateTime()));
+        res.sort((a, b) -> b.getCreateTime().compareTo(a.getCreateTime()));
         PageInfo<Message> pageInfo = new PageInfo<>();
         pageInfo.setPageData(res);
         pageInfo.setTotalSize((long)res.size());
