@@ -2,6 +2,7 @@ package com.guet.ARC.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.lang.Dict;
 import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.domain.PageInfo;
@@ -153,5 +154,11 @@ public class UserController {
     @Log(title = "管理员手动修改用户信息", businessType = BusinessType.UPDATE)
     public void adminUpdateUserInfoApi(@Valid @RequestBody User userInfo) {
         userService.updateUserInfoAdmin(userInfo);
+    }
+
+    @GetMapping("/user/get/by-name")
+    @ApiOperation(value = "获取需要建立会话的用户id")
+    public List<Dict> getUserIdApi(@RequestParam("name") String name) {
+        return userService.findUserByName(name);
     }
 }

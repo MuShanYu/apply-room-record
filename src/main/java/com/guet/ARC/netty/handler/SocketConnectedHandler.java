@@ -50,7 +50,7 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<Object> 
         if (!request.decoderResult().isSuccess()
                 || !"websocket".equalsIgnoreCase(request.headers().get(HttpHeaderNames.UPGRADE))
                 || !request.headers().contains(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE, true)) {
-            log.warn("Invalid WebSocket handshake request. Request headers: {}", request.headers());
+//            log.warn("Invalid WebSocket handshake request. Request headers: {}", request.headers());
             FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
             return;
@@ -60,7 +60,7 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<Object> 
         // 是否是授权访问socket
         String userId = (String) StpUtil.getLoginIdByToken(token);
         if (StrUtil.isEmpty(token) || StrUtil.isEmpty(userId)) {
-            log.warn("Unauthorized access. token is {}.", token);
+//            log.warn("Unauthorized access. token is {}.", token);
             ctx.channel().close();
             return;
         }

@@ -33,4 +33,6 @@ public interface UserRepository extends JpaCompatibilityRepository<User, String>
     boolean existsByMail(String mail);
 
     boolean existsById(@NotNull String id);
+
+    List<User> findByNameAndState(String name, State state);
 }

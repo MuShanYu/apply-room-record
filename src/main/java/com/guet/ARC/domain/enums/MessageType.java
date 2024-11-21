@@ -8,5 +8,16 @@ public enum MessageType {
     // 待办通知
     TODO,
     // 申请结果通知
-    RESULT
+    RESULT,
+
+    SYSTEM;
+
+    public static MessageType valueOf(int ordinal) {
+        MessageType[] values = MessageType.values();
+        if (ordinal >= values.length) {
+            return null;
+        } else {
+            return values[ordinal];
+        }
+    }
 }

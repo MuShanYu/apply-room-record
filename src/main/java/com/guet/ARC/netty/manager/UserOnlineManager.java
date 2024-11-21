@@ -29,9 +29,14 @@ public class UserOnlineManager {
 
     private static final ConcurrentMap<Channel, String> channelToPlatform =  new ConcurrentHashMap<>();
 
+    private static final ConcurrentMap<String, Channel> userIdToChannel =  new ConcurrentHashMap<>();
+
     public static void addChannel(Channel channel, String source) {
         String userId = String.valueOf(channel.attr(AttributeKey.valueOf("userId")).get());
         String platform = String.valueOf(channel.attr(AttributeKey.valueOf("platform")).get());
+        if (platform.equals("wx") ) {
+            userIdToChannel.put(userId, channel);
+        }
         channelToPlatform.put(channel, platform);
         channelToSource.put(channel, source);
         List<String> sources = userIdToSources.getOrDefault(userId, new ArrayList<>());
@@ -53,6 +58,7 @@ public class UserOnlineManager {
                 // 删除
                 sources.remove(source);
                 channelToSource.remove(channel);
+                userIdToChannel.remove(userId);
                 // 完全下线
                 if (sources.isEmpty()) {
                     userIdToSources.remove(userId);
@@ -87,6 +93,18 @@ public class UserOnlineManager {
             }
         } finally {
             lock.readLock().unlock();
+        }
+    }
+
+    public static void sendMessage(String message, String toUserId) {
+        Channel channel = userIdToChannel.get(toUserId);
+        if (channel != null && StrUtil.isNotEmpty(toUserId) && StrUtil.isNotEmpty(message)) {
+            if (channel.isActive() && channel.isOpen() && channel.isWritable() && channel.isRegistered()) {
+                // 通知接收者
+                channel.writeAndFlush(new TextWebSocketFrame(message));
+            } else {
+                removeChannel(channel);
+            }
         }
     }
 }

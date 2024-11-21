@@ -4,6 +4,7 @@ import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.lang.Dict;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -452,5 +453,19 @@ public class UserService {
 
     public User findUserById(String userId) {
         return userRepository.findByIdOrElseNull(userId);
+    }
+
+    public List<Dict> findUserByName(String name) {
+        // 姓名可能会重复，全部返回
+        List<User> users = userRepository.findByNameAndState(name, State.ACTIVE);
+        List<Dict> res = new ArrayList<>();
+        for (User user : users) {
+            Dict dict = Dict.create();
+            dict.set("userId", user.getId());
+            dict.set("name", user.getName());
+            dict.set("stuNum", user.getStuNum());
+            res.add(dict);
+        }
+        return res;
     }
 }

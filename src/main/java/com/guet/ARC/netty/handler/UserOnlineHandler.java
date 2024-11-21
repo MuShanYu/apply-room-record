@@ -1,5 +1,8 @@
 package com.guet.ARC.netty.handler;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.guet.ARC.common.enmu.SocketMsgType;
 import com.guet.ARC.netty.manager.UserOnlineManager;
 import io.netty.channel.*;
 import io.netty.handler.codec.DecoderException;
@@ -22,7 +25,16 @@ public class UserOnlineHandler extends SimpleChannelInboundHandler<TextWebSocket
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
-        UserOnlineManager.broadCastToOnlineUser();
+//        log.info("收到客户端消息{}", msg.text());
+        JSONObject jsonObject = JSON.parseObject(msg.text());
+        String type = jsonObject.getString("type");
+        // 用户第一次进入app，发送的设备信息，通知其他监听的用户
+        if (type.equals(SocketMsgType.DEVICE.getType())) {
+            UserOnlineManager.broadCastToOnlineUser();
+        } else {
+            // 用户发送的消息，通知对应的用户，如果在线的话
+            UserOnlineManager.sendMessage(msg.text(), jsonObject.getString("toUserId"));
+        }
     }
 
     @Override

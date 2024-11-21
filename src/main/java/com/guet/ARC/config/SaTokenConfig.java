@@ -1,14 +1,12 @@
 package com.guet.ARC.config;
 
 import cn.dev33.satoken.context.SaHolder;
-import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.filter.SaServletFilter;
 import cn.dev33.satoken.interceptor.SaAnnotationInterceptor;
-import cn.dev33.satoken.interceptor.SaRouteInterceptor;
 import cn.dev33.satoken.router.SaHttpMethod;
 import cn.dev33.satoken.router.SaRouter;
-import cn.dev33.satoken.stp.StpUtil;
 import com.guet.ARC.common.domain.Result;
+import com.guet.ARC.interceptor.RouteInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,17 +44,11 @@ public class SaTokenConfig implements WebMvcConfigurer {
         loginExcludePathPatterns.add("/error");
 
         // sa-token v1.30版本
-        // 注解权限拦截!!!!!
+        // 注解权限拦截
         registry.addInterceptor(new SaAnnotationInterceptor()).addPathPatterns("/**");
-        // 登录拦截器！！！！！！
-        registry.addInterceptor(new SaRouteInterceptor((req, res, handler) -> {
-            try {
-                StpUtil.checkLogin();
-            } catch (NotLoginException e) {
-                log.info("本次请求未授权，请求path：{}，url：{}", req.getRequestPath(), req.getUrl());
-            }
-            StpUtil.checkLogin();
-        })).addPathPatterns("/**").excludePathPatterns(loginExcludePathPatterns);
+        // 登录拦截器
+        registry.addInterceptor(new RouteInterceptor())
+                .addPathPatterns("/**").excludePathPatterns(loginExcludePathPatterns);
     }
 
     /**
