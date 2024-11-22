@@ -44,7 +44,7 @@ public class TaskHandler implements Serializable {
                         "您可以尝试重新预约其他时间段并联系房间负责人进行审核。本邮件由系统发出，请勿回复！";
                 break;
             case RESERVATION_SOON_OVERDUE:
-                res[0] = "房间预约申请未审核提醒";
+                res[0] = "房间预约申请待审核提醒";
                 res[1] = "用户所预约的房间" + taskHolder.getRoomName() + "，预约时间" + taskHolder.getTimeStr() +
                         "，该申请即将到达用户所预约的起始时间，为不影响申请人行程，请您及时处理。本邮件由系统发出，请勿回复！";
                 break;

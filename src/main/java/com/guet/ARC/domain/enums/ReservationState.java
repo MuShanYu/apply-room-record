@@ -52,10 +52,10 @@ public enum ReservationState {
                 return  userName + "取消了房间" + roomName + "的预约申请。预约时间：" + timeDateStr +
                         "。" + "取消理由：" + reservation.getRemark() + "。";
             case ROOM_RESERVE_TO_BE_REVIEWED:
-                return "您收到来自" + userName + "的" + roomName + "房间预约申请，预约时间" + timeDateStr + "，请您及时处理。";
+                return "来自" + userName + "的" + roomName + "房间预约申请，预约时间" + timeDateStr + "，麻烦您及时处理。";
             case ROOM_RESERVE_ALREADY_REVIEWED:
                 return "您" + createTimeStr +
-                        "发起的" + roomName + "预约申请，预约时间为" + timeDateStr + "，已由审核员审核通过。";
+                        "发起的" + roomName + "预约申请，预约时间为" + timeDateStr + "，已审核通过。";
             case ROOM_RESERVE_TO_BE_REJECTED:
                 return "您" + createTimeStr + "发起的" + roomName + "预约申请，预约时间为" + timeDateStr
                         + "，审核不通过。原因为：" + reservation.getRemark() + "。";
