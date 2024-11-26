@@ -1,6 +1,7 @@
 package com.guet.ARC.netty;
 
 import cn.hutool.core.io.resource.ClassPathResource;
+import com.guet.ARC.ApplyRoomRecordConfig;
 import com.guet.ARC.netty.handler.SocketConnectedHandler;
 import com.guet.ARC.netty.handler.UserOnlineHandler;
 import io.netty.bootstrap.ServerBootstrap;
@@ -26,7 +27,9 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.stereotype.Component;
 
+import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
+import java.util.Objects;
 
 /**
  * @author Yulf
@@ -39,6 +42,12 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
     @Value("${netty.websocket.port}")
     private int port;
 
+    @Value("${netty.websocket.pemFile}")
+    private String pemFile;
+
+    @Value("${netty.websocket.keyFile}")
+    private String keyFile;
+
     private Channel serverChannel;
 
     private ApplicationContext applicationContext;
@@ -50,11 +59,8 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        /*final SslContext sslCtx;
         // 使用自签名证书进行 SSL 配置
-        ClassPathResource pem = new ClassPathResource("x.pem");
-        ClassPathResource key = new ClassPathResource("x.key");
-        sslCtx = SslContextBuilder.forServer(pem.getStream(), key.getStream()).build();*/
+        ApplyRoomRecordConfig globalConfig = applicationContext.getBean(ApplyRoomRecordConfig.class);
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -66,7 +72,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                 @Override
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     ChannelPipeline pipeline = socketChannel.pipeline();
-//                    pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));  // 添加 SSL 处理
+                    addSslHandler(pipeline, socketChannel, globalConfig.getUseWebsocketSSL());
                     pipeline.addLast(new HttpServerCodec());//请求解码器
                     pipeline.addLast(new HttpObjectAggregator(65536));//将多个消息转换成单一的消息对象
                     pipeline.addLast(new ChunkedWriteHandler());//支持异步发送大的码流，一般用于发送文件流
@@ -94,5 +100,21 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
             this.serverChannel.close();
         }
         log.info("websocket 服务停止");
+    }
+
+    private void addSslHandler(ChannelPipeline pipeline, SocketChannel socketChannel, Boolean useWebsocketSSL) {
+        // 取决于你的配置，如果配置了是，那么请您同时配置pem和key文件
+        // 这两个文件请放在resource目录下
+        if (useWebsocketSSL) {
+            try {
+                ClassPathResource pem = new ClassPathResource(pemFile);
+                ClassPathResource key = new ClassPathResource(keyFile);
+                SslContext sslCtx = SslContextBuilder.forServer(pem.getStream(), key.getStream()).build();
+                pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));  // 添加 SSL 处理
+            } catch (SSLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 }

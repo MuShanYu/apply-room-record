@@ -18,4 +18,6 @@ public class UserListQueryDTO {
     private String name;
 
     private String institute;
+
+    private String stuNum;
 }

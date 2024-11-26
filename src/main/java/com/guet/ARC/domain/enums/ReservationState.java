@@ -52,10 +52,10 @@ public enum ReservationState {
                 return  userName + "取消了房间" + roomName + "的预约申请。预约时间：" + timeDateStr +
                         "。" + "取消理由：" + reservation.getRemark() + "。";
             case ROOM_RESERVE_TO_BE_REVIEWED:
-                return "您收到来自" + userName + "的" + roomName + "房间预约申请，预约时间" + timeDateStr + "，请您及时处理。";
+                return "来自" + userName + "的" + roomName + "房间预约申请，预约时间" + timeDateStr + "，麻烦您及时处理。";
             case ROOM_RESERVE_ALREADY_REVIEWED:
                 return "您" + createTimeStr +
-                        "发起的" + roomName + "预约申请，预约时间为" + timeDateStr + "，已由审核员审核通过。";
+                        "发起的" + roomName + "预约申请，预约时间为" + timeDateStr + "，已审核通过。";
             case ROOM_RESERVE_TO_BE_REJECTED:
                 return "您" + createTimeStr + "发起的" + roomName + "预约申请，预约时间为" + timeDateStr
                         + "，审核不通过。原因为：" + reservation.getRemark() + "。";
@@ -89,7 +89,7 @@ public enum ReservationState {
             case ROOM_RESERVE_ALREADY_REVIEWED:
                 data.put("thing33", CommonUtils.createValueItem(name));
                 data.put("thing47", CommonUtils.createValueItem(room.getRoomName()));
-                data.put("thing13", CommonUtils.createValueItem(timeDateStr));
+                data.put("time36", CommonUtils.createValueItem(timeDateStr));
                 data.put("thing4", CommonUtils.createValueItem("符合要求，审核通过。"));
                 templateId = WxMessageTemplateId.APPLY_SUCCESS_NOTICE_TEMPLATE.getId();
                 break;
@@ -111,7 +111,7 @@ public enum ReservationState {
                 return;
         }
         if (StrUtil.isNotEmpty(user.getOpenId())) {
-            WxUtils.sendSubscriptionMessage(user.getOpenId(), templateId, data);
+            WxUtils.getInstance().sendSubscriptionMessage(user.getOpenId(), templateId, data);
         }
     }
 

@@ -12,4 +12,8 @@ import lombok.EqualsAndHashCode;
 @Data
 public class MessageVo extends Message {
     private String senderUserName;
+
+    private String stuNum;
+
+    private Long notReadCount;
 }

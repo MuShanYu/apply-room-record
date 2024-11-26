@@ -1,6 +1,7 @@
 package com.guet.ARC.service;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.lang.Dict;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.Page;
@@ -12,26 +13,24 @@ import com.guet.ARC.dao.RoomRepository;
 import com.guet.ARC.dao.mybatis.query.RoomQuery;
 import com.guet.ARC.domain.Room;
 import com.guet.ARC.domain.User;
-import com.guet.ARC.domain.dto.room.RoomAddUpdateDTO;
-import com.guet.ARC.domain.dto.room.RoomListQueryDTO;
-import com.guet.ARC.domain.dto.room.RoomQueryDTO;
-import com.guet.ARC.domain.dto.room.UpdateRoomChargerDTO;
+import com.guet.ARC.domain.dto.room.*;
 import com.guet.ARC.dao.mybatis.RoomQueryRepository;
 import com.guet.ARC.domain.enums.RoomState;
+import com.guet.ARC.util.OSSUtil;
+import com.guet.ARC.util.WxUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Predicate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class RoomService {
     @Autowired
@@ -198,7 +197,6 @@ public class RoomService {
         return rooms;
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
     public void autoUpdateRoomChargerName(List<Room> rooms) {
         List<String> chargerPersonIds = rooms.stream().map(Room::getChargePersonId).collect(Collectors.toList());
         Map<String, User> idToUser = userService.findUserByIds(chargerPersonIds).stream().collect(Collectors.toMap(User::getId, Function.identity()));
@@ -213,5 +211,32 @@ public class RoomService {
             }
         }
         roomRepository.saveAll(needUpdateRoom);
+    }
+
+    // 没有就生成，有就返回文件访问路径
+    public Map<String, Object> generateRoomQRCode(RoomQRCodeDTO dto) {
+        OSSUtil ossUtil = OSSUtil.getInstance();
+        String prefix = ossUtil.getPublicReadFilePrefix();
+        String path = "static/qr_code/";
+        Dict filePath = Dict.create();
+        for (String roomId : dto.getRoomIds()) {
+            try {
+                String filename = path + roomId + ".png";
+                if (dto.isCover() || !ossUtil.hasFile(filename)) {
+                    byte[] wxQRCode = WxUtils.getInstance().createWxQRCode(roomId); // 可能生成失败
+                    if (wxQRCode.length == 0) {
+                        filePath.put(roomId, "");
+                        continue;
+                    }
+                    filePath.put(roomId, ossUtil.uploadFile(filename, wxQRCode));
+                } else {
+                    filePath.put(roomId, prefix + filename);
+                }
+            } catch (Exception e) {
+                filePath.put(roomId, "");
+                log.error("文件生成失败：", e);
+            }
+        }
+        return filePath;
     }
 }

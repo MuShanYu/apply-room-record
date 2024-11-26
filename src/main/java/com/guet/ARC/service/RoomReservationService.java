@@ -5,12 +5,15 @@ import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.cglib.CglibUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.guet.ARC.common.domain.TaskHolder;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
-import com.guet.ARC.common.enmu.RedisCacheKey;
+import com.guet.ARC.common.enmu.DelayTaskType;
 import com.guet.ARC.common.exception.AlertException;
+import com.guet.ARC.component.RedissonDelayQueueComponent;
 import com.guet.ARC.dao.RoomRepository;
 import com.guet.ARC.dao.RoomReservationRepository;
 import com.guet.ARC.dao.UserRepository;
@@ -30,19 +33,20 @@ import com.guet.ARC.domain.enums.ReservationState;
 import com.guet.ARC.domain.vo.room.RoomReservationAdminVo;
 import com.guet.ARC.domain.vo.room.RoomReservationUserVo;
 import com.guet.ARC.domain.vo.room.RoomReservationVo;
+import com.guet.ARC.job.ReserveUnprocessedTaskHandler;
 import com.guet.ARC.util.AsyncRunUtil;
 import com.guet.ARC.util.CommonUtils;
-import com.guet.ARC.util.RedisCacheUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.beans.BeanCopier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import javax.transaction.Transactional;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -70,9 +74,8 @@ public class RoomReservationService {
     private MessageService messageService;
 
     @Autowired
-    private RedisCacheUtil<String> redisCacheUtil;
+    private RedissonDelayQueueComponent delayQueue;
 
-    @Transactional(rollbackOn = RuntimeException.class)
     public void cancelApply(String roomReservationId, String reason) {
         if (roomReservationId == null || roomReservationId.trim().isEmpty()) {
             throw new AlertException(ResultCode.PARAM_IS_BLANK);
@@ -99,7 +102,6 @@ public class RoomReservationService {
     }
 
     //同步方法
-    @Transactional(rollbackOn = RuntimeException.class)
     public synchronized RoomReservation applyRoom(ApplyRoomDTO applyRoomDTO) {
         AsyncRunUtil asyncRunUtil = AsyncRunUtil.getInstance();
         // 检测预约起始和预约结束时间
@@ -114,7 +116,7 @@ public class RoomReservationService {
             throw new AlertException(1000, "单次房间的预约时间不能小于30分钟");
         }
         // 检测是否已经预约
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         // 是待审核状态且在这段预约时间内代表我已经预约过了, 预约起始时间不能在准备预约的时间范围内，结束时间不能在准备结束预约的时间范围内
         List<RoomReservation> roomReservations = roomReservationQueryRepository.selectMany(
                 roomReservationQuery.queryMyReservationListByTimeSql(applyRoomDTO, userId)
@@ -134,10 +136,10 @@ public class RoomReservationService {
         roomReservation.setUserId(userId);
         roomReservation.setRoomId(applyRoomDTO.getRoomId());
         roomReservationRepository.save(roomReservation);
-        setRoomApplyNotifyCache(roomReservation, userId);
         Room room = roomRepository.findByIdOrElseNull(roomReservation.getRoomId());
         User user = userRepository.findByIdOrElseNull(room.getChargePersonId());
         User curUser = userRepository.findByIdOrElseNull(userId);
+        setRoomApplyMailSendNotify(user.getMail(), curUser.getMail(), room.getRoomName(), roomReservation);
         // 发送邮件信息
         String mailContent = roomReservation.getState().generateFeedback(curUser.getName(), room.getRoomName(), roomReservation);
         asyncRunUtil.submit(() -> emailService.sendSimpleMail(user.getMail(),
@@ -147,8 +149,9 @@ public class RoomReservationService {
         // 发送订阅消息
         asyncRunUtil.submit(() -> {
             // 因为需要房间管理者的openid，所有user要更改一下name未预约人
-            user.setName(curUser.getName());
-            roomReservation.getState().sendReservationNoticeMessage(room, user, roomReservation);
+            User copiedUser = CglibUtil.copy(user, User.class);
+            copiedUser.setName(curUser.getName());
+            roomReservation.getState().sendReservationNoticeMessage(room, copiedUser, roomReservation);
         });
         return roomReservation;
     }
@@ -191,7 +194,7 @@ public class RoomReservationService {
     }
 
     public PageInfo<RoomReservationVo> queryMyApply(MyApplyQueryDTO myApplyQueryDTO) {
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         Page<RoomReservationVo> queryPageData = PageHelper.startPage(myApplyQueryDTO.getPage(), myApplyQueryDTO.getSize());
         roomReservationQueryRepository.selectRoomReservationsVo(
                 roomReservationQuery.queryMyApplySql(myApplyQueryDTO, userId)
@@ -209,7 +212,7 @@ public class RoomReservationService {
 
     // 获取待审核列表
     public PageInfo<RoomReservationAdminVo> queryRoomReserveToBeReviewed(RoomReserveReviewedDTO queryDTO) {
-        String currentUserId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String currentUserId = StpUtil.getLoginIdAsString();
         Page<RoomReservationAdminVo> queryPageData = PageHelper.startPage(queryDTO.getPage(), queryDTO.getSize());
         if (!StrUtil.isEmpty(queryDTO.getStuNum())) {
             userRepository.findByStuNum(queryDTO.getStuNum())
@@ -248,7 +251,7 @@ public class RoomReservationService {
         if (!StringUtils.hasLength(reason)) {
             reason = "";
         }
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         RoomReservation roomReservation = roomReservationRepository.findByIdOrElseNull(reserveId);
         // 审核人
         User user = userRepository.findByIdOrElseNull(userId);
@@ -330,14 +333,25 @@ public class RoomReservationService {
     /**
      * 包含两个提醒，发送时机就是key过期时，快要过期提醒审核，已过期提醒申请人超时未处理重新申请。
      *
-     * @param roomReservation 房间预约实体
-     * @param userId          当前登陆人id
+     * @param chargePersonMail 房间负责人邮箱
+     * @param userMail 预约人邮箱
+     * @param roomName 房间名称
+     * @param roomReservation 预约时间，用于计算延迟发送时间
      */
-    private void setRoomApplyNotifyCache(RoomReservation roomReservation, String userId) {
-        // 记录当前时间->房间预约起始时间，redis缓存，用于判断是否管理员超期未处理，自动更改状态，通知用户房间预约超期未处理，防止占用时间段，用户可以重新预约
+    private void setRoomApplyMailSendNotify(String chargePersonMail, String userMail, String roomName, RoomReservation roomReservation) {
+        // 记录当前时间->房间预约起始时间，redis缓存，用于判断是否管理员超期未处理，自动更改状态，
+        // 通知用户房间预约超期未处理，防止占用时间段，用户可以重新预约。
         long cacheTimeSecond = DateUtil.between(new Date(), new Date(roomReservation.getReserveStartTime()), DateUnit.SECOND);
-        String roomOccupancyApplyKey = RedisCacheKey.ROOM_OCCUPANCY_APPLY_KEY.concatKey(roomReservation.getId());
-        redisCacheUtil.setCacheObject(roomOccupancyApplyKey, userId, cacheTimeSecond, TimeUnit.SECONDS);
+        String startTimeStr = DateUtil.format(new Date(roomReservation.getReserveStartTime()), "yyyy年MM月dd日 HH:mm");
+        String endTimeStr = DateUtil.format(new Date(roomReservation.getReserveEndTime()), "HH:mm");
+        TaskHolder notProcessedBody = new TaskHolder();
+        notProcessedBody.setTimeStr(startTimeStr + "-" + endTimeStr);
+        notProcessedBody.setReservationId(roomReservation.getId());
+        notProcessedBody.setRoomName(roomName);
+        notProcessedBody.setTaskType(DelayTaskType.RESERVATION_NOT_PROCESSED);
+        notProcessedBody.setToUserMail(userMail);
+        notProcessedBody.setHandler(ReserveUnprocessedTaskHandler.class);
+        delayQueue.addMailSendTask(notProcessedBody, cacheTimeSecond);
         // 前一个小时提醒负责人审核。 预约间隔最少是30分钟
         long cacheNotifyChargerSecond = cacheTimeSecond - (60 * 60);
         // 当前时间距离预约起始时间小于一个小时
@@ -348,9 +362,11 @@ public class RoomReservationService {
             // 不设置通知审核人
             return;
         }
-        // 缓存
-        String notifyChargerKey = RedisCacheKey.ROOM_APPLY_TIMEOUT_NOTIFY_KEY.concatKey(roomReservation.getId());
-        redisCacheUtil.setCacheObject(notifyChargerKey, userId, cacheNotifyChargerSecond, TimeUnit.SECONDS);
+        TaskHolder soonOverdueBody = new TaskHolder();
+        BeanUtils.copyProperties(notProcessedBody, soonOverdueBody, "handler");
+        soonOverdueBody.setToUserMail(chargePersonMail);
+        soonOverdueBody.setTaskType(DelayTaskType.RESERVATION_SOON_OVERDUE);
+        delayQueue.addMailSendTask(soonOverdueBody, cacheNotifyChargerSecond);
     }
 
     /**

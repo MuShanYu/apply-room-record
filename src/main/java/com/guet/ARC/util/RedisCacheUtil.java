@@ -115,7 +115,7 @@ public class RedisCacheUtil<T> {
             String jsonData = listOperation.index(key, i);
             JSONObject jsonObject = JSON.parseObject(jsonData);
             if (Objects.nonNull(jsonObject)) {
-                AccessRecord accessRecord = jsonObject.getObject("data", AccessRecord.class);
+                    AccessRecord accessRecord = jsonObject.getObject("data", AccessRecord.class);
                 Long timeoutTimeStamp = jsonObject.getLong("expire");
                 if (now.compareTo(timeoutTimeStamp) < 0) {
                     dataList.add(accessRecord);

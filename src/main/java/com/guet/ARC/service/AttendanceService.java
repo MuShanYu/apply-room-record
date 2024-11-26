@@ -91,8 +91,4 @@ public class AttendanceService {
                 .map(AttendanceCountListVo::getValidAttendanceHours)
                 .reduce(new BigDecimal("0"), BigDecimal::add);
     }
-
-
-
-
 }

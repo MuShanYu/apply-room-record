@@ -101,7 +101,7 @@ public class RoomQuery {
 
     // 查询进出过的房间列表
     public SelectStatementProvider queryAccessRecordRoomListSql() {
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         return selectDistinct(RoomQueryRepository.selectList)
                 .from(RoomDynamicSqlSupport.room)
                 .leftJoin(AccessRecordDynamicSqlSupport.accessRecord)

@@ -19,6 +19,7 @@ import com.guet.ARC.dao.mybatis.ApplicationQueryRepository;
 import com.guet.ARC.dao.mybatis.query.ApplicationQuery;
 import com.guet.ARC.domain.Application;
 import com.guet.ARC.domain.Message;
+import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.apply.ApplicationListQuery;
 import com.guet.ARC.domain.enums.ApplicationState;
 import com.guet.ARC.domain.enums.MessageType;
@@ -100,8 +101,9 @@ public class ApplicationService {
         // 获取审核人信息
         userRepository.findById(application.getHandleUserId()).ifPresent(user -> {
             userRepository.findById(application.getApplyUserId()).ifPresent(applyUser -> {
-                user.setName(applyUser.getName());
-                AsyncRunUtil.getInstance().submit(() -> application.getState().sendApplicationMessage(user, application));
+                User copiedUser = CglibUtil.copy(user, User.class);
+                copiedUser.setName(applyUser.getName());
+                AsyncRunUtil.getInstance().submit(() -> application.getState().sendApplicationMessage(copiedUser, application));
             });
         });
 
@@ -150,7 +152,7 @@ public class ApplicationService {
 
     public void updateApplicationState(String applicationId, Boolean isPass, String remark) {
         Application application = applicationRepository.findByIdOrElseNull(applicationId);
-        String content = "";
+        String content;
         if (isPass) {
             application.setState(ApplicationState.SUCCESS);
             content = application.getTitle() + "，审批通过。";

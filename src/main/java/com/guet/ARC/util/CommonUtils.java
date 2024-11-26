@@ -3,7 +3,11 @@ package com.guet.ARC.util;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,22 +17,6 @@ public class CommonUtils {
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
-
-
-    // 加密手机号中间四位
-    public static String encodeTel(String tel) {
-        return tel.replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
-    }
-
-    public static String encodeName(String name) {
-        if (name.length() == 2) {
-            return name.replaceFirst(name.substring(1), "*");
-        }
-        if (name.length() > 2) {
-            return name.replaceFirst(name.substring(1, name.length() - 1), "*");
-        }
-        return name;
-    }
 
     // 获取起始日期的00:00，获取结束日期的11:59:59
 

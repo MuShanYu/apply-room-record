@@ -51,23 +51,17 @@ public class NoticeService {
     }
 
     public void setNoticeToDeleted(String noticeId) {
-        Optional<Notice> noticeOptional = noticeRepository.findById(noticeId);
-        if (noticeOptional.isPresent()) {
-            Notice notice = noticeOptional.get();
-            notice.setState(State.NEGATIVE);
-            notice.setUpdateTime(System.currentTimeMillis());
-            noticeRepository.saveAndFlush(notice);
-        }
+        Notice notice = noticeRepository.findByIdOrElseNull(noticeId);
+        notice.setState(State.NEGATIVE);
+        notice.setUpdateTime(System.currentTimeMillis());
+        noticeRepository.saveAndFlush(notice);
     }
 
     public void resetNoticeToNormal(String noticeId) {
-        Optional<Notice> noticeOptional = noticeRepository.findById(noticeId);
-        if (noticeOptional.isPresent()) {
-            Notice notice = noticeOptional.get();
-            notice.setState(State.ACTIVE);
-            notice.setUpdateTime(System.currentTimeMillis());
-            noticeRepository.saveAndFlush(notice);
-        }
+        Notice notice = noticeRepository.findByIdOrElseNull(noticeId);
+        notice.setState(State.ACTIVE);
+        notice.setUpdateTime(System.currentTimeMillis());
+        noticeRepository.saveAndFlush(notice);
     }
 
     public void saveNotice(Notice notice) {

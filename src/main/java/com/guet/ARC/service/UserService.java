@@ -4,40 +4,32 @@ import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.lang.Dict;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.cglib.CglibUtil;
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.domain.ResultCode;
 import com.guet.ARC.common.enmu.Device;
 import com.guet.ARC.common.exception.AlertException;
 import com.guet.ARC.dao.UserRepository;
-import com.guet.ARC.dao.mybatis.UserQueryRepository;
-import com.guet.ARC.dao.mybatis.support.UserDynamicSqlSupport;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.user.*;
 import com.guet.ARC.domain.enums.State;
-import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.netty.manager.UserOnlineManager;
 import com.guet.ARC.util.RedisCacheUtil;
 import com.guet.ARC.util.WxUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.mybatis.dynamic.sql.render.RenderingStrategies;
-import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cglib.beans.BeanCopier;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
+import javax.persistence.criteria.Predicate;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-
-import static org.mybatis.dynamic.sql.SqlBuilder.*;
 
 @Service
 @Slf4j
@@ -47,13 +39,7 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private UserQueryRepository userQueryRepository;
-
-    @Autowired
     private RedisCacheUtil redisCacheUtil;
-
-    @Autowired
-    private UserRoleService userRoleService;
 
     @Autowired
     private EmailService emailService;
@@ -178,7 +164,7 @@ public class UserService {
     // 微信登录
     public Map<String, Object> wxLogin(String code) {
         // 获取openId
-        String openid = WxUtils.getOpenid(code);
+        String openid = WxUtils.getInstance().getOpenid(code);
 
         // 查询用户是否已经绑定了，没有绑定则无法登录
         if (StrUtil.isEmpty(openid)) {
@@ -188,7 +174,6 @@ public class UserService {
 //        log.info("openId:{}", openid);
         Optional<User> userOptional = userRepository.findByOpenId(openid);
         Map<String, Object> map = new HashMap<>();
-        ;
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             map.put("canWxLogin", true);
@@ -219,12 +204,12 @@ public class UserService {
     // 绑定微信
     public void bindWx(String code) {
         // 获取openId
-        String openid = WxUtils.getOpenid(code);
+        String openid = WxUtils.getInstance().getOpenid(code);
         // 查询用户是否已经绑定了，没有绑定则无法登录
         if (StrUtil.isEmpty(openid)) {
             throw new AlertException(1000, "用户标识获取失败");
         }
-        String userId = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userId = StpUtil.getLoginIdAsString();
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isEmpty()) {
             throw new AlertException(ResultCode.USER_NOT_EXIST);
@@ -247,7 +232,7 @@ public class UserService {
 
     public void unBindWx(String code) {
         // 获取openId
-        String openid = WxUtils.getOpenid(code);
+        String openid = WxUtils.getInstance().getOpenid(code);
         // 查询用户是否已经绑定了，没有绑定则无法登录
         if (StrUtil.isEmpty(openid)) {
             throw new AlertException(1000, "用户标识获取失败");
@@ -262,34 +247,26 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public PageInfo<UserRoleVo> queryUserList(UserListQueryDTO userListQueryDTO) {
-        Integer page = userListQueryDTO.getPage();
-        Integer size = userListQueryDTO.getSize();
-        String name = userListQueryDTO.getName();
-        String institute = userListQueryDTO.getInstitute();
-        name = StringUtils.hasLength(name) ? name + "%" : null;
-        institute = StringUtils.hasLength(institute) ? institute + "%" : null;
-        SelectStatementProvider queryStatement = select(UserQueryRepository.selectList)
-                .from(UserDynamicSqlSupport.user)
-                .where(UserDynamicSqlSupport.name, isLikeWhenPresent(name))
-                .and(UserDynamicSqlSupport.institute, isLikeWhenPresent(institute))
-                .orderBy(UserDynamicSqlSupport.createTime.descending())
-                .build().render(RenderingStrategies.MYBATIS3);
-        Page<User> queryDataPage = PageHelper.startPage(page, size);
-        List<User> users = userQueryRepository.selectMany(queryStatement);
-        List<UserRoleVo> userRoleVos = new ArrayList<>();
-        BeanCopier userCopier = BeanCopier.create(User.class, UserRoleVo.class, false);
-        for (User user : users) {
-            UserRoleVo userRoleVo = new UserRoleVo();
-            userCopier.copy(user, userRoleVo, null);
-            userRoleVo.setRoleList(userRoleService.queryRoleByUserId(user.getId()));
-            userRoleVos.add(userRoleVo);
-        }
-        PageInfo<UserRoleVo> pageInfo = new PageInfo<>();
-        pageInfo.setPage(page);
-        pageInfo.setPageData(userRoleVos);
-        pageInfo.setTotalSize(queryDataPage.getTotal());
-        return pageInfo;
+    public PageInfo<User> queryUserList(UserListQueryDTO queryDTO) {
+        org.springframework.data.domain.Page<User> pageData = userRepository.findAll((root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StrUtil.isNotEmpty(queryDTO.getName())) {
+                predicates.add(cb.like(root.get("name"), queryDTO.getName() + "%"));
+            }
+            if (StrUtil.isNotEmpty(queryDTO.getStuNum())) {
+                predicates.add(cb.like(root.get("stuNum"), queryDTO.getStuNum()));
+            }
+            if (StrUtil.isNotEmpty(queryDTO.getInstitute())) {
+                predicates.add(cb.like(root.get("institute"), queryDTO.getInstitute() + "%"));
+            }
+            query.orderBy(cb.desc(root.get("createTime")));
+            return cb.and(predicates.toArray(Predicate[]::new));
+        }, PageRequest.of(queryDTO.getPage() - 1, queryDTO.getSize()));
+        pageData.getContent().forEach(user -> {
+            user.setPwd("");
+            user.setOpenId("");
+        });
+        return new PageInfo<>(pageData);
     }
 
     // 获取邮箱验证码
@@ -347,9 +324,8 @@ public class UserService {
         }
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
     public void updatePersonalInfo(Map<String, String> userInfo) {
-        String userIdContext = StpUtil.getSessionByLoginId(StpUtil.getLoginId()).getString("userId");
+        String userIdContext = StpUtil.getLoginIdAsString();
         Optional<User> userOptional = userRepository.findById(userIdContext);
         if (!StrUtil.isEmpty(userInfo.get("mail"))) {
             // 我提交的邮箱是不是已经被其他人注册了
@@ -362,8 +338,7 @@ public class UserService {
         }
         userOptional.ifPresent(user -> {
             // 避免修改查询后的数据，触发jpa脏检查，触发多余更新
-            User updateUserInfo = new User();
-            CglibUtil.copy(user, updateUserInfo);
+            User updateUserInfo = CglibUtil.copy(user, User.class);
             CglibUtil.fillBean(userInfo, updateUserInfo);
             updateUserInfo.setUpdateTime(System.currentTimeMillis());
             userRepository.save(updateUserInfo);
@@ -394,12 +369,14 @@ public class UserService {
         }
     }
 
+    // 由于spring的事务传播机制,save方法是一个事务，会把外层添加进事务，触发脏检查
     public void updateUserName(UserUpdateNameDTO userUpdateNameDTO) {
         User user = userRepository.findByIdOrElseNull(userUpdateNameDTO.getUserId());
-        user.setName(userUpdateNameDTO.getName());
-        user.setId(userUpdateNameDTO.getUserId());
-        user.setUpdateTime(System.currentTimeMillis());
-        userRepository.save(user);
+        User copiedUser = CglibUtil.copy(user, User.class);
+        copiedUser.setName(userUpdateNameDTO.getName());
+        copiedUser.setId(userUpdateNameDTO.getUserId());
+        copiedUser.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(copiedUser);
     }
 
     public Map<String, Object> refreshToken(String userId, String device) {
@@ -441,7 +418,6 @@ public class UserService {
     public List<User> findUserByIds(List<String> ids) {
         return userRepository.findAllById(ids);
     }
-
     public Map<String, Object> getUserPermissionAndRole() {
         Map<String, Object> res = new HashMap<>();
         res.put("roles", StpUtil.getRoleList());
@@ -449,27 +425,47 @@ public class UserService {
         return res;
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
     public void resetUserPwd(String newPwd, String userId) {
-        User user = userRepository.findByIdOrElseNull(userId);
-        user.setPwd(SaSecureUtil.md5(newPwd));
-        user.setUpdateTime(System.currentTimeMillis());
-        userRepository.save(user);
+        User copiedUser = CglibUtil.copy(userRepository.findByIdOrElseNull(userId), User.class);
+        copiedUser.setPwd(SaSecureUtil.md5(newPwd));
+        copiedUser.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(copiedUser);
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
-    public void updateUserInfoAdmin(User user) {
-        userRepository.findByStuNum(user.getStuNum()).ifPresent(u -> {
-            if (!u.getId().equals(user.getId())) {
-                throw new AlertException(1000, "学号" + user.getStuNum() + "已被其他用户注册");
+    public void updateUserInfoAdmin(User userInfo) {
+        User copiedUser = CglibUtil.copy(userRepository.findByIdOrElseNull(userInfo.getId()), User.class);
+        Map<String, Object> updateMap = new HashMap<>();
+        BeanUtil.beanToMap(userInfo, updateMap, false, true);
+        CglibUtil.fillBean(updateMap, copiedUser);
+        userRepository.findByStuNum(copiedUser.getStuNum()).ifPresent(u -> {
+            if (!u.getId().equals(copiedUser.getId())) {
+                throw new AlertException(1000, "学号" + copiedUser.getStuNum() + "已被其他用户注册");
             }
         });
-        userRepository.findByMail(user.getMail()).ifPresent(u -> {
-            if (!u.getId().equals(user.getId())) {
-                throw new AlertException(1000, "邮箱" + user.getMail() + "已被其他用户注册");
+        userRepository.findByMail(copiedUser.getMail()).ifPresent(u -> {
+            if (!u.getId().equals(copiedUser.getId())) {
+                throw new AlertException(1000, "邮箱" + copiedUser.getMail() + "已被其他用户注册");
             }
         });
-        user.setUpdateTime(System.currentTimeMillis());
-        userRepository.save(user);
+        copiedUser.setUpdateTime(System.currentTimeMillis());
+        userRepository.save(copiedUser);
+    }
+
+    public User findUserById(String userId) {
+        return userRepository.findByIdOrElseNull(userId);
+    }
+
+    public List<Dict> findUserByName(String name) {
+        // 姓名可能会重复，全部返回
+        List<User> users = userRepository.findByNameAndState(name, State.ACTIVE);
+        List<Dict> res = new ArrayList<>();
+        for (User user : users) {
+            Dict dict = Dict.create();
+            dict.set("userId", user.getId());
+            dict.set("name", user.getName());
+            dict.set("stuNum", user.getStuNum());
+            res.add(dict);
+        }
+        return res;
     }
 }

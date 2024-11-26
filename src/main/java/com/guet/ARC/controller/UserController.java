@@ -2,13 +2,13 @@ package com.guet.ARC.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.lang.Dict;
 import com.guet.ARC.common.anno.Log;
 import com.guet.ARC.common.anno.ResponseBodyResult;
 import com.guet.ARC.common.domain.PageInfo;
 import com.guet.ARC.common.enmu.BusinessType;
 import com.guet.ARC.domain.User;
 import com.guet.ARC.domain.dto.user.*;
-import com.guet.ARC.domain.vo.user.UserRoleVo;
 import com.guet.ARC.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -69,7 +69,6 @@ public class UserController {
 
     @PostMapping("/user/update/userInfo")
     @ApiOperation(value = "修改用户信息")
-    @Log(title = "用户自行更改用户信息", businessType = BusinessType.UPDATE)
     public void updateUserInfoApi(@Valid @RequestBody Map<String, String> userInfo) {
         userService.updatePersonalInfo(userInfo);
     }
@@ -96,7 +95,7 @@ public class UserController {
     @PostMapping("/admin/query/userList")
     @ApiOperation(value = "查询用户列表")
     @SaCheckPermission(value = {"system:user"})
-    public PageInfo<UserRoleVo> queryUserListApi(@Valid @RequestBody UserListQueryDTO userListQueryDTO) {
+    public PageInfo<User> queryUserListApi(@Valid @RequestBody UserListQueryDTO userListQueryDTO) {
         return userService.queryUserList(userListQueryDTO);
     }
 
@@ -153,7 +152,13 @@ public class UserController {
     @ApiOperation(value = "管理员手动修改用户信息")
     @SaCheckPermission(value = {"system:user:update"})
     @Log(title = "管理员手动修改用户信息", businessType = BusinessType.UPDATE)
-    public void adminUpdateUserInfoApi(@Valid @RequestBody User user) {
-        userService.updateUserInfoAdmin(user);
+    public void adminUpdateUserInfoApi(@Valid @RequestBody User userInfo) {
+        userService.updateUserInfoAdmin(userInfo);
+    }
+
+    @GetMapping("/user/get/by-name")
+    @ApiOperation(value = "获取需要建立会话的用户id")
+    public List<Dict> getUserIdApi(@RequestParam("name") String name) {
+        return userService.findUserByName(name);
     }
 }

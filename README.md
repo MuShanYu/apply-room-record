@@ -1,78 +1,72 @@
 # 房间预约与流动统计后端
 
-## 项目演示
+## 前言
 
-小程序、后端、管理端演示版开发中，后续会进行更新。
+本项目为单体项目，集成常用配置，包括统一请求结果返回、统一请求异常处理、项目统一配置、通用权限（按钮级别）等等，鉴权使用Sa-Token。您可以将其作为一个单体项目开发框架，可以大大缩减您的开发时间，或者您也可以抽取其中的部分功能进行学习或者二次开发。如果本项目对您有作用，您可以点一个star，感谢！
 
-部分界面预览：
+## 项目功能
 
-![image-20240226142457470](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226142457470.png)
+- 在线实时消息通知与聊天
+- 公告
+- 房间预约
+- 通用事项申请与处理
+- 房间签到
+- 统计签到时长与人数、人次
+- 后端页面报表
+- 通用权限解决方案（按钮级别）
+- 用户在线监控
+- 系统监控
+- 等等.......
 
-![image-20240226142949403](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226142949403.png)
+服务端包括常用的统一请求结果返回、统一请求异常处理、wx请求工具包基础、项目统一配置、Redis工具等等。
 
-![image-20240701093952500](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093952500.png)
+本项目提供完整小程序客户端，后台管理客户端，**页面精美**。
 
-![image-20240701093224957](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093224957.png)
+## 项目技术点
 
-![image-20240701093423280](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093423280.png)
+### 3. 服务端
 
-![image-20240701093454404](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093454404.png)
-
-![image-20240701093639341](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093639341.png)
-
-![image-20240701093755788](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093755788.png)
-
-![image-20240701093832862](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093832862.png)
-
-![image-20240701093857376](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093857376.png)
-
-![image-20240701093919123](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240701093919123.png)
-
-## 项目描述
-
-本项目为**房间预约与流动统计**，应用功能不局限于预约与流动统计，主要功能包含消息通知、公告、房间预约、通用申请处理、房间签到签出、人员人数与人次统计、签到时长统计、报表统计、基础功能、通用权限解决方案、在线用户监控等。
-
-基础功能主要有：统一异常处理、统一请求结果返回、统一请求异常处理、wx请求工具包基础等。
-
-技术栈：
-
-- 管理端：Vue、element-ui等、基于vue-element-admin框架开发。
-- 客户端：基于uni-app开发，组件使用图鸟UI。
-- 后端：springBoot、mybatis-dynamic-sql、redis、mysql、sa-token、springboot-jpa、netty等。
+- JDK17
+- Redis
+- MyBatis-Dynamic-SQL
+- SpringBoot
+- SpringBoot-JPA
+- Netty
+- Sa-Token
+- Hu-Tool
+- EasyExcel、FastJson
+- 等等......
 
 本项目分为：
 
-- 客户端：[apply-room-record-app](https://github.com/MuShanYu/apply-room-record-app) 小程序
-- 管理端：[apply-room-record-admin](https://github.com/MuShanYu/apply-room-record-admin) 
 - 后端：[apply-room-record](https://github.com/MuShanYu/apply-room-record) 
 
-## 本地运行说明
+## 服务端本地运行说明
 
-### 1. 后端
+1. 首先将代码clone到您的本地，使用集成开发工具打开项目，如idea。
+2. 配置本地开发环境，要求使用jdk17，数据库使用mysql8，redis。
+3. 环境配置完成后修改配置文件，包括数据库配置（账号密码）、redis配置、邮箱账号密码配置（如没有请去对应邮箱官网申请）。
+4. 运行resource/db/db_create.sql，创建基础数据库。
+5. 运行项目，查看本地数据库是否成功生成数据表。
+6. 运行项目下的init_data.sql脚本插入初始化数据。
 
-- 首先将代码clone到您的本地，使用集成开发工具打开项目，如idea。
-- 配置本地开发环境，要求使用jdk11，数据库使用mysql8，redis。
-- 环境配置完成后修改配置文件，包括数据库配置（账号密码）、redis配置、邮箱账号密码配置（如没有请去对应邮箱官网申请）。
-- 运行resource/db/db_create.sql，创建基础数据库。
-- 运行项目，查看本地数据库是否成功生成数据表。
-- 运行项目下的init_data.sql脚本插入初始化数据。
+## 项目演示
 
-### 2. 客户端
+后台管理客户端：https://www.mushanyu.xyz
 
-可以百度搜搜uniapp开发小程序步骤，以及需要的工具。
+登录账号：202300001，密码：123456
 
-- Hbuildx
+小程序客户端界面预览：
 
-- 微信开发者工具
+![image-20241122142648511](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20241122142648511.png)
 
-### 3. 管理端
+![image-20241122142726997](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20241122142726997.png)
 
-- 将代码clone到本地。
-- `npm install`
+![image-20241122142758062](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20241122142758062.png)
 
 ## 部署说明
 
-前后端项目提供完整dockerfile构建应用镜像
+前后端项目提供完整dockerfile构建应用镜像，您也可以参考提供的Jenkfile构建自己的流水线。
 
 ## 开源协议
 
@@ -80,8 +74,6 @@
 
 ## 联系方式
 
-QQ交流群
+QQ交流群：811043258
 
-![image-20240226155137983](https://mushanyu-note.oss-cn-beijing.aliyuncs.com/mk-image/image-20240226155137983.png)
-
-微信交流：@MuShanYu：wx：wxid_f5ayc9d2mken22
+作者微信：@MuShanYu：wx：wxid_f5ayc9d2mken22

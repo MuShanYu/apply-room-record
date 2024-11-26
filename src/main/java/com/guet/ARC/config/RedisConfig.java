@@ -3,6 +3,11 @@ package com.guet.ARC.config;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.codec.JsonJacksonCodec;
+import org.redisson.config.Config;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +22,16 @@ import java.net.UnknownHostException;
 @Configuration
 @EnableCaching
 public class RedisConfig {
+
+    @Value("${spring.redis.host}")
+    private String host;
+
+    @Value("${spring.redis.port}")
+    private String port;
+
+    @Value("${spring.redis.password}")
+    private String password;
+
     @Bean
     @SuppressWarnings("all")
     public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory) throws UnknownHostException {
@@ -51,6 +66,7 @@ public class RedisConfig {
         return template;
     }
 
+    // 用于监听key过期事件
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory factory) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
@@ -59,5 +75,15 @@ public class RedisConfig {
         //  container.setErrorHandler(null);            // 设置监听器方法执行过程中出现异常的处理器
         //  container.addMessageListener(null, null);   // 手动设置监听器 & 监听的 topic 表达式
         return container;
+    }
+
+    @Bean(value = "redissonClient", destroyMethod = "shutdown")
+    public RedissonClient redissonClient() {
+        Config config = new Config();
+        config.useSingleServer().setAddress(String.format("redis://%s:%s", host, port));
+        config.useSingleServer().setDatabase(0);
+        config.useSingleServer().setPassword(password);
+        config.setCodec(new JsonJacksonCodec());
+        return Redisson.create(config);
     }
 }
