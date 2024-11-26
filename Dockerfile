@@ -1,6 +1,9 @@
 # 使用一个轻量级的 Java 基础镜像
 FROM eclipse-temurin:17-alpine
 
+# 服务器在北京+8
+RUN apk add tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai > /etc/timezone
+
 # 设定工作目录
 WORKDIR /app
 
