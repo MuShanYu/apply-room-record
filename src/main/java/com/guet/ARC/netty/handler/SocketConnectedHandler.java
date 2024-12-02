@@ -30,15 +30,12 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<TextWebS
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) {
-        log.info("收到用户消息：{}", msg.text());
         if (msg.text().equalsIgnoreCase("ping")) {
             ctx.writeAndFlush(new TextWebSocketFrame("pong"));
         }
         // 这里可以考虑使用不同的manager处理不同type的消息，将功能解耦
         if (StrUtil.isNotEmpty(msg.text()) && !"ping".equalsIgnoreCase(msg.text())) {
             UserOnlineManager.addChannel(ctx.channel(), msg.text());
-            log.info("用户连接成功：{}", msg.text());
-            log.info("连接channel  {}", ctx.channel());
             JSONObject jsonObject = JSON.parseObject(msg.text());
             String type = jsonObject.getString("type");
             // 用户第一次进入app，发送的设备信息，通知其他监听的用户

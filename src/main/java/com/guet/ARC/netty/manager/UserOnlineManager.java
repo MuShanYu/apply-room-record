@@ -41,11 +41,7 @@ public class UserOnlineManager {
         channelToSource.put(channel, source);
         List<String> sources = userIdToSources.getOrDefault(userId, new ArrayList<>());
         sources.add(source);
-
-//        log.info("连接设备{}", sources);
         userIdToSources.put(userId, sources);
-        log.info("本次channel: {}", channel);
-        log.info("userIdToSources size: {}, content: {}", userIdToSources.size(), userIdToSources);
     }
 
     public static void removeChannel(Channel channel) {

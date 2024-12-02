@@ -40,7 +40,6 @@ public class UserAuthHandler extends SimpleChannelInboundHandler<FullHttpRequest
             ctx.channel().close();
             return;
         }
-        log.info("UserAuthHandler userId: {}, platform: {}", userId, platform);
         // 信息记录流转到业务逻辑中
         ctx.channel().attr(AttributeKey.valueOf("userId")).set(userId);
         ctx.channel().attr(AttributeKey.valueOf("platform")).set(platform);
