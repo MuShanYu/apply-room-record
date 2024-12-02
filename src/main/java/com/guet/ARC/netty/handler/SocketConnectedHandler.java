@@ -29,7 +29,7 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<TextWebS
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) {
-        log.info("收到用户消息：{}", msg);
+        log.info("收到用户消息：{}", msg.text());
         if (msg.text().equalsIgnoreCase("ping")) {
             ctx.writeAndFlush(new TextWebSocketFrame("pong"));
         }
