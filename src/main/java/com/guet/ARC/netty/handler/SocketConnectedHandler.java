@@ -37,6 +37,7 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<TextWebS
         if (StrUtil.isNotEmpty(msg.text()) && !"ping".equalsIgnoreCase(msg.text())) {
             UserOnlineManager.addChannel(ctx.channel(), msg.text());
             log.info("用户连接成功：{}", msg.text());
+            log.info("连接channel  {}", ctx.channel());
             JSONObject jsonObject = JSON.parseObject(msg.text());
             String type = jsonObject.getString("type");
             // 用户第一次进入app，发送的设备信息，通知其他监听的用户
