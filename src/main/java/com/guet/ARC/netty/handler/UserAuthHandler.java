@@ -3,10 +3,14 @@ package com.guet.ARC.netty.handler;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.net.url.UrlQuery;
 import cn.hutool.core.util.StrUtil;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +29,12 @@ public class UserAuthHandler extends SimpleChannelInboundHandler<FullHttpRequest
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
+        if (!"websocket".equalsIgnoreCase(msg.headers().get(HttpHeaderNames.UPGRADE))) {
+            FullHttpResponse response = new DefaultFullHttpResponse(
+                    HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
+            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+            return;
+        }
         String token = String.valueOf(UrlQuery.of(msg.uri(), Charset.defaultCharset()).get("token"));
         String platform = String.valueOf(UrlQuery.of(msg.uri(), Charset.defaultCharset()).get("platform"));
         // 是否是授权访问socket
@@ -48,7 +58,6 @@ public class UserAuthHandler extends SimpleChannelInboundHandler<FullHttpRequest
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.info("UserAuthHandler exceptionCaught: {}", cause.getMessage());
         super.exceptionCaught(ctx, cause);
     }
 
