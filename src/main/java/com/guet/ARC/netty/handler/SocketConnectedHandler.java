@@ -52,16 +52,16 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<TextWebS
         }
     }
 
-    /**
-     * 握手成功后，钩子回调函数，WebSocketServerProtocolHandler会传播两次该事件
-     */
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (ctx.pipeline().get(UserAuthHandler.class) != null) {
-            ctx.pipeline().remove(UserAuthHandler.class);
-        }
-        super.userEventTriggered(ctx, evt);
-    }
+//    /**
+//     * 握手成功后，钩子回调函数，WebSocketServerProtocolHandler会传播两次该事件
+//     */
+//    @Override
+//    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+//        if (ctx.pipeline().get(UserAuthHandler.class) != null) {
+//            ctx.pipeline().remove(UserAuthHandler.class);
+//        }
+//        super.userEventTriggered(ctx, evt);
+//    }
 
 
     @Override
