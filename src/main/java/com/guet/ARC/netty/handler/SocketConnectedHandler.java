@@ -50,21 +50,6 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<TextWebS
         }
     }
 
-    /**
-     * 握手成功后，钩子回调函数，WebSocketServerProtocolHandler会传播两次该事件
-     */
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (evt instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
-            // WebSocket握手完成事件
-            if (ctx.pipeline().get(UserAuthHandler.class) != null) {
-                ctx.pipeline().remove(UserAuthHandler.class);
-            }
-        }
-        super.userEventTriggered(ctx, evt);
-    }
-
-
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) {
 //        log.info("用户断开连接：{}", ctx.channel().attr(AttributeKey.valueOf("userId")).get());
