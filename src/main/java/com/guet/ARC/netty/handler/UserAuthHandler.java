@@ -29,12 +29,6 @@ public class UserAuthHandler extends SimpleChannelInboundHandler<FullHttpRequest
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) {
-        if (!"websocket".equalsIgnoreCase(msg.headers().get(HttpHeaderNames.UPGRADE))) {
-            FullHttpResponse response = new DefaultFullHttpResponse(
-                    HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
-            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-            return;
-        }
         String token = String.valueOf(UrlQuery.of(msg.uri(), Charset.defaultCharset()).get("token"));
         String platform = String.valueOf(UrlQuery.of(msg.uri(), Charset.defaultCharset()).get("platform"));
         // 是否是授权访问socket

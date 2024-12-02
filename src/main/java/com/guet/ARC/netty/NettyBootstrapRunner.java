@@ -2,6 +2,7 @@ package com.guet.ARC.netty;
 
 import cn.hutool.core.io.resource.ClassPathResource;
 import com.guet.ARC.ApplyRoomRecordConfig;
+import com.guet.ARC.netty.handler.HttpRequestCheckHandler;
 import com.guet.ARC.netty.handler.SocketConnectedHandler;
 import com.guet.ARC.netty.handler.UserAuthHandler;
 import io.netty.bootstrap.ServerBootstrap;
@@ -71,6 +72,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     ChannelPipeline pipeline = socketChannel.pipeline();
                     addSslHandler(pipeline, socketChannel, globalConfig);
+                    pipeline.addLast(new HttpRequestCheckHandler());
                     pipeline.addLast(new HttpServerCodec());//请求解码器
                     pipeline.addLast(new HttpObjectAggregator(65536));//将多个消息转换成单一的消息对象
                     pipeline.addLast(new ChunkedWriteHandler());//支持异步发送大的码流，一般用于发送文件流
