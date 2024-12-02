@@ -10,6 +10,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.ssl.NotSslRecordException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -52,16 +53,19 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<TextWebS
         }
     }
 
-//    /**
-//     * 握手成功后，钩子回调函数，WebSocketServerProtocolHandler会传播两次该事件
-//     */
-//    @Override
-//    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-//        if (ctx.pipeline().get(UserAuthHandler.class) != null) {
-//            ctx.pipeline().remove(UserAuthHandler.class);
-//        }
-//        super.userEventTriggered(ctx, evt);
-//    }
+    /**
+     * 握手成功后，钩子回调函数，WebSocketServerProtocolHandler会传播两次该事件
+     */
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
+            // WebSocket握手完成事件
+            if (ctx.pipeline().get(UserAuthHandler.class) != null) {
+                ctx.pipeline().remove(UserAuthHandler.class);
+            }
+        }
+        super.userEventTriggered(ctx, evt);
+    }
 
 
     @Override
