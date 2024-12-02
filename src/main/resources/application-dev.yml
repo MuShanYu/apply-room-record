@@ -9,7 +9,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/apply_room_record?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=UTC
     username: root
-    password: 123456
+    password: root
     hikari:
       maximum-pool-size: 10
       max-lifetime: 180000
@@ -81,3 +81,16 @@ sa-token:
 mybatis:
   configuration:
     default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
+
+# netty自定义配置相关
+netty:
+  websocket:
+    # Websocket服务端口
+    port: 9500
+    #两个文件请放在resource目录下
+    # ssl配置相关
+    pemFile: x.pem
+    # ssl配置相关
+    keyFile: x.key
+    # url路径
+    url: ws://127.0.0.1:9500/websocket
