@@ -44,6 +44,7 @@ public class UserOnlineManager {
 
 //        log.info("连接设备{}", sources);
         userIdToSources.put(userId, sources);
+        log.info("本次channel: {}", channel);
         log.info("userIdToSources size: {}, content: {}", userIdToSources.size(), userIdToSources);
     }
 
