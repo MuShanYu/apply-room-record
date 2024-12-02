@@ -10,7 +10,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.ssl.NotSslRecordException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -35,13 +34,13 @@ public class SocketConnectedHandler extends SimpleChannelInboundHandler<TextWebS
         }
         // 这里可以考虑使用不同的manager处理不同type的消息，将功能解耦
         if (StrUtil.isNotEmpty(msg.text()) && !"ping".equalsIgnoreCase(msg.text())) {
-            UserOnlineManager.addChannel(ctx.channel(), msg.text());
             JSONObject jsonObject = JSON.parseObject(msg.text());
             String type = jsonObject.getString("type");
             // 用户第一次进入app，发送的设备信息，通知其他监听的用户
             if (type.equals(SocketMsgType.DEVICE.getType())) {
                 // 告知当前设备消息发送成功
                 ctx.writeAndFlush(new TextWebSocketFrame("ok"));
+                UserOnlineManager.addChannel(ctx.channel(), msg.text());
                 UserOnlineManager.broadCastToOnlineUser();
             } else {
                 // 用户发送的消息，通知对应的用户，如果在线的话
