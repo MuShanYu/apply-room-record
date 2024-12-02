@@ -28,8 +28,7 @@ public class HttpRequestCheckHandler extends SimpleChannelInboundHandler<FullHtt
         }
         // 非websocket请求直接关闭连接
         if (!"websocket".equalsIgnoreCase(msg.headers().get(HttpHeaderNames.UPGRADE))) {
-            FullHttpResponse response = new DefaultFullHttpResponse(
-                    HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
+            ctx.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST));
             ctx.close();
             return;
         }
