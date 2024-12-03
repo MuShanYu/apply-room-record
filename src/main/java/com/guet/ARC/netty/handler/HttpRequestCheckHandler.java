@@ -17,7 +17,6 @@ import java.util.List;
  * Date 2024/12/2
  * 检查是否是明文 HTTP 请求，如果是则返回错误页面，主要用于防止爬虫
  */
-@ChannelHandler.Sharable
 @Component
 @Slf4j
 public class HttpRequestCheckHandler extends ByteToMessageDecoder {
