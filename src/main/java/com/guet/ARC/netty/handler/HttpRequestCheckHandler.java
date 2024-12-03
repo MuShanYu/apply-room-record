@@ -19,6 +19,7 @@ import java.util.List;
  */
 @Component
 @Slf4j
+@ChannelHandler.Sharable
 public class HttpRequestCheckHandler extends ByteToMessageDecoder {
 
     @Override
