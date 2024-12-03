@@ -72,7 +72,6 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     ChannelPipeline pipeline = socketChannel.pipeline();
                     addSslHandler(pipeline, socketChannel, globalConfig);
-                    pipeline.addLast(new HttpRequestCheckHandler());
                     pipeline.addLast(new HttpServerCodec());//请求解码器
                     pipeline.addLast(new HttpObjectAggregator(65536));//将多个消息转换成单一的消息对象
                     pipeline.addLast(new ChunkedWriteHandler());//支持异步发送大的码流，一般用于发送文件流
@@ -110,6 +109,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                 ClassPathResource pem = new ClassPathResource(pemFile);
                 ClassPathResource key = new ClassPathResource(keyFile);
                 SslContext sslCtx = SslContextBuilder.forServer(pem.getStream(), key.getStream()).build();
+                pipeline.addLast(new HttpRequestCheckHandler());
                 pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));  // 添加 SSL 处理
             } catch (SSLException e) {
                 throw new RuntimeException(e);
