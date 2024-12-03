@@ -109,7 +109,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                 ClassPathResource pem = new ClassPathResource(pemFile);
                 ClassPathResource key = new ClassPathResource(keyFile);
                 SslContext sslCtx = SslContextBuilder.forServer(pem.getStream(), key.getStream()).build();
-                pipeline.addLast(applicationContext.getBean(HttpRequestCheckHandler.class));
+                pipeline.addLast(new HttpRequestCheckHandler());
                 pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));  // 添加 SSL 处理
             } catch (SSLException e) {
                 throw new RuntimeException(e);
