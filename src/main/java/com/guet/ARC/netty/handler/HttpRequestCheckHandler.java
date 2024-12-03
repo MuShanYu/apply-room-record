@@ -44,7 +44,7 @@ public class HttpRequestCheckHandler extends ByteToMessageDecoder {
         // 构造 HTTP 响应
         String htmlPage = "<html><body><h1>非法请求</h1>" +
                 "<p>请使用 HTTPS 访问此服务。</p>" +
-                "<p>链接：<a href=\"https://ip:9500/\">https://ip:9500/</a></p>" +
+                "<p>关闭连接</p>" +
                 "</body></html>";
 
         String response = "HTTP/1.1 400 Bad Request\r\n" +
