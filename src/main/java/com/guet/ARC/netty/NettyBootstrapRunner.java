@@ -76,7 +76,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                     pipeline.addLast(new HttpObjectAggregator(65536));//将多个消息转换成单一的消息对象
                     pipeline.addLast(new ChunkedWriteHandler());//支持异步发送大的码流，一般用于发送文件流
                     pipeline.addLast(new WebSocketServerCompressionHandler());//压缩处理
-                    pipeline.addLast(new UserAuthHandler());// 用户认证处理
+                    pipeline.addLast(applicationContext.getBean(UserAuthHandler.class));// 用户认证处理
                     // 参数配置请百度
                     pipeline.addLast(new WebSocketServerProtocolHandler("/websocket", null, true, 16384, false, true, 60000L));//websocket协议处理
                     pipeline.addLast(applicationContext.getBean(SocketConnectedHandler.class)); // 自定义处理器，处理消息发送与在线统计
@@ -109,7 +109,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                 ClassPathResource pem = new ClassPathResource(pemFile);
                 ClassPathResource key = new ClassPathResource(keyFile);
                 SslContext sslCtx = SslContextBuilder.forServer(pem.getStream(), key.getStream()).build();
-                pipeline.addLast(new HttpRequestCheckHandler());
+                pipeline.addLast(applicationContext.getBean(HttpRequestCheckHandler.class));
                 pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));  // 添加 SSL 处理
             } catch (SSLException e) {
                 throw new RuntimeException(e);
