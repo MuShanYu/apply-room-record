@@ -23,20 +23,27 @@ public class HttpRequestCheckHandler extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        log.info("Readable bytes: {}", in.readableBytes());
         if (in.readableBytes() < 5) {
-            return; // 保证有足够数据判断协议
+            log.warn("Insufficient data to process, readableBytes={}", in.readableBytes());
+            return; // 等待更多数据
         }
         in.markReaderIndex();
-        byte[] bytes = new byte[5];
-        in.readBytes(bytes);
-        in.resetReaderIndex();
+        try {
+            byte[] bytes = new byte[5];
+            in.readBytes(bytes);
+            String data = new String(bytes, StandardCharsets.US_ASCII);
+            log.info("Decoded data: {}", data);
+            in.resetReaderIndex();
 
-        // 检查是否是明文 HTTP 请求
-        String data = new String(bytes, StandardCharsets.US_ASCII);
-        if (data.startsWith("GET") || data.startsWith("POST") || data.startsWith("HEAD")) {
-            sendFeedbackPage(ctx);
-        } else {
-            ctx.fireChannelRead(in.retain()); // 非明文请求，继续处理
+            if (data.startsWith("GET") || data.startsWith("POST") || data.startsWith("HEAD")) {
+                sendFeedbackPage(ctx);
+            } else {
+                ctx.fireChannelRead(in.retain());
+            }
+        } catch (Exception e) {
+            log.error("Exception in decode: {}", e.getMessage(), e);
+            ctx.close();
         }
     }
 
