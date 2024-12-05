@@ -10,9 +10,13 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -109,7 +113,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                 ClassPathResource pem = new ClassPathResource(pemFile);
                 ClassPathResource key = new ClassPathResource(keyFile);
                 SslContext sslCtx = SslContextBuilder.forServer(pem.getStream(), key.getStream()).build();
-                pipeline.addLast(new HttpRequestCheckHandler());
+//                pipeline.addLast(new HttpRequestCheckHandler());
                 pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));  // 添加 SSL 处理
             } catch (SSLException e) {
                 throw new RuntimeException(e);
