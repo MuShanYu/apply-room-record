@@ -23,12 +23,22 @@ public class HttpRequestCheckHandler extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        log.info("Readable bytes: {}", in.readableBytes());
+        log.debug("Readable bytes: {}", in.readableBytes());
+
         if (in.readableBytes() < 5) {
-            log.warn("Insufficient data to process, readableBytes={}", in.readableBytes());
-            return; // 等待更多数据
+            log.debug("Data insufficient, waiting for more bytes");
+            return;
         }
         in.markReaderIndex();
+        byte firstByte = in.getByte(0); // 检查第一个字节
+
+        // 判断是否为 TLS 握手数据
+        if (firstByte == 0x16) {
+            log.debug("Detected TLS handshake data, passing to next handler");
+            ctx.fireChannelRead(in.retain());
+            return;
+        }
+
         try {
             byte[] bytes = new byte[5];
             in.readBytes(bytes);
