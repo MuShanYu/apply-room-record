@@ -4,11 +4,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.CharsetUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 /**
  * @author Yulf
  * Date 2024/12/6
  */
+@Component
+@Slf4j
 public class ProtocolDetectorHandler extends SimpleChannelInboundHandler<ByteBuf> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
@@ -28,7 +32,7 @@ public class ProtocolDetectorHandler extends SimpleChannelInboundHandler<ByteBuf
             String errorResponse = "HTTP/1.1 400 Bad Request\r\n" +
                     "Content-Type: text/plain\r\n" +
                     "Content-Length: 29\r\n\r\n" +
-                    "Bad Request";
+                    "Bad Request. Code: 400\n";
             ctx.writeAndFlush(ctx.alloc().buffer().writeBytes(errorResponse.getBytes(CharsetUtil.UTF_8)))
                     .addListener(future -> ctx.close());
         } else if (isSslTlsHandshake(firstBytes[0])) {
