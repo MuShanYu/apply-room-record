@@ -34,7 +34,7 @@ public class ProtocolDetectorHandler extends SimpleChannelInboundHandler<ByteBuf
         } else if (isSslTlsHandshake(firstBytes[0])) {
             // 如果是 SSL/TLS 流量，移除协议检测器并将消息交给 SslHandler 处理
             ctx.pipeline().remove(this); // 移除协议检测器
-            ctx.fireChannelRead(msg);     // 将消息继续传递给后续处理器（例如 SslHandler）
+            ctx.fireChannelRead(msg.retain());     // 将消息继续传递给后续处理器（例如 SslHandler）
         } else {
             // 如果是未知协议流量，关闭连接
             ctx.close();
