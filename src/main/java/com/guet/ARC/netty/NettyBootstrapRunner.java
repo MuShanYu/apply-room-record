@@ -2,7 +2,7 @@ package com.guet.ARC.netty;
 
 import cn.hutool.core.io.resource.ClassPathResource;
 import com.guet.ARC.ApplyRoomRecordConfig;
-import com.guet.ARC.netty.handler.HttpRequestCheckHandler;
+import com.guet.ARC.netty.handler.ProtocolDetectorHandler;
 import com.guet.ARC.netty.handler.SocketConnectedHandler;
 import com.guet.ARC.netty.handler.UserAuthHandler;
 import io.netty.bootstrap.ServerBootstrap;
@@ -10,13 +10,9 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -112,8 +108,10 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
             try {
                 ClassPathResource pem = new ClassPathResource(pemFile);
                 ClassPathResource key = new ClassPathResource(keyFile);
-                SslContext sslCtx = SslContextBuilder.forServer(pem.getStream(), key.getStream()).build();
-//                pipeline.addLast(new HttpRequestCheckHandler());
+                SslContext sslCtx = SslContextBuilder
+                        .forServer(pem.getStream(), key.getStream())
+                        .build();
+                pipeline.addLast(applicationContext.getBean(ProtocolDetectorHandler.class)); // 添加协议检测器, 用于非法流量拦截
                 pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));  // 添加 SSL 处理
             } catch (SSLException e) {
                 throw new RuntimeException(e);
