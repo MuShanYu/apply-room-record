@@ -1,6 +1,5 @@
 package com.guet.ARC.netty.handler;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.guet.ARC.common.enmu.SocketMsgType;
@@ -25,27 +24,22 @@ import java.io.IOException;
 @ChannelHandler.Sharable
 @Component
 @Slf4j
-public class SocketConnectedHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
+public class UserMessageHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) {
-        if (msg.text().equalsIgnoreCase("ping")) {
-            ctx.writeAndFlush(new TextWebSocketFrame("pong"));
-        }
         // 这里可以考虑使用不同的manager处理不同type的消息，将功能解耦
-        if (StrUtil.isNotEmpty(msg.text()) && !"ping".equalsIgnoreCase(msg.text())) {
-            JSONObject jsonObject = JSON.parseObject(msg.text());
-            String type = jsonObject.getString("type");
-            // 用户第一次进入app，发送的设备信息，通知其他监听的用户
-            if (type.equals(SocketMsgType.DEVICE.getType())) {
-                // 告知当前设备消息发送成功
-                ctx.writeAndFlush(new TextWebSocketFrame("ok"));
-                UserOnlineManager.addChannel(ctx.channel(), msg.text());
-                UserOnlineManager.broadCastToOnlineUser();
-            } else {
-                // 用户发送的消息，通知对应的用户，如果在线的话
-                UserOnlineManager.sendMessage(msg.text(), jsonObject.getString("toUserId"));
-            }
+        JSONObject jsonObject = JSON.parseObject(msg.text());
+        String type = jsonObject.getString("type");
+        // 用户第一次进入app，发送的设备信息，通知其他监听的用户
+        if (type.equals(SocketMsgType.DEVICE.getType())) {
+            // 告知当前设备消息发送成功
+            ctx.writeAndFlush(new TextWebSocketFrame("ok"));
+            UserOnlineManager.addChannel(ctx.channel(), msg.text());
+            UserOnlineManager.broadCastToOnlineUser();
+        } else {
+            // 用户发送的消息，通知对应的用户，如果在线的话
+            UserOnlineManager.sendMessage(msg.text(), jsonObject.getString("toUserId"));
         }
     }
 

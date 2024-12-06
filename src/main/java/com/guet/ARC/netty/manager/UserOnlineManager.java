@@ -96,6 +96,9 @@ public class UserOnlineManager {
     }
 
     public static void sendMessage(String message, String toUserId) {
+        if (StrUtil.isEmpty(toUserId)) {
+            return;
+        }
         Channel channel = userIdToChannel.get(toUserId);
         if (channel != null && StrUtil.isNotEmpty(toUserId) && StrUtil.isNotEmpty(message)) {
             if (channel.isActive() && channel.isOpen() && channel.isWritable() && channel.isRegistered()) {

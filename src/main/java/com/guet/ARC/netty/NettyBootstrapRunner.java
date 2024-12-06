@@ -2,8 +2,9 @@ package com.guet.ARC.netty;
 
 import cn.hutool.core.io.resource.ClassPathResource;
 import com.guet.ARC.ApplyRoomRecordConfig;
+import com.guet.ARC.netty.handler.HeartBeatCheckHandler;
 import com.guet.ARC.netty.handler.ProtocolDetectorHandler;
-import com.guet.ARC.netty.handler.SocketConnectedHandler;
+import com.guet.ARC.netty.handler.UserMessageHandler;
 import com.guet.ARC.netty.handler.UserAuthHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -16,6 +17,7 @@ import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketSe
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Component;
 
 import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Yulf
@@ -57,7 +60,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
     }
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         // 使用自签名证书进行 SSL 配置
         ApplyRoomRecordConfig globalConfig = applicationContext.getBean(ApplyRoomRecordConfig.class);
         EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -79,7 +82,10 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                     pipeline.addLast(applicationContext.getBean(UserAuthHandler.class));// 用户认证处理
                     // 参数配置请百度
                     pipeline.addLast(new WebSocketServerProtocolHandler("/websocket", null, true, 16384, false, true, 60000L));//websocket协议处理
-                    pipeline.addLast(applicationContext.getBean(SocketConnectedHandler.class)); // 自定义处理器，处理消息发送与在线统计
+                    // 心跳检测，客户端心跳间隔5s，如果读写空闲事件超过10s，调用userEventTriggered，10s内没有收到心跳消息则关闭连接
+                    pipeline.addLast(new IdleStateHandler(10, 0, 0, TimeUnit.SECONDS));
+                    pipeline.addLast(applicationContext.getBean(HeartBeatCheckHandler.class)); // 心跳检测处理
+                    pipeline.addLast(applicationContext.getBean(UserMessageHandler.class)); // 自定义处理器，处理消息发送与在线统计
                 }
             });
             serverChannel = serverBootstrap.bind().sync().channel();
