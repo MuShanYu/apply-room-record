@@ -111,7 +111,7 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                 SslContext sslCtx = SslContextBuilder
                         .forServer(pem.getStream(), key.getStream())
                         .build();
-                pipeline.addLast(applicationContext.getBean(ProtocolDetectorHandler.class)); // 添加协议检测器, 用于非法流量拦截
+                pipeline.addLast(new ProtocolDetectorHandler()); // 添加协议检测器, 用于非法流量拦截
                 pipeline.addLast(sslCtx.newHandler(socketChannel.alloc()));  // 添加 SSL 处理
             } catch (SSLException e) {
                 throw new RuntimeException(e);
