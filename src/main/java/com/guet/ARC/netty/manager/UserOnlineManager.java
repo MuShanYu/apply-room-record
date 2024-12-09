@@ -25,7 +25,7 @@ public class UserOnlineManager {
 
     private static final AttributeKey<String> USER_ID_KEY = AttributeKey.valueOf("userId");
 
-    private static final AttributeKey<String> PLATFORM_KEY = AttributeKey.valueOf("userId");
+    private static final AttributeKey<String> PLATFORM_KEY = AttributeKey.valueOf("platform");
 
     private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
