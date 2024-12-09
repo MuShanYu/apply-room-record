@@ -67,6 +67,8 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
+            // 开启长连接
+            serverBootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
             serverBootstrap.group(bossGroup, workerGroup);
             serverBootstrap.channel(NioServerSocketChannel.class);
             serverBootstrap.localAddress(new InetSocketAddress(port));
@@ -82,8 +84,8 @@ public class NettyBootstrapRunner implements ApplicationRunner, ApplicationListe
                     pipeline.addLast(applicationContext.getBean(UserAuthHandler.class));// 用户认证处理
                     // 参数配置请百度
                     pipeline.addLast(new WebSocketServerProtocolHandler("/websocket", null, true, 16384, false, true, 60000L));//websocket协议处理
-                    // 心跳检测，客户端心跳间隔5s，如果读写空闲事件超过10s，调用userEventTriggered，10s内没有收到心跳消息则关闭连接
-                    pipeline.addLast(new IdleStateHandler(10, 0, 0, TimeUnit.SECONDS));
+                    // 心跳检测，客户端心跳间隔5s，如果读写空闲事件超过60s，调用userEventTriggered，60s内没有收到心跳消息则关闭连接
+                    pipeline.addLast(new IdleStateHandler(60, 0, 0, TimeUnit.SECONDS));
                     pipeline.addLast(applicationContext.getBean(HeartBeatCheckHandler.class)); // 心跳检测处理
                     pipeline.addLast(applicationContext.getBean(UserMessageHandler.class)); // 自定义处理器，处理消息发送与在线统计
                 }
