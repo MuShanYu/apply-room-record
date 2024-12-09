@@ -95,7 +95,6 @@ public class UserOnlineManager {
 
     public static void sendMessage(String message, String toUserId) {
         if (StrUtil.isEmpty(toUserId) || StrUtil.isEmpty(message)) {
-            log.warn("发送消息失败：toUserId 或 message 为空");
             return;
         }
         Channel channel = userIdToChannel.get(toUserId);
@@ -106,8 +105,6 @@ public class UserOnlineManager {
                 log.warn("发送消息失败，Channel 状态无效，移除用户连接。toUserId: {}", toUserId);
                 removeChannel(channel);
             }
-        } else {
-            log.warn("发送消息失败，找不到对应的 Channel。toUserId: {}", toUserId);
         }
     }
 }
