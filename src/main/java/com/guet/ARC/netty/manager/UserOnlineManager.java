@@ -10,7 +10,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -21,44 +23,43 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Slf4j
 public class UserOnlineManager {
 
-    private static ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
+    private static final AttributeKey<String> USER_ID_KEY = AttributeKey.valueOf("userId");
+
+    private static final AttributeKey<String> PLATFORM_KEY = AttributeKey.valueOf("userId");
+
+    private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
     private static final ConcurrentMap<Channel, String> channelToSource = new ConcurrentHashMap<>();
 
-    private static final ConcurrentMap<String, List<String>> userIdToSources = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, ConcurrentLinkedQueue<String>> userIdToSources = new ConcurrentHashMap<>();
 
     private static final ConcurrentMap<Channel, String> channelToPlatform =  new ConcurrentHashMap<>();
 
     private static final ConcurrentMap<String, Channel> userIdToChannel =  new ConcurrentHashMap<>();
 
     public static void addChannel(Channel channel, String source) {
-        String userId = String.valueOf(channel.attr(AttributeKey.valueOf("userId")).get());
-        String platform = String.valueOf(channel.attr(AttributeKey.valueOf("platform")).get());
-        if (platform.equals("wx") ) {
+        String userId = channel.attr(USER_ID_KEY).get();
+        String platform = channel.attr(PLATFORM_KEY).get();
+        if ("wx".equals(platform)) {
             userIdToChannel.put(userId, channel);
         }
         channelToPlatform.put(channel, platform);
         channelToSource.put(channel, source);
-        List<String> sources = userIdToSources.getOrDefault(userId, new ArrayList<>());
-        sources.add(source);
-        userIdToSources.put(userId, sources);
+        // CopyOnWriteArrayList 线程安全
+        userIdToSources.computeIfAbsent(userId, k -> new ConcurrentLinkedQueue<>()).add(source);
     }
 
     public static void removeChannel(Channel channel) {
+        String userId = channel.attr(USER_ID_KEY).get();
         try {
             lock.writeLock().lock();
-            channel.close();
-            String source = channelToSource.getOrDefault(channel, null);
-            channelToPlatform.remove(channel); // 移除连接平台信息
-            if (StrUtil.isNotEmpty(source)) {
-                String userId = String.valueOf(channel.attr(AttributeKey.valueOf("userId")).get());
-//                log.info("移除用户连接{}", userId);
-                List<String> sources = userIdToSources.getOrDefault(userId, new ArrayList<>());
-                // 删除
-                sources.remove(source);
-                channelToSource.remove(channel);
+            if (channelToSource.containsKey(channel)) { // 避免重复移除
+                channel.close();
+                String source = channelToSource.remove(channel);
+                channelToPlatform.remove(channel);
                 userIdToChannel.remove(userId);
-                // 完全下线
+                ConcurrentLinkedQueue<String> sources = userIdToSources.getOrDefault(userId, new ConcurrentLinkedQueue<>());
+                sources.remove(source);
                 if (sources.isEmpty()) {
                     userIdToSources.remove(userId);
                 }
@@ -66,26 +67,23 @@ public class UserOnlineManager {
         } finally {
             lock.writeLock().unlock();
         }
-
     }
 
-    public static ConcurrentMap<String, List<String>> getOnlineUserIdToSources() {
+    public static ConcurrentMap<String, ConcurrentLinkedQueue<String>> getOnlineUserIdToSources() {
         return userIdToSources;
     }
 
     public static void broadCastToOnlineUser() {
         try {
             lock.readLock().lock();
-            Set<Channel> channels = channelToSource.keySet();
-            for (Channel channel : channels) {
+            for (Channel channel : channelToSource.keySet()) {
                 String platform = channelToPlatform.get(channel);
-                // web管理的需要通知有新用户并展示
                 if ("web".equals(platform)) {
-                    if (channel.isActive() && channel.isOpen() && channel.isWritable() && channel.isRegistered()) {
-//                        log.info("转发给用户{}更新信息", channel.attr(AttributeKey.valueOf("userId")).get());
+                    if (channel.isActive() && channel.isWritable()) {
+                        // 向在线用户发送消息
                         channel.writeAndFlush(new TextWebSocketFrame(IdUtil.fastSimpleUUID()));
                     } else {
-                        //log.info("remove channel: {}", channel.id());
+                        // 异步删除失效的通道
                         removeChannel(channel);
                     }
                 }
@@ -96,17 +94,20 @@ public class UserOnlineManager {
     }
 
     public static void sendMessage(String message, String toUserId) {
-        if (StrUtil.isEmpty(toUserId)) {
+        if (StrUtil.isEmpty(toUserId) || StrUtil.isEmpty(message)) {
+            log.warn("发送消息失败：toUserId 或 message 为空");
             return;
         }
         Channel channel = userIdToChannel.get(toUserId);
-        if (channel != null && StrUtil.isNotEmpty(toUserId) && StrUtil.isNotEmpty(message)) {
-            if (channel.isActive() && channel.isOpen() && channel.isWritable() && channel.isRegistered()) {
-                // 通知接收者
+        if (channel != null) {
+            if (channel.isActive() && channel.isWritable()) {
                 channel.writeAndFlush(new TextWebSocketFrame(message));
             } else {
+                log.warn("发送消息失败，Channel 状态无效，移除用户连接。toUserId: {}", toUserId);
                 removeChannel(channel);
             }
+        } else {
+            log.warn("发送消息失败，找不到对应的 Channel。toUserId: {}", toUserId);
         }
     }
 }

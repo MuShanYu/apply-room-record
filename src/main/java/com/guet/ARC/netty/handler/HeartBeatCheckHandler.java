@@ -38,10 +38,10 @@ public class HeartBeatCheckHandler extends SimpleChannelInboundHandler<TextWebSo
         if (evt instanceof IdleStateEvent) {
             IdleState state = ((IdleStateEvent) evt).state();
             if (state == IdleState.READER_IDLE) {
-                // 服务端10s没有收到客户端的心跳消息了，或者其他消息（用户发送的信息），服务端主动断开连接
-                log.warn("客户端异常退出，60s未收到心跳消息，服务端主动断开连接。userId: {}", ctx.channel().attr(AttributeKey.valueOf("userId")).get());
-                // 可能连接过了，移除信息
-                UserOnlineManager.removeChannel(ctx.channel());
+                if (ctx.channel().isActive()) {
+                    log.warn("客户端异常退出，60s未收到心跳消息，服务端主动断开连接。userId: {}", ctx.channel().attr(AttributeKey.valueOf("userId")).get());
+                    UserOnlineManager.removeChannel(ctx.channel());
+                }
             }
         }
     }

@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.criteria.Predicate;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
@@ -406,7 +407,7 @@ public class UserService {
 
     public List<Map<String, Object>> getOlineUserList() {
         List<Map<String, Object>> res = new ArrayList<>();
-        ConcurrentMap<String, List<String>> onlineUserIdToSources = UserOnlineManager.getOnlineUserIdToSources();
+        ConcurrentMap<String, ConcurrentLinkedQueue<String>> onlineUserIdToSources = UserOnlineManager.getOnlineUserIdToSources();
         for (User user : userRepository.findAllById(onlineUserIdToSources.keySet())) {
             Map<String, Object> beanToMap = BeanUtil.beanToMap(user, "id", "name", "stuNum", "institute");
             beanToMap.put("sources", onlineUserIdToSources.get(user.getId()));
