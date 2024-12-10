@@ -8,11 +8,9 @@ import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -53,8 +51,8 @@ public class UserOnlineManager {
         String userId = channel.attr(USER_ID_KEY).get();
         try {
             lock.writeLock().lock();
+            channel.close();
             if (channelToSource.containsKey(channel)) { // 避免重复移除
-                channel.close();
                 String source = channelToSource.remove(channel);
                 channelToPlatform.remove(channel);
                 userIdToChannel.remove(userId);
