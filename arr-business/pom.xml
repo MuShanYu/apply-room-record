@@ -8,17 +8,10 @@
         <version>${local.project.version}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>arr-web</artifactId>
-    <packaging>jar</packaging>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-        </dependency>
-    </dependencies>
-
+    <artifactId>arr-business</artifactId>
+    <packaging>pom</packaging>
+    <modules>
+        <module>business-api</module>
+        <module>business-service</module>
+    </modules>
 </project>

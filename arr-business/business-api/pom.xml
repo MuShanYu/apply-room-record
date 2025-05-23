@@ -3,13 +3,20 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>top.mushanyu</groupId>
-        <artifactId>apply-room-record</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <artifactId>arr-business</artifactId>
+        <version>${local.project.version}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-
     <artifactId>business-api</artifactId>
     <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>top.mushanyu</groupId>
+            <artifactId>arr-common</artifactId>
+            <version>${local.project.version}</version>
+        </dependency>
+    </dependencies>
 
 
 </project>

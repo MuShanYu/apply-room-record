@@ -6,24 +6,20 @@
         <groupId>top.mushanyu</groupId>
         <artifactId>apply-room-record</artifactId>
         <version>${local.project.version}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>arr-config</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>arr-system</artifactId>
+    <packaging>pom</packaging>
+    <modules>
+        <module>system-api</module>
+        <module>system-service</module>
+    </modules>
 
     <dependencies>
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-aop</artifactId>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>top.mushanyu</groupId>
             <artifactId>arr-common</artifactId>
             <version>${local.project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
         </dependency>
     </dependencies>
 

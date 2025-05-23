@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>top.mushanyu</groupId>
-		<artifactId>apply-room-record</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-		<relativePath>../../pom.xml</relativePath>
+		<artifactId>arr-message</artifactId>
+		<version>${local.project.version}</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>message-service</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
 
 </project>
