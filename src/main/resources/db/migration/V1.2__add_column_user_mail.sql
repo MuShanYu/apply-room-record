@@ -1,1 +1,0 @@
-alter table tbl_user add column `mail` varchar(100) null comment '邮件';

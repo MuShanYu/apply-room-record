@@ -1,1 +1,0 @@
-alter table tbl_user drop column nickname;

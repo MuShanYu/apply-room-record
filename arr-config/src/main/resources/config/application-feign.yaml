@@ -1,0 +1,20 @@
+spring:
+  cloud:
+    openfeign:
+      okhttp:
+        enabled: true
+      httpclient:
+        max-connections: 200
+        max-connections-per-route: 50
+        connection-timeout: 60000
+        connection-timer-repeat: 70000
+      client:
+        config:
+          default:
+            connect-timeout: 60000
+            read-timeout: 60000
+            error-decoder: com.star.sboss.common.feign.FeignExceptionDecoder
+          jaxrs:
+            contract: feign.jaxrs.JAXRSContract
+            connect-timeout: 60000
+            read-timeout: 60000
