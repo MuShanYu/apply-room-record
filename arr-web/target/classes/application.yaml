@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: arr-web
+  profiles:
+    include: feign,flyway,orm,redis,tomcat
