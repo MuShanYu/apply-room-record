@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: message-service
+  profiles:
+    include: feign,flyway,orm,redis,tomcat
+  flyway:
+    table: message_schema_history

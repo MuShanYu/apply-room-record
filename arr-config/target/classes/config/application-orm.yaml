@@ -1,0 +1,60 @@
+spring:
+  transaction:
+    default-timeout: 60000s
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      # 数据库连接超时时间,默认30秒，即30000
+      connection-timeout: 30000
+      # 空闲连接存活最大时间，默认600000（10分钟）
+      idle-timeout: 600000
+      # 此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
+      max-lifetime: 1800000
+      # 连接池最大连接数，默认是10
+      maximum-pool-size: 100
+      # 最小空闲连接数量
+      minimum-idle: 5
+      register-mbeans: false
+  jpa:
+    show-sql: false
+    open-in-view: false
+    generate-ddl: false
+    properties:
+      hibernate:
+        #        generate_statistics: true
+        show_sql: false  # 控制台是否打印sql
+        use_sql_comments: false # 指出是什么操作生成了该语句
+        session:
+          events:
+            log:
+              #              Specifies a duration in milliseconds defining the minimum query execution time that characterizes a "slow" query.
+              LOG_QUERIES_SLOWER_THAN_MS: 30000
+        cache:
+          #          关闭二级缓存
+          use_second_level_cache: false
+          #          关闭查询缓存
+          use_query_cache: false
+        jdbc:
+          batch_size: 1000
+          batch_versioned_data: true
+        order_updates: true
+        order_inserts: true
+
+mybatis:
+  configuration:
+    cache-enabled: false
+    map-underscore-to-camel-case: true
+    # Sets the number of seconds the driver will wait for a response from the database.
+    default-statement-timeout: 60
+    default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
+
+
+pagehelper:
+  helper-dialect: mysql
+  offset-as-page-num: false
+  row-bounds-with-count: false
+  page-size-zero: false
+  reasonable: true
+  support-methods-arguments: true
+  auto-runtime-dialect: false
+  close-conn: true

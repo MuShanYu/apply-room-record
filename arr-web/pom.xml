@@ -5,7 +5,7 @@
     <parent>
         <groupId>top.mushanyu</groupId>
         <artifactId>apply-room-record</artifactId>
-        <version>${local.project.version}</version>
+        <version>1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>arr-web</artifactId>

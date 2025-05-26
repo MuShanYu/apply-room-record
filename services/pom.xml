@@ -1,0 +1,49 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>top.mushanyu</groupId>
+        <artifactId>apply-room-record</artifactId>
+        <version>1.0</version>
+    </parent>
+    <artifactId>services</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>arr-business</module>
+        <module>arr-message</module>
+        <module>arr-system</module>
+    </modules>
+
+    <dependencies>
+        <!--项目通用模块开始-->
+        <dependency>
+            <groupId>top.mushanyu</groupId>
+            <artifactId>arr-common</artifactId>
+            <version>${local.project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>top.mushanyu</groupId>
+            <artifactId>arr-config</artifactId>
+            <version>${local.project.version}</version>
+        </dependency>
+        <!--项目通用模块结束-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

@@ -10,10 +10,8 @@
         <module>arr-common</module>
         <module>arr-web</module>
         <module>arr-config</module>
-        <module>arr-business</module>
-        <module>arr-system</module>
-        <module>arr-message</module>
         <module>dependencies-bom</module>
+        <module>services</module>
     </modules>
     <properties>
         <java.version>17</java.version>

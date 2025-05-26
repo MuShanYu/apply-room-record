@@ -1,5 +1,0 @@
-spring:
-  application:
-    name: system-service
-  profiles:
-    include: feign,flyway,orm,redis,tomcat
