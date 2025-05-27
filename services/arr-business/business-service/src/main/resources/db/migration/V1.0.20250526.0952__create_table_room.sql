@@ -8,7 +8,10 @@ create table room
     equipment_info varchar(512) comment '设备信息',
     capacity       varchar(512)                         not null comment '容量',
     owner_id       bigint                               not null comment '房间所有者id',
-    state          tinyint(2) default 1                 not null,
-    update_time    timestamp  default current_timestamp not null,
-    create_time    timestamp  default current_timestamp not null
+    version        int        default 1                 not null,
+    create_user_id bigint                               not null,
+    update_user_id bigint,
+    update_time    timestamp  default current_timestamp,
+    create_time    timestamp  default current_timestamp not null,
+    server_ip varchar(1024) comment '产生这条数据的服务器ip'
 ) comment '房间';

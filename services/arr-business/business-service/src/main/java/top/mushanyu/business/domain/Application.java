@@ -3,10 +3,9 @@ package top.mushanyu.business.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import top.mushanyu.business.enums.ApplicationState;
 import top.mushanyu.business.enums.ApplicationType;
-import top.mushanyu.common.domain.AbstractModel;
+import top.mushanyu.config.domain.AbstractModel;
 
 @Entity
 @Table(name = "application" )

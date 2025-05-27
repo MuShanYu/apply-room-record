@@ -18,3 +18,5 @@ spring:
             contract: feign.jaxrs.JAXRSContract
             connect-timeout: 60000
             read-timeout: 60000
+            request-interceptors:
+              - top.mushanyu.config.session.filter.SessionConsumerFilter

@@ -2,13 +2,12 @@ package top.mushanyu.business.domain;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import jakarta.persistence.*;
 import top.mushanyu.business.enums.RoomState;
-import top.mushanyu.common.domain.AbstractModel;
+import top.mushanyu.config.domain.AbstractModel;
 
 @Entity
 @Table(name = "tbl_room")

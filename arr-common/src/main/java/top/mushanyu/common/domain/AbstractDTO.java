@@ -15,6 +15,14 @@ public class AbstractDTO {
 
     private Long id;
 
+    private int version;
+
+    private Long createUserId;
+
+    private Long updateUserId;
+
+    private String serverIp;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

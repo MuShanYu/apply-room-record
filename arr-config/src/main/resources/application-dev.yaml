@@ -25,30 +25,17 @@ spring:
             required: true
           ssl:
             enable: true
-# Sa-Token 配置
-sa-token:
-  # token有效期，单位s 默认30天, -1代表永不过期
-  token-name: token
-  # token有效期，单位s 默认30天, -1代表永不过期
-  timeout: 36000
-  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
-  is-concurrent: true
-  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
-  is-share: false
-  # 同一账号的最大登录账号数量
-  maxLoginCount: 6
-  # 每次获取登录状态是否检查已经登录，有些情况可能是前端导致登录信息丢失，后端登录状态任然在保存
-  tokenSessionCheckLogin: false
-  # token风格
-  token-style: tik
-  # 是否输出操作日志
-  is-log: true
 # 项目配置
 arr:
   tomcat-port: ${arr.port.${spring.application.name}}
+  host: localhost
+  url:
+    system-service: ${arr.host}:${arr.port.system-service}
+    message-service: ${arr.host}:${arr.port.message-service}
+    business-service: ${arr.host}:${arr.port.business-service}
   port:
     system-service: 12010
     message-service: 12011
-    business-service: 12022
-    arr-web: 12023
+    business-service: 12012
+    arr-web: 12013
 

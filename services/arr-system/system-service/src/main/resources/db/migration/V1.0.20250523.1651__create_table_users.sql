@@ -7,7 +7,10 @@ create table users
     `mail`      varchar(100)                        not null,
     institute   varchar(128)                        not null,
     `open_id`   varchar(1024),
-    state       tinyint(2) default 1 not null,
-    update_time timestamp default current_timestamp not null,
-    create_time timestamp default current_timestamp not null
+    version        int        default 1                 not null,
+    create_user_id bigint                               not null,
+    update_user_id bigint,
+    update_time    timestamp  default current_timestamp,
+    create_time    timestamp  default current_timestamp not null,
+    server_ip varchar(1024) comment '产生这条数据的服务器ip'
 ) comment '用户表';

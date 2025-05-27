@@ -5,3 +5,5 @@ spring:
     include: feign,flyway,orm,redis,tomcat
   flyway:
     table: message_schema_history
+  main:
+    allow-bean-definition-overriding: true
