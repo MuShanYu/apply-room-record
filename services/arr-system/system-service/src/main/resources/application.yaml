@@ -2,7 +2,7 @@ spring:
   application:
     name: system-service
   profiles:
-    include: feign,flyway,orm,redis,tomcat
+    include: feign,flyway,orm,redis,tomcat,rest
   flyway:
     table: system_schema_history
   main:

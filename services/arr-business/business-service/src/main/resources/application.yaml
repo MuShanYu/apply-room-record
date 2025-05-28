@@ -2,7 +2,7 @@ spring:
   application:
     name: business-service
   profiles:
-    include: feign,flyway,orm,redis,tomcat
+    include: feign,flyway,orm,redis,tomcat,rest
   flyway:
     table: business_schema_history
   main:

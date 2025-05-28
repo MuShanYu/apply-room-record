@@ -13,6 +13,7 @@ spring:
           default:
             connect-timeout: 60000
             read-timeout: 60000
+            logger-level: full
             error-decoder: top.mushanyu.config.feign.FeignExceptionDecoder
           jaxrs:
             contract: feign.jaxrs.JAXRSContract

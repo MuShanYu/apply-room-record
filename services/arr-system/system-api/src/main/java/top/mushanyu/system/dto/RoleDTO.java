@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import top.mushanyu.common.domain.AbstractDTO;
 import top.mushanyu.common.enums.State;
+import top.mushanyu.system.enums.RoleType;
 
 /**
  * @author Yulf
@@ -18,4 +19,6 @@ public class RoleDTO extends AbstractDTO {
     private String des;
 
     private State state;
+
+    private RoleType type;
 }

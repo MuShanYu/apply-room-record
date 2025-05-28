@@ -19,9 +19,10 @@ import top.mushanyu.config.serialize.exception.ThrowableExceptionMapper;
 import top.mushanyu.config.serialize.exception.WebApplicationExceptionMapper;
 import top.mushanyu.config.serialize.jackson.JacksonMapperProvider;
 import top.mushanyu.config.session.filter.SessionProviderFilter;
+import top.mushanyu.system.api.RoleServiceImpl;
 
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "top.mushanyu")
 @EnableJpaRepositories(basePackages = "top.mushanyu.system.dao")
 @EnableFeignClients
 @EntityScan(basePackages = "top.mushanyu.system.domain")
@@ -48,8 +49,8 @@ public class SystemServiceApplication {
 		config.register(WebApplicationExceptionMapper.class);
 		config.register(JacksonMapperProvider.class);
 		config.register(SessionProviderFilter.class);
-		config.packages(false,
-				"top.mushanyu.system.api");
+
+		config.register(RoleServiceImpl.class);
 		return config;
 	}
 

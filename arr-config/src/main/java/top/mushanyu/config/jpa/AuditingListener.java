@@ -22,9 +22,10 @@ public class AuditingListener {
 
         if (target instanceof AbstractModel model) {
             LocalDateTime now = LocalDateTime.now();
-            if (null != AppSession.getUserId()) {
-                model.setCreateUserId(AppSession.getUserId());
-            }
+//            if (null != AppSession.getUserId()) {
+//                model.setCreateUserId(AppSession.getUserId());
+//            }
+            model.setCreateUserId(1L);
             model.setCreateTime(now);
             model.setUpdateTime(now);
             model.setVersion(1);

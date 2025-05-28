@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import top.mushanyu.system.dao.RoleRepository;
 import top.mushanyu.system.dto.RoleDTO;
+import top.mushanyu.system.enums.RoleType;
 import top.mushanyu.system.mapper.RoleMapper;
 
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.List;
  * @author Yulf
  * Date 2025/5/27
  */
-@Service
+@Service("roleService")
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
 
@@ -22,6 +23,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public RoleDTO save(RoleDTO roleDTO) {
+        roleDTO.setType(RoleType.DATA);
         return roleMapper.toDTO(roleRepository.save(roleMapper.toEntity(roleDTO)));
     }
 

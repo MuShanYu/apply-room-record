@@ -6,6 +6,7 @@ import lombok.Setter;
 import jakarta.persistence.*;
 import top.mushanyu.config.domain.AbstractModel;
 import top.mushanyu.common.enums.State;
+import top.mushanyu.system.enums.RoleType;
 
 @Entity
 @Table(name = "role")
@@ -23,4 +24,7 @@ public class Role extends AbstractModel {
 
     @Enumerated(EnumType.ORDINAL)
     private State state;
+
+    @Enumerated(EnumType.ORDINAL)
+    private RoleType type;
 }

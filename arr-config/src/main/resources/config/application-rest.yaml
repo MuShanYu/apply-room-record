@@ -1,0 +1,16 @@
+
+spring:
+  # 文件上传
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  jersey:
+    type: servlet
+    application-path: ${spring.application.name}
+    servlet:
+      load-on-startup: 1
+
+  mvc:
+    servlet:
+      path: /

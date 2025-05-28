@@ -14,6 +14,7 @@ public class FeignExceptionDecoder extends ErrorDecoder.Default {
         Exception e = super.decode(methodKey, response);
         if (e instanceof FeignException fe) {
             String content = fe.contentUTF8();
+            log.error(response.request().url());
             return decodeException(response.status(), content);
         }
         log.error("UnRecognizable Exception", e);

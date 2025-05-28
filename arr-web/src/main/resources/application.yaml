@@ -2,7 +2,7 @@ spring:
   application:
     name: arr-web
   profiles:
-    include: feign,redis,tomcat
+    include: feign,redis,tomcat,rest
   jackson:
     serialization:
       fail-on-empty-beans: false
@@ -18,3 +18,16 @@ spring:
       - org.springframework.boot.autoconfigure.data.jdbc.JdbcRepositoriesAutoConfiguration
   jpa:
     open-in-view: false
+springdoc:
+  api-docs:
+    version: openapi_3_0
+    path: /v3/api-docs
+    groups:
+      enabled: true
+  swagger-ui:
+    path: /arr-web/
+  group-configs:
+    - group: "Message Domain API"
+      packages-to-scan: "top.mushanyu.web.api.message"
+    - group: "System Domain API"
+      packages-to-scan: "top.mushanyu.web.api.system"
