@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>top.mushanyu</groupId>
-        <artifactId>apply-room-record</artifactId>
+        <artifactId>infra-core</artifactId>
         <version>1.0</version>
     </parent>
     <artifactId>arr-common</artifactId>
