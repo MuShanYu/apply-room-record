@@ -2,7 +2,7 @@ package top.mushanyu.business.enums;
 
 import lombok.extern.slf4j.Slf4j;
 /**
- * Author: Yulf
+ * @author: MuShanYu
  * Date: 2023/11/22
  */
 @Slf4j

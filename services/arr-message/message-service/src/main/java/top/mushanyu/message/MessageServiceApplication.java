@@ -1,5 +1,7 @@
 package top.mushanyu.message;
 
+import cn.hutool.core.annotation.AnnotationUtil;
+import cn.hutool.core.util.ClassUtil;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
@@ -13,6 +15,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.stereotype.Service;
 import top.mushanyu.config.serialize.exception.AlertExceptionMapper;
 import top.mushanyu.config.serialize.exception.JacksonExceptionMapper;
 import top.mushanyu.config.serialize.exception.ThrowableExceptionMapper;
@@ -20,10 +23,11 @@ import top.mushanyu.config.serialize.exception.WebApplicationExceptionMapper;
 import top.mushanyu.config.serialize.jackson.JacksonMapperProvider;
 import top.mushanyu.config.session.filter.SessionProviderFilter;
 
-@SpringBootApplication
+import java.util.Set;
+
+@SpringBootApplication(scanBasePackages = "top.mushanyu")
 @EnableJpaRepositories(basePackages = "top.mushanyu.message.dao")
 @EntityScan(basePackages = "top.mushanyu.message.domain")
-@EnableFeignClients
 public class MessageServiceApplication {
 
 	public static void main(String[] args) {
@@ -47,8 +51,12 @@ public class MessageServiceApplication {
 		config.register(WebApplicationExceptionMapper.class);
 		config.register(JacksonMapperProvider.class);
 		config.register(SessionProviderFilter.class);
-		config.packages(false,
-				"top.mushanyu.message.api");
+		Set<Class<?>> jerseyComponent = ClassUtil.scanPackage("top.mushanyu.message.api", clazz -> {
+			return AnnotationUtil.hasAnnotation(clazz, Service.class) &&
+					!clazz.isAnnotation() &&
+					!clazz.isInterface();
+		});
+		config.registerClasses(jerseyComponent);
 		return config;
 	}
 }

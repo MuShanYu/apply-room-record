@@ -7,3 +7,6 @@ spring:
     table: system_schema_history
   main:
     allow-bean-definition-overriding: true
+  jackson:
+    serialization:
+      fail-on-empty-beans: false

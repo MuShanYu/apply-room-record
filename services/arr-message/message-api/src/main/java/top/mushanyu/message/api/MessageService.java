@@ -8,7 +8,7 @@ import top.mushanyu.message.dto.MessageDTO;
 import java.util.List;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/27
  */
 @FeignClient(name = Info.NAME, path = Info.JAX_RS_PATH, url = Info.URL, contextId = Info.CONTEXT_ID, primary = false)

@@ -9,7 +9,7 @@ import top.mushanyu.common.problem.Problem;
 import java.util.List;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/27
  */
 public abstract class BaseExceptionMapper<E extends Throwable> implements ExceptionMapper<E> {

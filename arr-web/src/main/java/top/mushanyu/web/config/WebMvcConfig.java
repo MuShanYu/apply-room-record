@@ -10,7 +10,7 @@ import top.mushanyu.web.config.converter.Jackson2HttpMessageConverter;
 import java.util.List;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/27
  */
 @Configuration

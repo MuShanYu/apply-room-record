@@ -8,7 +8,7 @@ import top.mushanyu.message.dto.MessageDTO;
 import java.util.List;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/27
  */
 @Mapper(config = BeanMapperConf.class)

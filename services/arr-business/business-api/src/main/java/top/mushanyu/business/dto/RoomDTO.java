@@ -1,20 +1,14 @@
-package top.mushanyu.business.domain;
+package top.mushanyu.business.dto;
 
 import lombok.Getter;
 import lombok.Setter;
-
-import jakarta.persistence.*;
 import top.mushanyu.business.enums.RoomState;
-import top.mushanyu.config.domain.AbstractModel;
+import top.mushanyu.common.domain.AbstractDTO;
 
-@Entity
-@Table(name = "tbl_room")
 @Getter
 @Setter
-public class Room extends AbstractModel {
+public class RoomDTO extends AbstractDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String school;
@@ -29,7 +23,6 @@ public class Room extends AbstractModel {
 
     private String capacity;
 
-    @Enumerated(EnumType.ORDINAL)
     private RoomState state;
 
     private Long ownerId;

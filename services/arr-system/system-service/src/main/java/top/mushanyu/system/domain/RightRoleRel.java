@@ -10,7 +10,7 @@ import lombok.Setter;
 import java.util.Objects;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/23
  */
 @Entity

@@ -9,7 +9,7 @@ import top.mushanyu.system.enums.RightClass;
 import top.mushanyu.system.enums.RightType;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/23
  */
 @Entity

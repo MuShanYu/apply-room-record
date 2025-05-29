@@ -1,7 +1,7 @@
 package top.mushanyu.common.exception;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/27
  */
 public interface BaseErrorCode {

@@ -11,7 +11,7 @@ import top.mushanyu.message.dto.MessageDTO;
 import java.util.List;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/27
  */
 @Tag(name = "消息管理")

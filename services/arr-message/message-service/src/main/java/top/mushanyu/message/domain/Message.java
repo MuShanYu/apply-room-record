@@ -8,7 +8,7 @@ import top.mushanyu.common.enums.State;
 import top.mushanyu.message.enums.MessageType;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/26
  */
 @Entity

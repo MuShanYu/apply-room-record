@@ -1,7 +1,7 @@
 package top.mushanyu.common.enums;
 
 /**
- * Author: Yulf
+ * @author: MuShanYu
  * Date: 2023/11/13
  */
 public enum State {

@@ -2,6 +2,8 @@ package top.mushanyu.system.api;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import top.mushanyu.message.api.MessageService;
+import top.mushanyu.message.dto.MessageDTO;
 import top.mushanyu.system.dao.RoleRepository;
 import top.mushanyu.system.dto.RoleDTO;
 import top.mushanyu.system.enums.RoleType;
@@ -10,10 +12,10 @@ import top.mushanyu.system.mapper.RoleMapper;
 import java.util.List;
 
 /**
- * @author Yulf
+ * @author MuShanYu
  * Date 2025/5/27
  */
-@Service("roleService")
+@Service
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
 
@@ -21,9 +23,12 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleMapper roleMapper;
 
+    private final MessageService messageService;
+
     @Override
     public RoleDTO save(RoleDTO roleDTO) {
         roleDTO.setType(RoleType.DATA);
+        List<MessageDTO> all = messageService.findAll();
         return roleMapper.toDTO(roleRepository.save(roleMapper.toEntity(roleDTO)));
     }
 
