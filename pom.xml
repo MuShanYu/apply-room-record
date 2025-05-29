@@ -8,7 +8,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>arr-web</module>
-        <module>dependencies-bom</module>
+        <module>dependencies-pom</module>
         <module>services</module>
         <module>infra-core</module>
     </modules>
@@ -22,7 +22,7 @@
         <dependencies>
             <dependency>
                 <groupId>top.mushanyu</groupId>
-                <artifactId>dependencies-bom</artifactId>
+                <artifactId>dependencies-pom</artifactId>
                 <version>${local.project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
