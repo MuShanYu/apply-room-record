@@ -1,11 +1,13 @@
 package top.mushanyu.web.config.converter;
 
+import cn.hutool.core.date.DateTime;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import top.mushanyu.common.exception.AlertException;
 import top.mushanyu.common.problem.jackson.ProblemModule;
+import top.mushanyu.web.config.serializer.DateTimeSerializer;
 import top.mushanyu.web.config.serializer.LocalDateTimeSerializer;
 
 import java.time.LocalDateTime;
@@ -19,6 +21,7 @@ public class WebObjectMapper extends ObjectMapper {
         JavaTimeModule module = new JavaTimeModule();
 
         module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer());
+        module.addSerializer(DateTime.class, new DateTimeSerializer());
 
         this.registerModule(module);
         this.registerModule(new ProblemModule());

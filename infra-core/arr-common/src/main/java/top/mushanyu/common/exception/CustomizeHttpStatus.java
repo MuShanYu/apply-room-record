@@ -7,7 +7,7 @@ public enum CustomizeHttpStatus implements Response.StatusType {
     /**
      * 业务自定义异常
      */
-    BUSINESS_STATUS(114514, "Business Custom Status");
+    BUSINESS_STATUS(444, "Business Custom Status");
 
     private final int code;
     private final String reason;

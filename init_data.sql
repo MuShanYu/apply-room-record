@@ -190,7 +190,7 @@ CREATE TABLE `tbl_notice`  (
 -- Records of tbl_notice
 -- ----------------------------
 INSERT INTO `tbl_notice` VALUES ('011ef44660404813b8278ecf529db168', 'test2', '这是Test内容，这是test内容，这是一堆废话，这是一堆废话，这是一堆废话。这是Test内容，这是test内容，这是一堆废话，这是一堆废话，这是一堆废话。这是Test内容，这是test内容，这是一堆废话，这是一堆废话，这是一堆废话。这是Test内容，这是test内容，这是一堆废话，这是一堆废话，这是一堆废话。这是Test内容，这是test内容，这是一堆废话，这是一堆废话，这是一堆废话。这是Test内容，这是test内容，这是一堆废话，这是一堆废话，这是一堆废话。这是Test内容，这是test内容，这是一堆', '8e6b34a790c046e5a5b8bbf47ce7c190', 1716535723268, 1716535723268, 1);
-INSERT INTO `tbl_notice` VALUES ('1d962e4f10b54db482490465e0a219da', 'Test', '这是Test内容，这是test内容，这是一堆废话，这是一堆废话，这是一堆废话。', '8e6b34a790c046e5a5b8bbf47ce7c190', 1708655792370, 1708655792370, 1);
+INSERT INTO `tbl_notice` VALUES ('1d962e4f10b54db482490465e0a219da', 'ArrWebTest', '这是Test内容，这是test内容，这是一堆废话，这是一堆废话，这是一堆废话。', '8e6b34a790c046e5a5b8bbf47ce7c190', 1708655792370, 1708655792370, 1);
 
 -- ----------------------------
 -- Table structure for tbl_role

@@ -14,10 +14,10 @@ import java.util.Objects;
 public class UserRoleRel {
 
     @Id
-    private String userId;
+    private Long userId;
 
     @Id
-    private String roleId;
+    private Long roleId;
 
     @Override
     public boolean equals(Object o) {

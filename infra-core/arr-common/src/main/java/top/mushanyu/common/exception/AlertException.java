@@ -21,11 +21,11 @@ import java.util.Map;
  * Date 2025/5/27
  */
 @Slf4j
-@JsonTypeName(AlertException.TYPE_NAME)
+@JsonTypeName("AlertException") // 用于多态序列化/反序列化，jackson直接根据名称还原子类
 @ToString(callSuper = true)
 public class AlertException extends RuntimeException implements Exceptional {
 
-    static final String TYPE_NAME = "http://localhost";
+    static final String TYPE_NAME = "http://localhost/your/code/reference/doc/url";
 
     private static final URI TYPE = URI.create(TYPE_NAME);
 

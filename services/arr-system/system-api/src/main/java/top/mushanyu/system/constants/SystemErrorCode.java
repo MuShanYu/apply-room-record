@@ -1,20 +1,20 @@
-package top.mushanyu.web.constant;
+package top.mushanyu.system.constants;
 
 
 import top.mushanyu.common.exception.BaseErrorCode;
 
-public enum WebErrorCode implements BaseErrorCode {
+public enum SystemErrorCode implements BaseErrorCode {
 
-    UNAUTHORIZED("web_000004", "未授权或授权信息错误"),
-    ROLE_NAME_NULL("web_000003", "角色名称不能为空"),
-    INVALID_PARAMS("web_000002", "无效参数"),
-    UNKNOWN_EXCEPTION("web_000001", "未知异常");
+    // 账号或者密码错误
+    ACCOUNT_OR_PASSWORD_ERROR("system_000003", "账号或者密码错误"),
+    INVALID_PARAMS("system_000002", "无效参数"),
+    UNKNOWN_EXCEPTION("system_000001", "未知异常");
 
 
     private final String errorCode;
     private final String message;
 
-    WebErrorCode(String error, String message) {
+    SystemErrorCode(String error, String message) {
         this.errorCode = error;
         this.message = message;
     }

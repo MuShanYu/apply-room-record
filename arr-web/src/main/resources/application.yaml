@@ -10,8 +10,8 @@ spring:
     allow-bean-definition-overriding: true
   autoconfigure:
     exclude:
-#      - org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration
-#      - com.github.pagehelper.autoconfigure.PageHelperAutoConfiguration
+      #      - org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration
+      #      - com.github.pagehelper.autoconfigure.PageHelperAutoConfiguration
       - org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.JdbcClientAutoConfiguration

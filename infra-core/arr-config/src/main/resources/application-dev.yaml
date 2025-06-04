@@ -38,4 +38,9 @@ arr:
     message-service: 12011
     business-service: 12012
     arr-web: 12013
+arr-web:
+  common:
+    jwt-secret: 3aa7bc0a-eaee-4649-bd88-32abaa830328
+    jwt-expire-time: 1800 # 单位为秒
+    jwt-refresh-expire-time: 7200 # 单位为秒
 

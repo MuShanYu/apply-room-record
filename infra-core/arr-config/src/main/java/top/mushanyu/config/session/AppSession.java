@@ -1,5 +1,6 @@
 package top.mushanyu.config.session;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -21,14 +22,6 @@ public class AppSession {
         add(APP_USER_ID, userId);
     }
 
-    public static String getUserName() {
-        return convert(get(APP_USER_NAME), Object::toString);
-    }
-
-    public static void setUserName(String userName) {
-        add(APP_USER_NAME, userName);
-    }
-
     public static String getLanguage() {
         return convert(getOrDefault(APP_LAN, "cn"), Object::toString);
     }
@@ -47,7 +40,7 @@ public class AppSession {
 
     public static void putAll(Map<String, Object> maps) {
         for (Map.Entry<String, Object> entry : maps.entrySet()) {
-            if (entry.getKey().startsWith(KEY_PREFIX)) {
+            if (StrUtil.toLoweCase(entry.getKey()).startsWith(KEY_PREFIX)) {
                 SESSION_ATTRIBUTE.get().put(entry.getKey(), entry.getValue());
             }
         }

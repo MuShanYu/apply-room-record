@@ -2,7 +2,6 @@ package top.mushanyu.web.config.exception;
 
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -25,7 +24,7 @@ public class ExceptionHandling {
     }
 
     @ExceptionHandler
-    public ResponseEntity<Problem> handleMsrRuntimeException(AlertException exception) {
+    public ResponseEntity<Problem> handleCustomException(AlertException exception) {
         log.info(exception.getMessage());
         return buildResponseEntity(exception);
     }
@@ -33,7 +32,6 @@ public class ExceptionHandling {
     @ExceptionHandler
     public ResponseEntity<Problem> handleThrowable(Throwable throwable) {
         if (isIllegalArgument(throwable)) {
-            log.info("invalid args, msg: {}", throwable.getMessage());
             return buildResponseEntity(AlertException.of(WebErrorCode.INVALID_PARAMS));
         }
         log.error(throwable.getMessage(), throwable);
@@ -46,7 +44,7 @@ public class ExceptionHandling {
                 .status(problem.getStatus().getStatusCode())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Problem.builder(problem)
-                        .with("traceId", MDC.get("traceId"))
+                        .with("other param", "param value")
                         .build());
     }
 
