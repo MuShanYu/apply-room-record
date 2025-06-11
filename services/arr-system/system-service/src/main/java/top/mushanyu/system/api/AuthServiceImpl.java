@@ -16,20 +16,17 @@ import top.mushanyu.common.exception.AlertException;
 import top.mushanyu.config.ArrCommonConfig;
 import top.mushanyu.config.session.AppSession;
 import top.mushanyu.system.constants.SystemErrorCode;
-import top.mushanyu.system.dao.RightRepository;
-import top.mushanyu.system.dao.RightRoleRelRepository;
-import top.mushanyu.system.dao.UserRepository;
-import top.mushanyu.system.dao.UserRoleRelRepository;
-import top.mushanyu.system.domain.Right;
-import top.mushanyu.system.domain.RightRoleRel;
-import top.mushanyu.system.domain.User;
-import top.mushanyu.system.domain.UserRoleRel;
+import top.mushanyu.system.dao.*;
+import top.mushanyu.system.domain.*;
 import top.mushanyu.system.dto.AuthDTO;
 import top.mushanyu.system.dto.LoginDTO;
+import top.mushanyu.system.dto.UserDTO;
 import top.mushanyu.system.enums.RightType;
+import top.mushanyu.system.mapper.UserMapper;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -44,14 +41,20 @@ public class AuthServiceImpl implements AuthService {
     private final RightRoleRelRepository rightRoleRelRepository;
     private final UserRoleRelRepository userRoleRelRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     private final ArrCommonConfig arrCommonConfig;
+    private final UserMapper userMapper;
 
     @Override
-    public List<String> findCurrentUserActionRights() {
+    public List<String> findCurUserActionRights() {
         List<Long> roleIds = CollStreamUtil.toList(
                 userRoleRelRepository.findByUserId(AppSession.getUserId()),
                 UserRoleRel::getRoleId
+        );
+        roleIds = CollStreamUtil.toList(
+                roleRepository.findByIdInAndState(roleIds, State.ACTIVE),
+                Role::getId
         );
         Set<Long> rightIds = CollStreamUtil.toSet(
                 rightRoleRelRepository.findByRoleIdIn(roleIds),
@@ -80,9 +83,10 @@ public class AuthServiceImpl implements AuthService {
                 .setAudience("web") // 本系统用该字段标识平台
                 .sign(jwtSigner);
         // 签发长期刷新token
+        DateTime refreshExpireIn = DateUtil.offsetSecond(new Date(), arrCommonConfig.getJwtRefreshExpireTime());
         String refreshToken = JWT.create()
                 .setJWTId(IdUtil.fastUUID())
-                .setExpiresAt(DateUtil.offsetSecond(new Date(), arrCommonConfig.getJwtRefreshExpireTime())) // 过期时间
+                .setExpiresAt(refreshExpireIn) // 过期时间
                 .setPayload("userId", user.getId())
                 .setAudience("web-refresh")
                 .sign(jwtSigner);
@@ -90,6 +94,14 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(token)
                 .expiresIn(expiredTime)
                 .refreshToken(refreshToken)
+                .refreshExpiresIn(refreshExpireIn)
                 .build();
+    }
+
+    @Override
+    public UserDTO findCurUserInfo() {
+        return userRepository.findById(AppSession.getUserId())
+                .map(userMapper::toDTO)
+                .orElseThrow(() -> AlertException.of(SystemErrorCode.USER_NOT_EXIST));
     }
 }

@@ -5,6 +5,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.springframework.cloud.openfeign.FeignClient;
 import top.mushanyu.system.dto.AuthDTO;
 import top.mushanyu.system.dto.LoginDTO;
+import top.mushanyu.system.dto.UserDTO;
 import top.mushanyu.system.enums.RightType;
 
 import java.util.List;
@@ -21,7 +22,11 @@ public interface AuthService {
 
     @GET
     @Path("/cur-user-action-rights")
-    List<String> findCurrentUserActionRights();
+    List<String> findCurUserActionRights();
+
+    @GET
+    @Path("/cur-user-info")
+    UserDTO findCurUserInfo();
 
     @POST
     @Path("/login")

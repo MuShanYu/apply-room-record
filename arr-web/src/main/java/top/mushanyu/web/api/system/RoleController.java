@@ -1,14 +1,17 @@
 package top.mushanyu.web.api.system;
 
+import cn.hutool.core.bean.BeanUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import top.mushanyu.common.domain.PageQueryResult;
 import top.mushanyu.system.api.RoleService;
+import top.mushanyu.system.cnodition.RoleCondition;
 import top.mushanyu.system.dto.RoleDTO;
+import top.mushanyu.web.receiver.system.RoleReceiver;
 
 import java.util.List;
 
@@ -26,13 +29,31 @@ public class RoleController {
 
     @PostMapping
     @Operation(summary = "保存角色")
-    public RoleDTO save(RoleDTO roleDTO) {
-        return roleService.save(roleDTO);
+    public RoleDTO save(@RequestBody RoleReceiver receiver) {
+        return roleService.save(BeanUtil.copyProperties(receiver, RoleDTO.class));
     }
 
     @GetMapping
-    @Operation(summary = "查询所有角色")
-    public List<RoleDTO> findAll() {
-        return roleService.findAll();
+    @Operation(summary = "根据名称模糊查询角色")
+    public PageQueryResult<RoleDTO> findByCondition(RoleCondition condition) {
+        return roleService.findByCondition(condition);
+    }
+
+    @PutMapping
+    @Operation(summary = "更新角色")
+    public RoleDTO update(@RequestBody RoleReceiver receiver) {
+        return roleService.update(BeanUtil.copyProperties(receiver, RoleDTO.class));
+    }
+
+    @DeleteMapping
+    @Operation(summary = "删除角色")
+    public RoleDTO delete(@RequestParam("id") Long id) {
+        return roleService.delete(id);
+    }
+
+    @PutMapping("/recover")
+    @Operation(summary = "恢复角色")
+    public RoleDTO recover(@RequestParam("id") Long id) {
+        return roleService.recover(id);
     }
 }

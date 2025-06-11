@@ -5,7 +5,7 @@ import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Version;
-import top.mushanyu.config.jpa.AuditingListener;
+import top.mushanyu.config.audit.AuditingListener;
 
 import java.time.LocalDateTime;
 

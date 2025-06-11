@@ -1,4 +1,4 @@
-package top.mushanyu.config.jpa;
+package top.mushanyu.config.audit;
 
 
 import cn.hutool.core.net.NetUtil;
@@ -6,8 +6,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Configurable;
-import top.mushanyu.config.domain.AbstractModel;
 import top.mushanyu.common.enums.State;
+import top.mushanyu.config.domain.AbstractModel;
 import top.mushanyu.config.session.AppSession;
 
 import java.lang.reflect.Method;

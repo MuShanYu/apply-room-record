@@ -21,4 +21,6 @@ public class AuthDTO {
     private DateTime expiresIn;
 
     private String refreshToken;
+
+    private DateTime refreshExpiresIn;
 }

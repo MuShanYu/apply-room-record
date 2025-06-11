@@ -14,4 +14,6 @@ public interface RightRoleRelRepository extends JpaRepository<RightRoleRel, Long
     List<RightRoleRel> findByRoleId(Long roleId);
 
     List<RightRoleRel> findByRoleIdIn(List<Long> roleIds);
+
+    void deleteByRoleId(Long roleId);
 }

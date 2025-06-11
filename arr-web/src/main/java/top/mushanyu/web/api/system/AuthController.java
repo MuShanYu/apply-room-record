@@ -16,6 +16,7 @@ import top.mushanyu.system.api.AuthService;
 import top.mushanyu.system.api.RoleService;
 import top.mushanyu.system.dto.AuthDTO;
 import top.mushanyu.system.dto.LoginDTO;
+import top.mushanyu.system.dto.UserDTO;
 import top.mushanyu.web.receiver.system.LoginReceiver;
 
 import java.util.Date;
@@ -42,7 +43,13 @@ public class AuthController {
 
     @GetMapping("/cur-user-action-rights")
     @Operation(summary = "获取当前用户的操作权限")
-    public List<String> findCurrentUserActionRights() {
-        return authService.findCurrentUserActionRights();
+    public List<String> queryCurrentUserActionRights() {
+        return authService.findCurUserActionRights();
+    }
+
+    @GetMapping("/cur-user-info")
+    @Operation(summary = "获取当前用户的基本信息")
+    public UserDTO queryCurUserInfo() {
+        return authService.findCurUserInfo();
     }
 }

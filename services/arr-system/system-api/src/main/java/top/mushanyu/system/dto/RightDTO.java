@@ -28,4 +28,13 @@ public class RightDTO extends AbstractDTO {
     private String rightObjectId;
 
     private State state;
+
+   public void updateFields(RightDTO updateDTO) {
+       this.name = updateDTO.name;
+       this.type = updateDTO.type;
+       this.assignable = updateDTO.assignable;
+       this.parentId = updateDTO.parentId;
+       this.rightClass = updateDTO.rightClass;
+       this.rightObjectId = updateDTO.rightObjectId;
+   }
 }
