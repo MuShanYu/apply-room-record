@@ -19,10 +19,6 @@ import java.util.List;
 public interface RightService {
 
     @GET
-    @Path("/cur-user-rights")
-    List<String> findCurrentUserRights(@QueryParam("type")RightType type);
-
-    @GET
     @Path("/all")
     List<RightDTO> findAllRights();
 
@@ -37,4 +33,8 @@ public interface RightService {
     @PUT
     @Path("/update")
     RightDTO update(RightDTO right);
+
+    @GET
+    @Path("/user-rights/{userId}")
+    List<String> findRightsByUserId(@PathParam("userId") Long userId);
 }

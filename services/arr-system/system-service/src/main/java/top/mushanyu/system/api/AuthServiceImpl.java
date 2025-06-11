@@ -15,6 +15,7 @@ import top.mushanyu.common.enums.State;
 import top.mushanyu.common.exception.AlertException;
 import top.mushanyu.config.ArrCommonConfig;
 import top.mushanyu.config.session.AppSession;
+import top.mushanyu.system.component.AuthCacheComponent;
 import top.mushanyu.system.constants.SystemErrorCode;
 import top.mushanyu.system.dao.*;
 import top.mushanyu.system.domain.*;
@@ -37,34 +38,18 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final RightRepository rightRepository;
-    private final RightRoleRelRepository rightRoleRelRepository;
-    private final UserRoleRelRepository userRoleRelRepository;
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
 
     private final ArrCommonConfig arrCommonConfig;
     private final UserMapper userMapper;
 
+    private final RightService rightService;
+
+    private final AuthCacheComponent authCacheComponent;
+
     @Override
     public List<String> findCurUserActionRights() {
-        List<Long> roleIds = CollStreamUtil.toList(
-                userRoleRelRepository.findByUserId(AppSession.getUserId()),
-                UserRoleRel::getRoleId
-        );
-        roleIds = CollStreamUtil.toList(
-                roleRepository.findByIdInAndState(roleIds, State.ACTIVE),
-                Role::getId
-        );
-        Set<Long> rightIds = CollStreamUtil.toSet(
-                rightRoleRelRepository.findByRoleIdIn(roleIds),
-                RightRoleRel::getRightId
-        );
-        return rightRepository.findAllById(rightIds).stream()
-                .filter(right -> right.getState() == State.ACTIVE)
-                .filter(right -> right.getType() == RightType.ACTION)
-                .map(Right::getRightObjectId)
-                .toList();
+        return rightService.findRightsByUserId(AppSession.getUserId());
     }
 
     @Override
@@ -90,12 +75,14 @@ public class AuthServiceImpl implements AuthService {
                 .setPayload("userId", user.getId())
                 .setAudience("web-refresh")
                 .sign(jwtSigner);
-        return AuthDTO.builder()
+        AuthDTO authDTO = AuthDTO.builder()
                 .accessToken(token)
                 .expiresIn(expiredTime)
                 .refreshToken(refreshToken)
                 .refreshExpiresIn(refreshExpireIn)
                 .build();
+        authCacheComponent.cacheAuthInfo(authDTO);
+        return authDTO;
     }
 
     @Override
