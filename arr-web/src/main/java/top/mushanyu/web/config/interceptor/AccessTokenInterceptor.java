@@ -50,7 +50,6 @@ public class AccessTokenInterceptor implements HandlerInterceptor {
             jwtComponent.verifyToken(tokenValue);
             JWT jwt = JWT.of(tokenValue); // 可以直接jwt.of
             JSONObject payloads = jwt.getPayloads();
-            log.info(payloads.getStr(JWTPayload.AUDIENCE));
             List<String> audiences = payloads.getBeanList(JWTPayload.AUDIENCE, String.class);
             if (CollUtil.isEmpty(audiences)
                     || !CollUtil.contains(audiences, JwtAudience.WEB.name())) {
