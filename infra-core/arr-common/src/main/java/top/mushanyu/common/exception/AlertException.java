@@ -61,7 +61,7 @@ public class AlertException extends RuntimeException implements Exceptional {
 
     @Override
     public Response.StatusType getStatus() {
-        return CustomizeHttpStatus.BUSINESS_STATUS;
+        return CustomizeHttpStatus.BUSINESS_ERROR_STATUS;
     }
 
     @Override

@@ -5,9 +5,13 @@ import jakarta.ws.rs.core.Response;
 public enum CustomizeHttpStatus implements Response.StatusType {
 
     /**
-     * 业务自定义异常
+     * 业务自定义异常状态码
      */
-    BUSINESS_STATUS(444, "Business Custom Status");
+    BUSINESS_ERROR_STATUS(490, "Business Custom Status"),
+    /**
+     * 刷新token无效状态码
+     */
+    REFRESH_TOKEN_INVALID_STATUS(491, "Refresh Token Expired");
 
     private final int code;
     private final String reason;

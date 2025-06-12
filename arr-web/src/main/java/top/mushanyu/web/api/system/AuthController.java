@@ -41,6 +41,18 @@ public class AuthController {
         return authService.login(BeanUtil.copyProperties(receiver, LoginDTO.class));
     }
 
+    @DeleteMapping("/login-out")
+    @Operation(summary = "退出登录")
+    public void loginOut(@RequestParam("accessToken") String accessToken) {
+        authService.logout(accessToken);
+    }
+
+    @PutMapping("/refresh")
+    @Operation(summary = "获取新的访问令牌")
+    public AuthDTO refresh(@RequestParam("refreshToken") String refreshToken) {
+        return authService.refresh(refreshToken);
+    }
+
     @GetMapping("/cur-user-action-rights")
     @Operation(summary = "获取当前用户的操作权限")
     public List<String> queryCurrentUserActionRights() {

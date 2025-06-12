@@ -41,6 +41,6 @@ arr:
 arr-web:
   common:
     jwt-secret: 3aa7bc0a-eaee-4649-bd88-32abaa830328
-    jwt-expire-time: 1800 # 单位为秒
-    jwt-refresh-expire-time: 7200 # 单位为秒
+    jwt-expire-time: 5 # 单位为秒
+    jwt-refresh-expire-time: 30 # 单位为秒
 

@@ -1,4 +1,4 @@
-package top.mushanyu.config;
+package top.mushanyu.common;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.crypto.asymmetric.RSA;

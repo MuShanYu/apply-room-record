@@ -32,4 +32,12 @@ public interface AuthService {
     @Path("/login")
     AuthDTO login(LoginDTO dto);
 
+    @DELETE
+    @Path("/logout")
+    void logout(@QueryParam("accessToken") String accessToken);
+
+    @GET
+    @Path("/refresh")
+    AuthDTO refresh(@QueryParam("refreshToken") String refreshToken);
+
 }

@@ -1,9 +1,12 @@
 package top.mushanyu.web.config.interceptor;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.exceptions.ValidateException;
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.jwt.JWT;
+import cn.hutool.jwt.JWTPayload;
 import cn.hutool.jwt.JWTValidator;
 import cn.hutool.jwt.signers.JWTSigner;
 import cn.hutool.jwt.signers.JWTSignerUtil;
@@ -14,11 +17,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+import top.mushanyu.common.component.JwtComponent;
+import top.mushanyu.common.enums.JwtAudience;
 import top.mushanyu.common.exception.AlertException;
 import top.mushanyu.common.problem.Problem;
-import top.mushanyu.config.ArrCommonConfig;
 import top.mushanyu.config.session.AppSession;
 import top.mushanyu.web.constant.WebErrorCode;
+
+import java.util.List;
 
 /**
  * @author MuShanYu
@@ -31,7 +37,7 @@ public class AccessTokenInterceptor implements HandlerInterceptor {
 
     private static final String TOKEN_PREFIX = "Bearer ";
 
-    private final ArrCommonConfig arrCommonConfig;
+    private final JwtComponent jwtComponent;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -41,12 +47,15 @@ public class AccessTokenInterceptor implements HandlerInterceptor {
                 throw AlertException.of(WebErrorCode.UNAUTHORIZED);
             }
             String tokenValue = token.substring(TOKEN_PREFIX.length()).trim();
-            JWTValidator jwtValidator = JWTValidator.of(tokenValue);
-            jwtValidator.validateDate(); // 验证有效期等时间参数
-            JWTSigner publicKeySigner = JWTSignerUtil.rs256(arrCommonConfig.getRsa().getPublicKey());
-            jwtValidator.validateAlgorithm(publicKeySigner); // 公钥验证签名，防止token被篡改
+            jwtComponent.verifyToken(tokenValue);
             JWT jwt = JWT.of(tokenValue); // 可以直接jwt.of
             JSONObject payloads = jwt.getPayloads();
+            log.info(payloads.getStr(JWTPayload.AUDIENCE));
+            List<String> audiences = payloads.getBeanList(JWTPayload.AUDIENCE, String.class);
+            if (CollUtil.isEmpty(audiences)
+                    || !CollUtil.contains(audiences, JwtAudience.WEB.name())) {
+                throw new IllegalArgumentException("audience not match.");
+            }
             fillSession(payloads);
         } catch (ValidateException e) {
             throw Problem.builder()

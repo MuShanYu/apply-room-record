@@ -41,7 +41,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/arr-web/**")
                 .excludePathPatterns("/arr-web/system/v1/auth/login",
                         "/arr-web/v3/api-docs/**",
-                        "/arr-web/swagger-ui/**"
+                        "/arr-web/swagger-ui/**",
+                        "/arr-web/system/v1/auth/refresh"
                 );
     }
 }
