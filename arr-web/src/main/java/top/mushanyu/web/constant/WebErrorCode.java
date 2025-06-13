@@ -5,6 +5,7 @@ import top.mushanyu.common.exception.BaseErrorCode;
 
 public enum WebErrorCode implements BaseErrorCode {
 
+    PERMISSION_DENIED("web_000005", "权限不足"),
     UNAUTHORIZED("web_000004", "未授权或授权信息错误"),
     ROLE_NAME_NULL("web_000003", "角色名称不能为空"),
     INVALID_PARAMS("web_000002", "无效参数"),

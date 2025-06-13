@@ -29,6 +29,10 @@
             <artifactId>flyway-mysql</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+        <dependency>
             <groupId>top.mushanyu</groupId>
             <artifactId>message-api</artifactId>
             <version>${local.project.version}</version>

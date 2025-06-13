@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import top.mushanyu.system.api.RightService;
 import top.mushanyu.system.dto.RightDTO;
+import top.mushanyu.web.config.annotation.CheckPermission;
 import top.mushanyu.web.receiver.system.RightReceiver;
 
 import java.util.HashMap;
@@ -66,12 +67,14 @@ public class RightController {
 
     @PostMapping
     @Operation(summary = "保存权限信息")
+    @CheckPermission(value = {"system:rights:addBtn"})
     public RightDTO save(@RequestBody RightReceiver receiver) {
         return rightService.save(BeanUtil.copyProperties(receiver, RightDTO.class));
     }
 
     @PutMapping
     @Operation(summary = "修改权限信息")
+    @CheckPermission(value = {"system:rights:editBtn"})
     public RightDTO update(@RequestBody RightReceiver receiver) {
         return rightService.update(BeanUtil.copyProperties(receiver, RightDTO.class));
     }

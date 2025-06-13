@@ -9,6 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.util.UrlPathHelper;
 import top.mushanyu.web.config.converter.Jackson2HttpMessageConverter;
 import top.mushanyu.web.config.interceptor.AccessTokenInterceptor;
+import top.mushanyu.web.config.interceptor.CheckPermissionInterceptor;
 
 import java.util.List;
 
@@ -21,6 +22,8 @@ import java.util.List;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     private final AccessTokenInterceptor accessTokenInterceptor;
+
+    private final CheckPermissionInterceptor checkPermissionInterceptor;
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -44,5 +47,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/arr-web/swagger-ui/**",
                         "/arr-web/system/v1/auth/refresh"
                 );
+        registry.addInterceptor(checkPermissionInterceptor)
+                .addPathPatterns("/arr-web/**");
     }
 }

@@ -3,6 +3,7 @@ package top.mushanyu.system.component;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.jwt.JWT;
 import cn.hutool.jwt.JWTPayload;
@@ -32,10 +33,9 @@ public class AuthCacheComponent {
 
     // 每次重新获取缓存时间，保证准确
     public void cacheAuthInfo(AuthDTO authDTO) {
-        // 缓存accessToken
         JWT accessToken = JWT.of(authDTO.getAccessToken());
         JSONObject payloads = accessToken.getPayloads();
-      // 权限信息
+        // 权限信息
         Long userId = payloads.getLong("userId");
         List<String> rightsByUserId = rightService.findRightsByUserId(userId);
         if (CollUtil.isNotEmpty(rightsByUserId)) {

@@ -11,6 +11,7 @@ import top.mushanyu.common.domain.PageQueryResult;
 import top.mushanyu.system.api.RoleService;
 import top.mushanyu.system.cnodition.RoleCondition;
 import top.mushanyu.system.dto.RoleDTO;
+import top.mushanyu.web.config.annotation.CheckPermission;
 import top.mushanyu.web.receiver.system.RoleReceiver;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class RoleController {
 
     @PostMapping
     @Operation(summary = "保存角色")
+    @CheckPermission(value = {"system:role:addBtn"})
     public RoleDTO save(@RequestBody RoleReceiver receiver) {
         return roleService.save(BeanUtil.copyProperties(receiver, RoleDTO.class));
     }
@@ -41,18 +43,21 @@ public class RoleController {
 
     @PutMapping
     @Operation(summary = "更新角色")
+    @CheckPermission(value = {"system:role:editBtn"})
     public RoleDTO update(@RequestBody RoleReceiver receiver) {
         return roleService.update(BeanUtil.copyProperties(receiver, RoleDTO.class));
     }
 
     @DeleteMapping
     @Operation(summary = "删除角色")
+    @CheckPermission(value = {"system:role:delBtn"})
     public RoleDTO delete(@RequestParam("id") Long id) {
         return roleService.delete(id);
     }
 
     @PutMapping("/recover")
     @Operation(summary = "恢复角色")
+    @CheckPermission(value = {"system:role:recoverBtn"})
     public RoleDTO recover(@RequestParam("id") Long id) {
         return roleService.recover(id);
     }
