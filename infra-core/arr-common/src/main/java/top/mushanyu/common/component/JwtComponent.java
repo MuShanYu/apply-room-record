@@ -40,26 +40,12 @@ public class JwtComponent {
 
     public String genDefaultToken(Long userId) {
         DateTime expiredTime = DateUtil.offsetSecond(new Date(), arrCommonConfig.getJwtExpireTime());
-        JWTSigner jwtSigner = JWTSignerUtil.rs256(arrCommonConfig.getRsa().getPrivateKey());
-        return JWT.create()
-                .setJWTId(IdUtil.fastUUID())
-                .setExpiresAt(expiredTime) // 过期时间
-                .setPayload("userId", userId)
-                .setPayload("type", TokenType.NORMAL)
-                .setAudience(JwtAudience.WEB.name()) // 本系统用该字段标识平台
-                .sign(jwtSigner);
+        return genToken(userId, expiredTime, JwtAudience.WEB, TokenType.NORMAL);
     }
 
     public String genDefaultRefreshToken(Long userId) {
         DateTime refreshExpireIn = DateUtil.offsetSecond(new Date(), arrCommonConfig.getJwtRefreshExpireTime());
-        JWTSigner jwtSigner = JWTSignerUtil.rs256(arrCommonConfig.getRsa().getPrivateKey());
-        return JWT.create()
-                .setJWTId(IdUtil.fastUUID())
-                .setExpiresAt(refreshExpireIn) // 过期时间
-                .setPayload("userId", userId)
-                .setPayload("type", TokenType.REFRESH) // 1表示刷新令牌
-                .setAudience(JwtAudience.WEB.name()) // 本系统用该字段标识平台
-                .sign(jwtSigner);
+        return genToken(userId, refreshExpireIn, JwtAudience.WEB, TokenType.REFRESH);
     }
 
     public void verifyToken(String token) {
